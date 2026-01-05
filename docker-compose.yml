@@ -7,5 +7,9 @@ services:
     ports:
       - "5174:80"
     restart: unless-stopped
+    # Load environment variables from the .env file in the project root at runtime
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=production
+      # Use NODE_ENV from .env if present, otherwise fall back to production
+      - NODE_ENV=${NODE_ENV:-production}
