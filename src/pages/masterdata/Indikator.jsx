@@ -798,7 +798,7 @@ const Indikator = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-200 dark:bg-gray-700">
+              <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
                 <tr>
                   <th className="px-3 py-3 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider">
                     Penilaian
@@ -1214,7 +1214,7 @@ const Indikator = () => {
 
                     <div className="max-h-64 overflow-auto border border-gray-200 dark:border-gray-700 rounded-lg">
                       <table className="w-full text-sm">
-                        <thead className="bg-gray-200 dark:bg-gray-700">
+                        <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
                           <tr>
                             <th className="px-3 py-2 text-left">Nama</th>
                             <th className="px-3 py-2 text-center w-36">
@@ -1514,7 +1514,7 @@ const Indikator = () => {
                     return (
                       <div className="w-full min-w-0">
                         <table className="w-full text-sm table-auto min-w-full sm:table-fixed">
-                          <thead className="bg-gray-200 dark:bg-gray-700">
+                          <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
                             <tr>
                               <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-12">
                                 No

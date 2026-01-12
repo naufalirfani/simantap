@@ -48,8 +48,8 @@ function EmployeeListModal({
 
       {/* Modal with slide-up + scale animation */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl">
+        <div className="w-full max-w-5xl max-h-full bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl sticky top-0">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
                 {title}
@@ -377,28 +377,28 @@ function EmployeeTableView({
           <div className="w-full">
             <div className="overflow-x-auto max-h-[55vh]">
               <table className="w-full text-md table-auto border-collapse min-w-0">
-                <thead className="bg-gray-200 dark:bg-gray-700">
+                <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
                   <tr className="text-center">
                     <th
-                      className="pb-2 px-3 text-gray-500 dark:text-gray-300 w-12 whitespace-nowrap sticky top-0 z-10"
+                      className="pb-2 px-3 text-gray-500 dark:text-gray-300 w-12 whitespace-nowrap top-0 z-10"
                       aria-label="Foto"
                     ></th>
-                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[180px] whitespace-nowrap sticky top-0 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[180px] whitespace-nowrap top-0 z-10">
                       Nama
                     </th>
-                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-36 whitespace-nowrap sticky top-0 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-36 whitespace-nowrap top-0 z-10">
                       NIP
                     </th>
-                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[200px] whitespace-nowrap sticky top-0 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[200px] whitespace-nowrap top-0 z-10">
                       Jabatan
                     </th>
-                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap sticky top-0 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap top-0 z-10">
                       Unit Kerja
                     </th>
-                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap sticky top-0 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10">
                       Jenis Jabatan
                     </th>
-                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap sticky top-0 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10">
                       Golongan
                     </th>
                   </tr>
@@ -460,7 +460,7 @@ function EmployeeTableView({
                       <td className="py-2 px-3 text-gray-700 dark:text-gray-300 truncate text-md">
                         {e.unitKerja || "-"}
                       </td>
-                      <td className="py-2 px-3 text-gray-700 dark:text-gray-300 truncate text-md text-center">
+                      <td className="py-2 px-3 text-gray-700 dark:text-gray-300 truncate text-md">
                         {e.jenisJabatan || e.unitKerja || "-"}
                       </td>
                       <td className="py-2 px-3 text-gray-700 dark:text-gray-300 text-md text-center">
@@ -482,24 +482,24 @@ function EmployeeTableView({
         <div className="w-full">
           <div className="overflow-x-auto max-h-[55vh]">
             <table className="w-full text-md table-auto border-collapse min-w-0">
-              <thead className="bg-gray-200 dark:bg-gray-700">
+              <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
                 <tr className="text-center">
-                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[240px] whitespace-nowrap sticky top-0 z-10">
+                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[240px] whitespace-nowrap top-0 z-10">
                     Nama
                   </th>
-                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-36 whitespace-nowrap sticky top-0 z-10">
+                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-36 whitespace-nowrap top-0 z-10">
                     NIP
                   </th>
-                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap sticky top-0 z-10">
+                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap top-0 z-10">
                     Jabatan
                   </th>
-                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap sticky top-0 z-10">
+                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap top-0 z-10">
                     Unit Kerja
                   </th>
-                  <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap sticky top-0 z-10">
+                  <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap top-0 z-10">
                     Potensial
                   </th>
-                  <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap sticky top-0 z-10">
+                  <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap top-0 z-10">
                     Kinerja
                   </th>
                 </tr>

@@ -282,7 +282,7 @@ const ServerDataTable = ({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full table-auto">
-          <thead className="bg-gray-200 dark:bg-gray-700">
+          <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
             <tr>
               {columns.map((column) => (
                 <th

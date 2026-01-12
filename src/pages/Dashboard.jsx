@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSettings } from "../context/SettingsContext";
 import {
   PieChart,
@@ -7,21 +7,34 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
-  ScatterChart,
-  Scatter,
-  Layer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ZAxis,
-  ReferenceLine,
-  ReferenceArea,
-  LabelList,
 } from "recharts";
+import { Scatter } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip as ChartTooltip,
+  Legend as ChartLegend,
+  Filler,
+} from "chart.js";
 import EmployeeCountBox from "../components/EmployeeCountBox";
 import EmployeeListModal from "../components/EmployeeListModal";
 import { fetchStatistik, fetchPegawaiList } from "../services/apiService";
-import { loadKotakConfig, computeQuadrantDynamic } from "../services/kotakConfigService";
+import {
+  loadKotakConfig,
+  computeQuadrantDynamic,
+} from "../services/kotakConfigService";
+
+// Register Chart.js components
+ChartJS.register(
+  LinearScale,
+  PointElement,
+  LineElement,
+  ChartTooltip,
+  ChartLegend,
+  Filler
+);
 
 const Dashboard = () => {
   const { t } = useSettings();
@@ -45,12 +58,12 @@ const Dashboard = () => {
     const config = loadKotakConfig();
     setKotakConfig(config);
     const onConfigChanged = () => setKotakConfig(loadKotakConfig());
-    if (typeof window !== 'undefined') {
-      window.addEventListener('kotakConfigChanged', onConfigChanged);
+    if (typeof window !== "undefined") {
+      window.addEventListener("kotakConfigChanged", onConfigChanged);
     }
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('kotakConfigChanged', onConfigChanged);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("kotakConfigChanged", onConfigChanged);
       }
     };
   }, []);
@@ -82,10 +95,38 @@ const Dashboard = () => {
     `;
     document.head.appendChild(styleEl);
 
+    // Ensure Poppins font is available for tooltip on hover
+    const fontLinkHref =
+      "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap";
+    let fontLink = Array.from(
+      document.head.querySelectorAll('link[rel="stylesheet"]')
+    ).find(
+      (l) =>
+        l.href &&
+        l.href.includes("fonts.googleapis.com") &&
+        l.href.includes("Poppins")
+    );
+    if (!fontLink) {
+      fontLink = document.createElement("link");
+      fontLink.rel = "stylesheet";
+      fontLink.href = fontLinkHref;
+      fontLink.setAttribute("data-poppins", "true");
+      document.head.appendChild(fontLink);
+    }
+
     return () => {
       window.removeEventListener("resize", checkMobile);
       if (styleEl && styleEl.parentNode)
         styleEl.parentNode.removeChild(styleEl);
+      // remove injected font link if we added it
+      if (
+        fontLink &&
+        fontLink.getAttribute &&
+        fontLink.getAttribute("data-poppins") === "true" &&
+        fontLink.parentNode
+      ) {
+        fontLink.parentNode.removeChild(fontLink);
+      }
     };
   }, [t]);
 
@@ -160,8 +201,16 @@ const Dashboard = () => {
   // Build quadrant centers from kotakConfig intervals (fallback to defaults)
   const computeCentersFromConfig = () => {
     const cfg = kotakConfig || loadKotakConfig();
-    const p = cfg?.intervals?.potensial || [{ min: 0, max: 50 }, { min: 50, max: 75 }, { min: 75, max: 100 }];
-    const k = cfg?.intervals?.kinerja || [{ min: 0, max: 50 }, { min: 50, max: 75 }, { min: 75, max: 100 }];
+    const p = cfg?.intervals?.potensial || [
+      { min: 0, max: 50 },
+      { min: 50, max: 75 },
+      { min: 75, max: 100 },
+    ];
+    const k = cfg?.intervals?.kinerja || [
+      { min: 0, max: 50 },
+      { min: 50, max: 75 },
+      { min: 75, max: 100 },
+    ];
     const mapping = [
       [0, 0],
       [0, 1],
@@ -206,14 +255,46 @@ const Dashboard = () => {
           count: stats.total_jabatan_pengawas || 0,
           filterKey: "jabatan_pengawas",
         },
-        { name: "Jabatan Fungsional Utama", count: stats.total_fungsional_utama || 0, filterKey: "fungsional_utama" },
-        { name: "Jabatan Fungsional Madya", count: stats.total_fungsional_madya || 0, filterKey: "fungsional_madya" },
-        { name: "Jabatan Fungsional Muda", count: stats.total_fungsional_muda || 0, filterKey: "fungsional_muda" },
-        { name: "Jabatan Fungsional Pertama", count: stats.total_fungsional_pertama || 0, filterKey: "fungsional_pertama" },
-        { name: "Jabatan Fungsional Penyelia", count: stats.total_fungsional_penyelia || 0, filterKey: "fungsional_penyelia" },
-        { name: "Jabatan Fungsional Mahir", count: stats.total_fungsional_mahir || 0, filterKey: "fungsional_mahir" },
-        { name: "Jabatan Fungsional Terampil", count: stats.total_fungsional_terampil || 0, filterKey: "fungsional_terampil" },
-        { name: "Jabatan Pelaksana", count: stats.total_pelaksana || 0, filterKey: "pelaksana" },
+        {
+          name: "Jabatan Fungsional Utama",
+          count: stats.total_fungsional_utama || 0,
+          filterKey: "fungsional_utama",
+        },
+        {
+          name: "Jabatan Fungsional Madya",
+          count: stats.total_fungsional_madya || 0,
+          filterKey: "fungsional_madya",
+        },
+        {
+          name: "Jabatan Fungsional Muda",
+          count: stats.total_fungsional_muda || 0,
+          filterKey: "fungsional_muda",
+        },
+        {
+          name: "Jabatan Fungsional Pertama",
+          count: stats.total_fungsional_pertama || 0,
+          filterKey: "fungsional_pertama",
+        },
+        {
+          name: "Jabatan Fungsional Penyelia",
+          count: stats.total_fungsional_penyelia || 0,
+          filterKey: "fungsional_penyelia",
+        },
+        {
+          name: "Jabatan Fungsional Mahir",
+          count: stats.total_fungsional_mahir || 0,
+          filterKey: "fungsional_mahir",
+        },
+        {
+          name: "Jabatan Fungsional Terampil",
+          count: stats.total_fungsional_terampil || 0,
+          filterKey: "fungsional_terampil",
+        },
+        {
+          name: "Jabatan Pelaksana",
+          count: stats.total_pelaksana || 0,
+          filterKey: "pelaksana",
+        },
       ]
     : [
         { name: "Jabatan Pimpinan Tinggi Madya", count: 3, filterKey: null },
@@ -223,7 +304,11 @@ const Dashboard = () => {
         { name: "Jabatan Fungsional Ahli Utama", count: 15, filterKey: null },
         { name: "Jabatan Fungsional Ahli Madya", count: 85, filterKey: null },
         { name: "Jabatan Fungsional Ahli Muda", count: 180, filterKey: null },
-        { name: "Jabatan Fungsional Ahli Pertama", count: 220, filterKey: null },
+        {
+          name: "Jabatan Fungsional Ahli Pertama",
+          count: 220,
+          filterKey: null,
+        },
         { name: "Jabatan Fungsional Penyelia", count: 45, filterKey: null },
         { name: "Jabatan Fungsional Mahir", count: 95, filterKey: null },
         { name: "Jabatan Fungsional Terampil", count: 140, filterKey: null },
@@ -235,50 +320,140 @@ const Dashboard = () => {
   const [empLoading, setEmpLoading] = useState(false);
   const [empMeta, setEmpMeta] = useState(null);
   const [empFilter, setEmpFilter] = useState(null);
+  const [empKuadran, setEmpKuadran] = useState(null);
 
-  const loadEmployees = useCallback(async ({ filter, q = "", page = 1, per_page = 20 } = {}) => {
-    try {
-      setEmpLoading(true);
-      setEmpEmployees([]);
-      setEmpMeta(null);
-      const res = await fetchPegawaiList({ filter, page, per_page, q });
-      const mapped = (res.data || []).map((it) => ({
-        name: (it.nama || it.name || "").toString().replace(/^\-\s*/, ""),
-        nip: it.nip || it.NIP || "",
-        jabatan: it.jabatan || it.nama_jabatan || "",
-        unitKerja: it.unit_kerja || it.unitKerja || "",
-        email: it.email || it.email_pegawai || it.email_personal || "",
-        jenisJabatan: it.jenis_jabatan || it.jenisJabatan || it.jenis || "",
-        golongan: it.golongan || it.gol || it.pangkat || "",
-        potensial: it.potensial ?? null,
-        kinerja: it.kinerja ?? null,
-        avatar: it.avatar || null,
-      }));
-      setEmpEmployees(mapped);
-      setEmpMeta(res.meta || null);
-    } catch (err) {
-      console.error("loadEmployees error:", err);
-      setEmpEmployees([]);
-      setEmpMeta(null);
-    } finally {
-      setEmpLoading(false);
-    }
-  }, []);
+  const loadEmployees = useCallback(
+    async ({
+      filter,
+      kuadran = null,
+      q = "",
+      page = 1,
+      per_page = 10,
+    } = {}) => {
+      try {
+        setEmpLoading(true);
+        setEmpEmployees([]);
+        setEmpMeta(null);
 
-  const handleJobTypeClick = (item) => {
+        if (kuadran != null) {
+          const kotakId = Number(kuadran);
+          // prefer computedQuadrantData; if not available yet, fetch full penilaian list
+          let sourceData = computedQuadrantData;
+          if (!sourceData || sourceData.length === 0) {
+            try {
+              const resAll = await fetchPegawaiList({ with_penilaian: true, with_pagination: false });
+              sourceData = (resAll.data || []).map((it) => ({
+                name: (it.nama || it.name || "").toString().replace(/^\-\s*/, ""),
+                nip: it.nip || it.NIP || "",
+                jabatan: it.jabatan || it.nama_jabatan || "",
+                unitKerja: it.unit_kerja || it.unitKerja || "",
+                potensial: it.nilai_potensial ?? null,
+                kinerja: it.nilai_kinerja ?? null,
+                quadrant: computeQuadrant(it.nilai_potensial ?? null, it.nilai_kinerja ?? null),
+                avatar: it.avatar || null,
+                raw: it,
+              }));
+            } catch (e) {
+              sourceData = [];
+            }
+          }
+          
+          const filtered = (sourceData || []).filter((it) => it.quadrant === kotakId);
+          const qnorm = (q || "").toString().trim().toLowerCase();
+          const searched = qnorm
+            ? filtered.filter((it) => {
+                const hay = `${it.name || ""} ${it.nip || ""} ${
+                  it.jabatan || ""
+                }`.toLowerCase();
+                return hay.includes(qnorm);
+              })
+            : filtered;
+
+          const total = searched.length;
+          const last_page = Math.max(1, Math.ceil(total / per_page));
+          const current_page = Math.min(Math.max(1, page), last_page);
+          const start = (current_page - 1) * per_page;
+          const paged = searched.slice(start, start + per_page);
+
+          const mapped = paged.map((it) => ({
+            name: it.name || "",
+            nip: it.nip || "",
+            jabatan: it.jabatan || "",
+            unitKerja: it.unitKerja || "",
+            email: it.email || "",
+            jenisJabatan: it.jenisJabatan || it.jenis || "",
+            golongan: it.golongan || "",
+            potensial: it.potensial ?? it.raw?.nilai_potensial ?? null,
+            kinerja: it.kinerja ?? it.raw?.nilai_kinerja ?? null,
+            avatar: it.avatar || null,
+          }));
+
+          setEmpEmployees(mapped);
+          setEmpMeta({ current_page, per_page, last_page, total });
+          return;
+        }
+
+        // Fallback to server-side fetch for other filters
+        const res = await fetchPegawaiList({ filter, page, per_page, q });
+        const mapped = (res.data || []).map((it) => ({
+          name: (it.nama || it.name || "").toString().replace(/^\-\s*/, ""),
+          nip: it.nip || it.NIP || "",
+          jabatan: it.jabatan || it.nama_jabatan || "",
+          unitKerja: it.unit_kerja || it.unitKerja || "",
+          email: it.email || it.email_pegawai || it.email_personal || "",
+          jenisJabatan: it.jenis_jabatan || it.jenisJabatan || it.jenis || "",
+          golongan: it.golongan || it.gol || it.pangkat || "",
+          potensial: it.potensial ?? null,
+          kinerja: it.kinerja ?? null,
+          avatar: it.avatar || null,
+        }));
+        setEmpEmployees(mapped);
+        setEmpMeta(res.meta || null);
+      } catch (err) {
+        console.error("loadEmployees error:", err);
+        setEmpEmployees([]);
+        setEmpMeta(null);
+      } finally {
+        setEmpLoading(false);
+      }
+    },
+    []
+  );
+
+  const handleJobTypeClick = async (item) => {
     // only fetch if filterKey present
     const filter = item.name || null;
-    setModalState({ isOpen: true, quadrant: null, employees: [], title: item.name, color: POINT_COLOR });
     setEmpEmployees([]);
     setEmpMeta(null);
     setEmpFilter(filter);
-    if (filter) loadEmployees({ filter, q: "", page: 1 });
+    setEmpKuadran(null);
+
+    if (filter) {
+      // await server load so modal mounts with meta/employees already present
+      await loadEmployees({ filter, q: "", page: 1, per_page: 10 });
+    }
+
+    setModalState({
+      isOpen: true,
+      quadrant: null,
+      employees: [],
+      title: item.name,
+      color: POINT_COLOR,
+    });
   };
 
-  const handleModalSearch = useCallback((q, page = 1, per_page = 20) => {
-    if (!empFilter) return;
-    loadEmployees({ filter: empFilter, q: q || "", page, per_page });
-  }, [empFilter, loadEmployees]);
+  const handleModalSearch = useCallback(
+    (q, page = 1, per_page = 10) => {
+      // If empKuadran is set, perform frontend search/pagination
+      if (empKuadran != null) {
+        loadEmployees({ kuadran: empKuadran, q: q || "", page, per_page });
+        return;
+      }
+      if (!empFilter) return;
+      loadEmployees({ filter: empFilter, q: q || "", page, per_page });
+    },
+    [empFilter, empKuadran, loadEmployees]
+  );
 
   // Load pegawai (with penilaian) dari API untuk chart 9 Kotak
   const [quadrantData, setQuadrantData] = useState([]);
@@ -295,12 +470,8 @@ const Dashboard = () => {
           nip: it.nip || it.NIP || "",
           jabatan: it.jabatan || it.nama_jabatan || "",
           unitKerja: it.unit_kerja || it.unitKerja || "",
-          potensial:
-            it.nilai_potensial ??
-            null,
-          kinerja:
-            it.nilai_kinerja ??
-            null,
+          potensial: it.nilai_potensial ?? null,
+          kinerja: it.nilai_kinerja ?? null,
           avatar: it.avatar || null,
           raw: it,
         }));
@@ -338,21 +509,21 @@ const Dashboard = () => {
 
   // Fungsi untuk membuka modal dengan data pegawai per kotak
   const handleBoxClick = (quadrantNumber) => {
-    const employees = computedQuadrantData.filter(
-      (emp) => emp.quadrant === quadrantNumber
-    );
-
-    const kotak = kotakConfig?.kotak.find(k => k.id === quadrantNumber);
-
+    const kotak = kotakConfig?.kotak.find((k) => k.id === quadrantNumber);
     setModalState({
       isOpen: true,
       quadrant: quadrantNumber,
-      employees: employees,
+      employees: [],
       title: `Kotak ${quadrantNumber}`,
       description: kotak?.kategori || "",
       color: kotak?.warna || "#3B82F6",
       kotakConfig: kotak,
     });
+    setEmpEmployees([]);
+    setEmpMeta(null);
+    // use empKuadran for frontend pagination/search
+    setEmpKuadran(quadrantNumber);
+    loadEmployees({ kuadran: quadrantNumber, q: "", page: 1, per_page: 10 });
   };
 
   const handleCloseModal = () => {
@@ -368,58 +539,219 @@ const Dashboard = () => {
     setEmpEmployees([]);
     setEmpMeta(null);
     setEmpFilter(null);
+    setEmpKuadran(null);
   };
 
   const GENDER_COLORS = ["#3B82F6", "#EC4899"];
   // Warna titik yang kontras dengan warna area; menyesuaikan dark mode
   const POINT_COLOR = isDark ? "#F3F4F6" : "#3B82F6";
 
-  // Custom tooltip untuk scatter chart
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-          <p className="font-semibold text-gray-800 dark:text-white">
-            {payload[0].payload.name}
-          </p>
-          <div className="mt-2 space-y-1">
-            <div className="flex justify-between text-md text-gray-600 dark:text-gray-300">
-              <span>Potensial</span>
-              <span
-                style={{
-                  fontVariantNumeric: "tabular-nums",
-                  minWidth: 40,
-                  textAlign: "right",
-                }}
-                className="font-medium"
-              >
-                {payload[0].payload.potensial}
-              </span>
-            </div>
-            <div className="flex justify-between text-md text-gray-600 dark:text-gray-300">
-              <span>Kinerja</span>
-              <span
-                style={{
-                  fontVariantNumeric: "tabular-nums",
-                  minWidth: 40,
-                  textAlign: "right",
-                }}
-                className="font-medium"
-              >
-                {payload[0].payload.kinerja}
-              </span>
-            </div>
-            <div className="flex justify-between text-md text-gray-600 dark:text-gray-300">
-              <span>Kotak</span>
-              <span className="font-medium" style={{ color: POINT_COLOR }}>
-                {payload[0].payload.quadrant}
-              </span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
+  const chartRef = useRef(null);
+
+  // Custom plugin untuk menggambar background areas dan label kotak
+  const backgroundPlugin = {
+    id: "backgroundPlugin",
+    beforeDatasetsDraw: (chart) => {
+      const {
+        ctx,
+        chartArea: { left, right, top, bottom },
+        scales: { x, y },
+      } = chart;
+      const cfg = kotakConfig || loadKotakConfig();
+      const p = cfg?.intervals?.potensial || [
+        { min: 0, max: 50 },
+        { min: 50, max: 75 },
+        { min: 75, max: 100 },
+      ];
+      const k = cfg?.intervals?.kinerja || [
+        { min: 0, max: 50 },
+        { min: 50, max: 75 },
+        { min: 75, max: 100 },
+      ];
+
+      ctx.save();
+
+      // Draw background areas
+      (cfg.kotak || []).forEach((kotak) => {
+        const x1 = x.getPixelForValue(kotak.potensialRange.min);
+        const x2 = x.getPixelForValue(kotak.potensialRange.max);
+        const y1 = y.getPixelForValue(kotak.kinerjaRange.min);
+        const y2 = y.getPixelForValue(kotak.kinerjaRange.max);
+
+        ctx.fillStyle = kotak.warna;
+        ctx.globalAlpha = 0.12;
+        ctx.fillRect(x1, y2, x2 - x1, y1 - y2);
+      });
+
+      ctx.globalAlpha = 1;
+
+      // Draw boundary lines
+      ctx.strokeStyle = "#9CA3AF";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+
+      // Vertical lines
+      [p[0].max, p[1].max].forEach((val) => {
+        const xPos = x.getPixelForValue(val);
+        ctx.beginPath();
+        ctx.moveTo(xPos, top);
+        ctx.lineTo(xPos, bottom);
+        ctx.stroke();
+      });
+
+      // Horizontal lines
+      [k[0].max, k[1].max].forEach((val) => {
+        const yPos = y.getPixelForValue(val);
+        ctx.beginPath();
+        ctx.moveTo(left, yPos);
+        ctx.lineTo(right, yPos);
+        ctx.stroke();
+      });
+
+      ctx.setLineDash([]);
+
+      // Draw labels
+      ctx.font = "bold 24px sans-serif";
+      ctx.fillStyle = isDark ? "#E5E7EB" : "#374151";
+      ctx.globalAlpha = 0.3;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      quadrantCenters.forEach((center) => {
+        const xPos = x.getPixelForValue(center.potensial);
+        const yPos = y.getPixelForValue(center.kinerja);
+        ctx.fillText(center.label, xPos, yPos);
+      });
+
+      ctx.restore();
+    },
+  };
+
+  // Prepare Chart.js data
+  const getChartData = () => {
+    return {
+      datasets: [
+        {
+          label: "Pegawai",
+          data: computedQuadrantData.map((item) => ({
+            x: item.potensial,
+            y: item.kinerja,
+            name: item.name,
+            quadrant: item.quadrant,
+          })),
+          backgroundColor: POINT_COLOR,
+          borderColor: isDark ? "#0F172A" : "#FFFFFF",
+          borderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7.5,
+        },
+      ],
+    };
+  };
+
+  // Chart.js options
+  const getChartOptions = () => {
+    const cfg = kotakConfig || loadKotakConfig();
+    const p = cfg?.intervals?.potensial || [
+      { min: 0, max: 50 },
+      { min: 50, max: 75 },
+      { min: 75, max: 100 },
+    ];
+    const k = cfg?.intervals?.kinerja || [
+      { min: 0, max: 50 },
+      { min: 50, max: 75 },
+      { min: 75, max: 100 },
+    ];
+
+    return {
+      responsive: true,
+      maintainAspectRatio: isMobile,
+      aspectRatio: isMobile ? 1 : undefined,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+          titleColor: isDark ? "#F3F4F6" : "#1F2937",
+          bodyColor: isDark ? "#F3F4F6" : "#1F2937",
+          // use Poppins for tooltip text when hovering a point
+          titleFont: {
+            family:
+              'Poppins, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial',
+            weight: "600",
+            size: 14,
+          },
+          bodyFont: {
+            family:
+              'Poppins, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial',
+            weight: "500",
+            size: 13,
+          },
+          borderColor: isDark ? "#374151" : "#E5E7EB",
+          borderWidth: 1,
+          padding: 12,
+          displayColors: false,
+          fontSize: 14,
+          callbacks: {
+            // don't put names in the title (title remains empty)
+            title: () => "",
+            // Use label to render the employee name (will appear above the details)
+            label: (context) => {
+              const data = context.raw || context;
+              return data.name || "";
+            },
+            // afterLabel returns details for the same employee; add an extra blank line for spacing
+            afterLabel: (item) => {
+              const data = item.raw || item;
+              return [
+                `Potensial: ${data.x}`,
+                `Kinerja: ${data.y}`,
+                `Kotak: ${data.quadrant}`,
+                "",
+              ];
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: "linear",
+          position: "bottom",
+          min: 0,
+          max: 100,
+          ticks: {
+            stepSize: p[0].max,
+            color: "#6B7280",
+          },
+          grid: {
+            color: "#374151",
+            lineWidth: 1,
+            drawTicks: true,
+          },
+          border: {
+            color: "#6B7280",
+          },
+        },
+        y: {
+          type: "linear",
+          min: 0,
+          max: 100,
+          ticks: {
+            stepSize: k[0].max,
+            color: "#6B7280",
+          },
+          grid: {
+            color: "#374151",
+            lineWidth: 1,
+            drawTicks: true,
+          },
+          border: {
+            color: "#6B7280",
+          },
+        },
+      },
+    };
   };
 
   // Render label persentase di dalam setiap slice pie
@@ -497,7 +829,9 @@ const Dashboard = () => {
                 {loadingStats ? (
                   <div className="h-8 w-20 rounded bg-white bg-opacity-20 animate-pulse" />
                 ) : (
-                  (stats?.total_struktural ?? employeeStats.structural).toLocaleString()
+                  (
+                    stats?.total_struktural ?? employeeStats.structural
+                  ).toLocaleString()
                 )}
               </h3>
             </div>
@@ -516,7 +850,9 @@ const Dashboard = () => {
                 {loadingStats ? (
                   <div className="h-8 w-20 rounded bg-white bg-opacity-20 animate-pulse" />
                 ) : (
-                  (stats?.total_fungsional ?? employeeStats.functional).toLocaleString()
+                  (
+                    stats?.total_fungsional ?? employeeStats.functional
+                  ).toLocaleString()
                 )}
               </h3>
             </div>
@@ -535,7 +871,9 @@ const Dashboard = () => {
                 {loadingStats ? (
                   <div className="h-8 w-20 rounded bg-white bg-opacity-20 animate-pulse" />
                 ) : (
-                  (stats?.total_pelaksana ?? employeeStats.implementer).toLocaleString()
+                  (
+                    stats?.total_pelaksana ?? employeeStats.implementer
+                  ).toLocaleString()
                 )}
               </h3>
             </div>
@@ -591,35 +929,44 @@ const Dashboard = () => {
             Komposisi Pegawai Berdasarkan Jenis Jabatan
           </h2>
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
-            {loadingStats ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                >
-                  <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-2/3 animate-pulse" />
-                  <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-12 animate-pulse" />
-                </div>
-              ))
-            ) : (
-              jobTypeData.map((item, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleJobTypeClick(item)}
-                  role={item.filterKey ? "button" : undefined}
-                  tabIndex={item.filterKey ? 0 : undefined}
-                  onKeyDown={(e) => { if (item.filterKey && (e.key === 'Enter' || e.key === ' ')) handleJobTypeClick(item); }}
-                  className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition ${item.filterKey ? 'cursor-pointer' : ''}`}
-                >
-                  <span className="text-md text-gray-700 dark:text-gray-300">
-                    {item.name}
-                  </span>
-                  <span className="font-semibold" style={{ color: POINT_COLOR }}>
-                    {item.count}
-                  </span>
-                </div>
-              ))
-            )}
+            {loadingStats
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  >
+                    <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-2/3 animate-pulse" />
+                    <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-12 animate-pulse" />
+                  </div>
+                ))
+              : jobTypeData.map((item, index) => (
+                  <div
+                    key={index}
+                    onClick={() => handleJobTypeClick(item)}
+                    role={item.filterKey ? "button" : undefined}
+                    tabIndex={item.filterKey ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (
+                        item.filterKey &&
+                        (e.key === "Enter" || e.key === " ")
+                      )
+                        handleJobTypeClick(item);
+                    }}
+                    className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition ${
+                      item.filterKey ? "cursor-pointer" : ""
+                    }`}
+                  >
+                    <span className="text-md text-gray-700 dark:text-gray-300">
+                      {item.name}
+                    </span>
+                    <span
+                      className="font-semibold"
+                      style={{ color: POINT_COLOR }}
+                    >
+                      {item.count}
+                    </span>
+                  </div>
+                ))}
           </div>
         </div>
       </div>
@@ -637,11 +984,14 @@ const Dashboard = () => {
           {/* responsive: wrap on small screens, single-row on large */}
           <div className="flex flex-wrap gap-3 py-2">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
-              const kotak = kotakConfig?.kotak.find(k => k.id === q);
+              const kotak = kotakConfig?.kotak.find((k) => k.id === q);
               const warna = kotak?.warna || "#3B82F6";
               const nama = `Kotak ${q}`;
               return (
-                <div key={q} className="w-full sm:w-1/2 md:w-1/3 lg:flex-1 min-w-0">
+                <div
+                  key={q}
+                  className="w-full sm:w-1/2 md:w-1/3 lg:flex-1 min-w-0"
+                >
                   <EmployeeCountBox
                     title={nama}
                     count={quadrantCounts[q] || 0}
@@ -665,112 +1015,20 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <ResponsiveContainer
-                {...scatterContainerProps}
-                tabIndex={-1}
-                style={{ outline: "none" }}
+              <div
+                style={
+                  isMobile
+                    ? { width: "100%", aspectRatio: "1" }
+                    : { height: "600px", width: "100%" }
+                }
               >
-                <ScatterChart
-                  tabIndex={-1}
-                  style={{ outline: "none" }}
-                  onFocus={(e) => e.target.blur()}
-                  margin={{ top: 20, right: 20, bottom: 0, left: -25 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#374151"
-                    opacity={0.3}
-                  />
-                  <XAxis
-                    type="number"
-                    dataKey="potensial"
-                    name="Potensial"
-                    domain={[0, 100]}
-                    ticks={(() => {
-                      const p = kotakConfig?.intervals?.potensial || [{ max: 50 }, { max: 75 }, { max: 100 }];
-                      return [0, p[0].max, p[1].max, 100];
-                    })()}
-                    stroke="#6B7280"
-                  />
-                  <YAxis
-                    type="number"
-                    dataKey="kinerja"
-                    name="Kinerja"
-                    domain={[0, 100]}
-                    ticks={(() => {
-                      const k = kotakConfig?.intervals?.kinerja || [{ max: 50 }, { max: 75 }, { max: 100 }];
-                      return [0, k[0].max, k[1].max, 100];
-                    })()}
-                    stroke="#6B7280"
-                  />
-                  <ZAxis range={[100, 100]} />
-                  <Tooltip content={<CustomTooltip />} />
-
-                  {/* Background areas for each kotak using configured ranges */}
-                  {(() => {
-                    const cfg = kotakConfig || loadKotakConfig();
-                    return (cfg.kotak || []).map((kotak) => (
-                      <ReferenceArea
-                        key={`ra-${kotak.id}`}
-                        x1={kotak.potensialRange.min}
-                        x2={kotak.potensialRange.max}
-                        y1={kotak.kinerjaRange.min}
-                        y2={kotak.kinerjaRange.max}
-                        fill={kotak.warna || '#3B82F6'}
-                        fillOpacity={0.12}
-                      />
-                    ));
-                  })()}
-
-                  {/* Boundary lines based on interval maxima */}
-                  {(() => {
-                    const cfg = kotakConfig || loadKotakConfig();
-                    const p = cfg?.intervals?.potensial || [{ max: 50 }, { max: 75 }, { max: 100 }];
-                    const k = cfg?.intervals?.kinerja || [{ max: 50 }, { max: 75 }, { max: 100 }];
-                    return (
-                      <>
-                        <ReferenceLine x={p[0].max} stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" />
-                        <ReferenceLine x={p[1].max} stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" />
-                        <ReferenceLine y={k[0].max} stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" />
-                        <ReferenceLine y={k[1].max} stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" />
-                      </>
-                    );
-                  })()}
-
-                  {/* Label Kotak di tengah setiap area - render sebagai Scatter + LabelList sehingga menggunakan koordinat data */}
-                  <Layer key="labels-layer">
-                    <Scatter
-                      data={quadrantCenters}
-                      fill="transparent"
-                      shape={() => null}
-                    >
-                      <LabelList
-                        dataKey="label"
-                        position="middle"
-                        style={{
-                          fontSize: 24,
-                          fontWeight: 700,
-                          fill: isDark ? "#E5E7EB" : "#374151",
-                          opacity: 0.3,
-                          pointerEvents: "none",
-                        }}
-                      />
-                    </Scatter>
-                  </Layer>
-
-                  <Layer key="points-layer">
-                    <Scatter
-                      name="Pegawai"
-                      data={computedQuadrantData}
-                      fill={POINT_COLOR}
-                      stroke={isDark ? "#0F172A" : "#FFFFFF"}
-                      shape="circle"
-                      className="cursor-pointer"
-                      size={40}
-                    />
-                  </Layer>
-                </ScatterChart>
-              </ResponsiveContainer>
+                <Scatter
+                  ref={chartRef}
+                  data={getChartData()}
+                  options={getChartOptions()}
+                  plugins={[backgroundPlugin]}
+                />
+              </div>
 
               {/* Label Sumbu X (Potensial) - di luar chart */}
               <div className="text-center mt-2">
@@ -783,7 +1041,7 @@ const Dashboard = () => {
 
           {/* Legend untuk interval Kotak + jumlah data per Kotak (kanan) */}
           <div className="lg:col-span-1 lg:mt-4">
-            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg sticky top-6 shadow-sm">
+            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg top-6 shadow-sm">
               <h3 className="font-semibold text-gray-800 dark:text-white mb-2 text-md">
                 Batas Interval Kotak
               </h3>
@@ -792,18 +1050,34 @@ const Dashboard = () => {
                   Sumbu X (Potensial):
                   <br />
                   <b>
-                    {((kotakConfig && kotakConfig.intervals && kotakConfig.intervals.potensial) || [{ min: 0, max: 50 }, { min: 50, max: 75 }, { min: 75, max: 100 }])
+                    {(
+                      (kotakConfig &&
+                        kotakConfig.intervals &&
+                        kotakConfig.intervals.potensial) || [
+                        { min: 0, max: 50 },
+                        { min: 50, max: 75 },
+                        { min: 75, max: 100 },
+                      ]
+                    )
                       .map((it) => `${it.min}-${it.max}`)
-                      .join(' | ')}
+                      .join(" | ")}
                   </b>
                 </div>
                 <div>
                   Sumbu Y (Kinerja):
                   <br />
                   <b>
-                    {((kotakConfig && kotakConfig.intervals && kotakConfig.intervals.kinerja) || [{ min: 0, max: 50 }, { min: 50, max: 75 }, { min: 75, max: 100 }])
+                    {(
+                      (kotakConfig &&
+                        kotakConfig.intervals &&
+                        kotakConfig.intervals.kinerja) || [
+                        { min: 0, max: 50 },
+                        { min: 50, max: 75 },
+                        { min: 75, max: 100 },
+                      ]
+                    )
                       .map((it) => `${it.min}-${it.max}`)
-                      .join(' | ')}
+                      .join(" | ")}
                   </b>
                 </div>
               </div>
@@ -815,7 +1089,7 @@ const Dashboard = () => {
                 </h3>
                 <div className="grid grid-cols-1 gap-2 text-md">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
-                    const kotak = kotakConfig?.kotak.find(k => k.id === q);
+                    const kotak = kotakConfig?.kotak.find((k) => k.id === q);
                     const warna = kotak?.warna || "#3B82F6";
                     const kategori = kotak?.kategori;
                     return (

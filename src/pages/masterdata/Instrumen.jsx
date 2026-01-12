@@ -324,7 +324,7 @@ const Instrumen = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-200 dark:bg-gray-700">
+              <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
                 <tr>
                   <th className="px-3 py-3 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-16">
                     No

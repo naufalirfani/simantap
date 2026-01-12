@@ -171,7 +171,7 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-200 dark:bg-gray-700">
+          <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
             <tr>
               {columns.map((column) => {
                 const align = column.align || 'left';

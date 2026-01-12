@@ -269,11 +269,12 @@ export const fetchStatistik = async () => {
  * Fetch pegawai list with filter key, pagination and optional search query
  * Returns { data: [...], meta: { current_page, per_page, last_page, total } }
  */
-export const fetchPegawaiList = async ({ filter, page = 1, per_page = 20, q = "", with_penilaian = false, with_pagination = true } = {}) => {
+export const fetchPegawaiList = async ({ filter, kuadran, page = 1, per_page = 20, q = "", with_penilaian = false, with_pagination = true } = {}) => {
   try {
     const base = API_BASE_URL || "http://192.168.0.111:8000";
     const params = new URLSearchParams();
     if (filter) params.append("jenis_jabatan", filter);
+    if (kuadran) params.append("kuadran", kuadran);
     if (with_penilaian) params.append("with_penilaian", "true");
     if (!with_pagination) params.append("with_pagination", "false");
     if (page) params.append("page", page);
