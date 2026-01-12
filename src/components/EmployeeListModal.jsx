@@ -1,17 +1,20 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import PropTypes from "prop-types";
+import QuadrantRecommendation from "./QuadrantRecommendation";
 
 function EmployeeListModal({
   isOpen,
   onClose,
   employees,
   title,
+  description,
   color,
   serverSearch = false,
   loading = false,
   meta = null,
   onSearch = null,
   skipInitialSearch = false,
+  kotakConfig = null,
 }) {
   // Close on Escape key
   useEffect(() => {
@@ -45,17 +48,13 @@ function EmployeeListModal({
 
       {/* Modal with slide-up + scale animation */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl pointer-events-auto overflow-hidden">
-          <div
-            className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl"
-            style={{
-              background: `linear-gradient(135deg, ${color}15 0%, ${color}05 100%)`,
-            }}
-          >
+        <div className="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
                 {title}
               </h2>
+              {kotakConfig && <span>{description}</span>}
               <p className="text-md text-gray-600 dark:text-gray-400 mt-1">
                 {serverSearch
                   ? meta?.total != null
@@ -66,15 +65,18 @@ function EmployeeListModal({
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-200 hover:scale-110 hover:rotate-90 cursor-pointer"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-120 cursor-pointer"
               aria-label="Close"
             >
-              <i className="fas fa-times text-2xl text-gray-600 dark:text-gray-300"></i>
+              <i className="fas fa-times text-xl text-gray-600 dark:text-gray-300"></i>
             </button>
           </div>
 
           {/* Employee List - Scrollable with search + table */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Show QuadrantRecommendation if kotakConfig is provided */}
+            {kotakConfig && <QuadrantRecommendation kotak={kotakConfig} />}
+
             <EmployeeTableView
               employees={employees}
               color={color}
@@ -274,10 +276,10 @@ function EmployeeTableView({
     const base =
       "min-w-[2.5rem] px-3 py-2 rounded-lg text-md font-semibold transition-all shadow-sm";
     const cls = isCurrent
-      ? `${base} bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md scale-105 cursor-pointer`
+      ? `${base} bg-gradient-to-r from-[#3B82F6] to-[#3B82F6] text-white shadow-md scale-105 cursor-pointer`
       : page === "..."
       ? `${base} cursor-default text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none`
-      : `${base} text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 cursor-pointer`;
+      : `${base} text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] cursor-pointer`;
 
     return (
       <button
@@ -300,7 +302,7 @@ function EmployeeTableView({
             placeholder="Cari nama, NIP, jabatan, unit kerja..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all shadow-sm"
+            className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] dark:text-white transition-all shadow-sm"
           />
           <svg
             className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 dark:text-gray-500"
@@ -326,13 +328,13 @@ function EmployeeTableView({
                 <select
                   value={itemsPerPage}
                   onChange={handleItemsPerPageChange}
-                  className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 [&>option]:bg-white [&>option]:dark:bg-gray-700 [&>option]:py-2 [&>option]:px-4 [&>option]:text-gray-900 [&>option]:dark:text-gray-100"
+                  className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] cursor-pointer transition-all shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 [&>option]:bg-white [&>option]:dark:bg-gray-700 [&>option]:py-2 [&>option]:px-4 [&>option]:text-gray-900 [&>option]:dark:text-gray-100"
                 >
                   {[10, 25, 50, 100].map((option) => (
                     <option
                       key={option}
                       value={option}
-                      className="py-2 px-4 hover:bg-blue-50 dark:hover:bg-gray-600"
+                      className="py-2 px-4 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600"
                     >
                       {option}
                     </option>
@@ -362,7 +364,7 @@ function EmployeeTableView({
 
       {loading ? (
         <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-blue-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-[#3B82F6] mx-auto mb-4"></div>
           Memuat data...
         </div>
       ) : serverSearch ? (
@@ -375,28 +377,28 @@ function EmployeeTableView({
           <div className="w-full">
             <div className="overflow-x-auto max-h-[55vh]">
               <table className="w-full text-md table-auto border-collapse min-w-0">
-                <thead>
+                <thead className="bg-gray-200 dark:bg-gray-700">
                   <tr className="text-center">
                     <th
-                      className="pb-2 px-3 text-gray-500 dark:text-gray-300 w-12 whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10"
+                      className="pb-2 px-3 text-gray-500 dark:text-gray-300 w-12 whitespace-nowrap sticky top-0 z-10"
                       aria-label="Foto"
                     ></th>
-                    <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[180px] whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[180px] whitespace-nowrap sticky top-0 z-10">
                       Nama
                     </th>
-                    <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-36 whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-36 whitespace-nowrap sticky top-0 z-10">
                       NIP
                     </th>
-                    <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[200px] whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[200px] whitespace-nowrap sticky top-0 z-10">
                       Jabatan
                     </th>
-                    <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap sticky top-0 z-10">
                       Unit Kerja
                     </th>
-                    <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap sticky top-0 z-10">
                       Jenis Jabatan
                     </th>
-                    <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap sticky top-0 z-10">
                       Golongan
                     </th>
                   </tr>
@@ -405,7 +407,7 @@ function EmployeeTableView({
                   {employees.map((e, idx) => (
                     <tr
                       key={idx}
-                      className="align-top border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className={`${idx % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50' : ''} align-top border-t border-gray-100 dark:border-gray-700 dark:hover:bg-gray-800`}
                     >
                       <td className="py-2 px-3 align-top w-12">
                         <div
@@ -441,7 +443,7 @@ function EmployeeTableView({
                       </td>
                       <td className="py-2 px-3 align-top">
                         <div className="min-w-0">
-                          <div className="font-medium text-gray-800 dark:text-white whitespace-normal break-words truncate">
+                          <div className="font-medium text-gray-800 dark:text-white truncate">
                             {e.name}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
@@ -480,24 +482,24 @@ function EmployeeTableView({
         <div className="w-full">
           <div className="overflow-x-auto max-h-[55vh]">
             <table className="w-full text-md table-auto border-collapse min-w-0">
-              <thead>
+              <thead className="bg-gray-200 dark:bg-gray-700">
                 <tr className="text-center">
-                  <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[240px] whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[240px] whitespace-nowrap sticky top-0 z-10">
                     Nama
                   </th>
-                  <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-36 whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-36 whitespace-nowrap sticky top-0 z-10">
                     NIP
                   </th>
-                  <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap sticky top-0 z-10">
                     Jabatan
                   </th>
-                  <th className="pb-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                  <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap sticky top-0 z-10">
                     Unit Kerja
                   </th>
-                  <th className="pb-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                  <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap sticky top-0 z-10">
                     Potensial
                   </th>
-                  <th className="pb-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap sticky top-0 bg-white dark:bg-gray-800 z-10">
+                  <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap sticky top-0 z-10">
                     Kinerja
                   </th>
                 </tr>
@@ -506,7 +508,7 @@ function EmployeeTableView({
                 {filtered.map((e, idx) => (
                   <tr
                     key={idx}
-                    className="align-top border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    className={`${idx % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50' : ''} align-top border-t border-gray-100 dark:border-gray-700 dark:hover:bg-gray-800`}
                   >
                     <td className="py-2 px-3 align-top">
                       <div className="flex items-center gap-3">
@@ -562,7 +564,7 @@ function EmployeeTableView({
               <button
                 onClick={() => goToPage(1)}
                 disabled={(meta.current_page || 1) === 1}
-                className="p-2 rounded-lg text-md font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-md font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"
@@ -582,7 +584,7 @@ function EmployeeTableView({
               <button
                 onClick={() => goToPage((meta.current_page || 1) - 1)}
                 disabled={(meta.current_page || 1) === 1}
-                className="p-2 rounded-lg text-md font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-md font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"
@@ -608,7 +610,7 @@ function EmployeeTableView({
               <button
                 onClick={() => goToPage((meta.current_page || 1) + 1)}
                 disabled={(meta.current_page || 1) >= (meta.last_page || 1)}
-                className="p-2 rounded-lg text-md font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-md font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"
@@ -628,7 +630,7 @@ function EmployeeTableView({
               <button
                 onClick={() => goToPage(meta.last_page)}
                 disabled={(meta.current_page || 1) === (meta.last_page || 1)}
-                className="p-2 rounded-lg text-md font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-md font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"

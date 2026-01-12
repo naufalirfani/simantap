@@ -149,7 +149,7 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label }) => {
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full px-3 pr-20 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 dark:text-white cursor-pointer"
+          className="w-full px-3 pr-20 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-[#3B82F6] dark:text-white cursor-pointer"
           readOnly={!isOpen}
         />
         <div className="absolute right-2 top-2 flex items-center gap-1">

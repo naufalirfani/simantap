@@ -95,8 +95,8 @@ const SSOLogin = () => {
   if (status === 'verifying') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-md">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto"></div>
+        <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl max-w-md">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#3B82F6] mx-auto"></div>
           <h2 className="mt-6 text-2xl font-bold text-gray-800 dark:text-white">
             Memverifikasi Token
           </h2>
@@ -111,10 +111,10 @@ const SSOLogin = () => {
   if (status === 'success') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-md">
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-900">
+        <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl max-w-md">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-[#2fa84f]/10 dark:bg-[#2fa84f]">
             <svg
-              className="h-10 w-10 text-green-600 dark:text-green-400"
+              className="h-10 w-10 text-[#2fa84f] dark:text-[#2fa84f]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -140,10 +140,10 @@ const SSOLogin = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-pink-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-md">
+      <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl max-w-md">
         <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900">
           <svg
-            className="h-10 w-10 text-red-600 dark:text-red-400"
+            className="h-10 w-10 text-[#d33] dark:text-[#d33]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -164,7 +164,7 @@ const SSOLogin = () => {
         </p>
         <button
           onClick={handleBackToNUSA}
-          className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 cursor-pointer"
+          className="mt-6 w-full bg-[#3B82F6] hover:bg-[#296eb8] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 cursor-pointer"
         >
           Kembali ke NUSA
         </button>

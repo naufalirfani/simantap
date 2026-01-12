@@ -21,6 +21,7 @@ import {
 import EmployeeCountBox from "../components/EmployeeCountBox";
 import EmployeeListModal from "../components/EmployeeListModal";
 import { fetchStatistik, fetchPegawaiList } from "../services/apiService";
+import { loadKotakConfig, computeQuadrantDynamic } from "../services/kotakConfigService";
 
 const Dashboard = () => {
   const { t } = useSettings();
@@ -32,8 +33,27 @@ const Dashboard = () => {
     quadrant: null,
     employees: [],
     title: "",
+    description: "",
     color: "",
+    kotakConfig: null,
   });
+
+  // Load kotak configuration from localStorage
+  const [kotakConfig, setKotakConfig] = useState(null);
+
+  useEffect(() => {
+    const config = loadKotakConfig();
+    setKotakConfig(config);
+    const onConfigChanged = () => setKotakConfig(loadKotakConfig());
+    if (typeof window !== 'undefined') {
+      window.addEventListener('kotakConfigChanged', onConfigChanged);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('kotakConfigChanged', onConfigChanged);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     document.title = `${t("dashboard")} | SIMANTAP`;
@@ -137,17 +157,31 @@ const Dashboard = () => {
       ];
 
   // Titik tengah untuk label Kotak (koordinat data 0-100)
-  const quadrantCenters = [
-    { potensial: 25, kinerja: 25, label: "1" },
-    { potensial: 25, kinerja: 62.5, label: "2" },
-    { potensial: 62.5, kinerja: 25, label: "3" },
-    { potensial: 25, kinerja: 87.5, label: "4" },
-    { potensial: 62.5, kinerja: 62.5, label: "5" },
-    { potensial: 87.5, kinerja: 25, label: "6" },
-    { potensial: 62.5, kinerja: 87.5, label: "7" },
-    { potensial: 87.5, kinerja: 62.5, label: "8" },
-    { potensial: 87.5, kinerja: 87.5, label: "9" },
-  ];
+  // Build quadrant centers from kotakConfig intervals (fallback to defaults)
+  const computeCentersFromConfig = () => {
+    const cfg = kotakConfig || loadKotakConfig();
+    const p = cfg?.intervals?.potensial || [{ min: 0, max: 50 }, { min: 50, max: 75 }, { min: 75, max: 100 }];
+    const k = cfg?.intervals?.kinerja || [{ min: 0, max: 50 }, { min: 50, max: 75 }, { min: 75, max: 100 }];
+    const mapping = [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [0, 2],
+      [1, 1],
+      [2, 0],
+      [1, 2],
+      [2, 1],
+      [2, 2],
+    ];
+    return mapping.map((m, idx) => {
+      const pc = p[m[0]];
+      const kc = k[m[1]];
+      const potensial = ((pc?.min ?? 0) + (pc?.max ?? 100)) / 2;
+      const kinerja = ((kc?.min ?? 0) + (kc?.max ?? 100)) / 2;
+      return { potensial, kinerja, label: String(idx + 1) };
+    });
+  };
+  const quadrantCenters = computeCentersFromConfig();
 
   // Data jenis jabatan (dari API jika ada)
   const jobTypeData = stats
@@ -172,14 +206,14 @@ const Dashboard = () => {
           count: stats.total_jabatan_pengawas || 0,
           filterKey: "jabatan_pengawas",
         },
-        { name: "Fungsional Utama", count: stats.total_fungsional_utama || 0, filterKey: "fungsional_utama" },
-        { name: "Fungsional Madya", count: stats.total_fungsional_madya || 0, filterKey: "fungsional_madya" },
-        { name: "Fungsional Muda", count: stats.total_fungsional_muda || 0, filterKey: "fungsional_muda" },
-        { name: "Fungsional Pertama", count: stats.total_fungsional_pertama || 0, filterKey: "fungsional_pertama" },
-        { name: "Fungsional Penyelia", count: stats.total_fungsional_penyelia || 0, filterKey: "fungsional_penyelia" },
-        { name: "Fungsional Mahir", count: stats.total_fungsional_mahir || 0, filterKey: "fungsional_mahir" },
-        { name: "Fungsional Terampil", count: stats.total_fungsional_terampil || 0, filterKey: "fungsional_terampil" },
-        { name: "Pelaksana", count: stats.total_pelaksana || 0, filterKey: "pelaksana" },
+        { name: "Jabatan Fungsional Utama", count: stats.total_fungsional_utama || 0, filterKey: "fungsional_utama" },
+        { name: "Jabatan Fungsional Madya", count: stats.total_fungsional_madya || 0, filterKey: "fungsional_madya" },
+        { name: "Jabatan Fungsional Muda", count: stats.total_fungsional_muda || 0, filterKey: "fungsional_muda" },
+        { name: "Jabatan Fungsional Pertama", count: stats.total_fungsional_pertama || 0, filterKey: "fungsional_pertama" },
+        { name: "Jabatan Fungsional Penyelia", count: stats.total_fungsional_penyelia || 0, filterKey: "fungsional_penyelia" },
+        { name: "Jabatan Fungsional Mahir", count: stats.total_fungsional_mahir || 0, filterKey: "fungsional_mahir" },
+        { name: "Jabatan Fungsional Terampil", count: stats.total_fungsional_terampil || 0, filterKey: "fungsional_terampil" },
+        { name: "Jabatan Pelaksana", count: stats.total_pelaksana || 0, filterKey: "pelaksana" },
       ]
     : [
         { name: "Jabatan Pimpinan Tinggi Madya", count: 3, filterKey: null },
@@ -233,7 +267,7 @@ const Dashboard = () => {
 
   const handleJobTypeClick = (item) => {
     // only fetch if filterKey present
-    const filter = item.filterKey || null;
+    const filter = item.name || null;
     setModalState({ isOpen: true, quadrant: null, employees: [], title: item.name, color: POINT_COLOR });
     setEmpEmployees([]);
     setEmpMeta(null);
@@ -385,19 +419,9 @@ const Dashboard = () => {
     },
   ];
 
-  // Tentukan Kotak secara dinamis berdasarkan interval sumbu
+  // Tentukan Kotak secara dinamis berdasarkan konfigurasi
   const computeQuadrant = (potensial, kinerja) => {
-    if (potensial < 50 && kinerja < 50) return 1;
-    if (potensial < 50 && kinerja >= 50 && kinerja < 75) return 2;
-    if (potensial >= 50 && potensial < 75 && kinerja < 50) return 3;
-    if (potensial < 50 && kinerja >= 75) return 4;
-    if (potensial >= 50 && potensial < 75 && kinerja >= 50 && kinerja < 75)
-      return 5;
-    if (potensial >= 75 && kinerja < 50) return 6;
-    if (potensial >= 50 && potensial < 75 && kinerja >= 75) return 7;
-    if (potensial >= 75 && kinerja >= 50 && kinerja < 75) return 8;
-    if (potensial >= 75 && kinerja >= 75) return 9;
-    return 0;
+    return computeQuadrantDynamic(potensial, kinerja);
   };
 
   // Buat data baru dengan Kotak yang dihitung
@@ -419,24 +443,16 @@ const Dashboard = () => {
       (emp) => emp.quadrant === quadrantNumber
     );
 
-    const colorMap = {
-      1: "#EF4444",
-      2: "#F97316",
-      3: "#F59E0B",
-      4: "#F59E0B",
-      5: "#EAB308",
-      6: "#84CC16",
-      7: "#84CC16",
-      8: "#22C55E",
-      9: "#10B981",
-    };
+    const kotak = kotakConfig?.kotak.find(k => k.id === quadrantNumber);
 
     setModalState({
       isOpen: true,
       quadrant: quadrantNumber,
       employees: employees,
-      title: `Pegawai Kotak ${quadrantNumber}`,
-      color: colorMap[quadrantNumber],
+      title: `Kotak ${quadrantNumber}`,
+      description: kotak?.kategori || "",
+      color: kotak?.warna || "#3B82F6",
+      kotakConfig: kotak,
     });
   };
 
@@ -447,6 +463,7 @@ const Dashboard = () => {
       employees: [],
       title: "",
       color: "",
+      kotakConfig: null,
     });
     // clear server-side employee state
     setEmpEmployees([]);
@@ -554,7 +571,7 @@ const Dashboard = () => {
       {/* Statistik Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
         {/* Total Pegawai */}
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform transition hover:scale-105">
+        <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-md opacity-90 font-medium">Total Pegawai</p>
@@ -567,13 +584,13 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-users text-4xl text-blue-500"></i>
+              <i className="fas fa-users text-4xl text-slate-500"></i>
             </div>
           </div>
         </div>
 
         {/* Struktural */}
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform transition hover:scale-105">
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-md opacity-90 font-medium">Struktural</p>
@@ -586,13 +603,13 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-building text-4xl text-purple-500"></i>
+              <i className="fas fa-building text-4xl text-indigo-500"></i>
             </div>
           </div>
         </div>
 
         {/* Fungsional */}
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform transition hover:scale-105">
+        <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-md opacity-90 font-medium">Fungsional</p>
@@ -605,13 +622,13 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-award text-4xl text-green-500"></i>
+              <i className="fas fa-award text-4xl text-[#2fa84f]"></i>
             </div>
           </div>
         </div>
 
         {/* Pelaksana */}
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white transform transition hover:scale-105">
+        <div className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-md opacity-90 font-medium">Pelaksana</p>
@@ -624,7 +641,7 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-user-circle text-4xl text-orange-500"></i>
+              <i className="fas fa-user-circle text-4xl text-amber-500"></i>
             </div>
           </div>
         </div>
@@ -633,7 +650,7 @@ const Dashboard = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Pie Chart - Gender */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white mb-4">
             Komposisi Pegawai Berdasarkan Jenis Kelamin
           </h2>
@@ -670,7 +687,7 @@ const Dashboard = () => {
         </div>
 
         {/* List - Job Types */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white mb-4">
             Komposisi Pegawai Berdasarkan Jenis Jabatan
           </h2>
@@ -709,7 +726,7 @@ const Dashboard = () => {
       </div>
 
       {/* 9 Quadrant Scatter Chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white mb-2">
           Matriks 9 Kotak - Potensial vs Kinerja
         </h2>
@@ -721,23 +738,15 @@ const Dashboard = () => {
           {/* responsive: wrap on small screens, single-row on large */}
           <div className="flex flex-wrap gap-3 py-2">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
-              const colorMap = {
-                1: "#EF4444",
-                2: "#F97316",
-                3: "#F59E0B",
-                4: "#F59E0B",
-                5: "#EAB308",
-                6: "#84CC16",
-                7: "#84CC16",
-                8: "#22C55E",
-                9: "#10B981",
-              };
+              const kotak = kotakConfig?.kotak.find(k => k.id === q);
+              const warna = kotak?.warna || "#3B82F6";
+              const nama = `Kotak ${q}`;
               return (
                 <div key={q} className="w-full sm:w-1/2 md:w-1/3 lg:flex-1 min-w-0">
                   <EmployeeCountBox
-                    title={`Kotak ${q}`}
+                    title={nama}
                     count={quadrantCounts[q] || 0}
-                    color={colorMap[q]}
+                    color={warna}
                     onClick={() => handleBoxClick(q)}
                   />
                 </div>
@@ -778,7 +787,10 @@ const Dashboard = () => {
                     dataKey="potensial"
                     name="Potensial"
                     domain={[0, 100]}
-                    ticks={[0, 50, 75, 100]}
+                    ticks={(() => {
+                      const p = kotakConfig?.intervals?.potensial || [{ max: 50 }, { max: 75 }, { max: 100 }];
+                      return [0, p[0].max, p[1].max, 100];
+                    })()}
                     stroke="#6B7280"
                   />
                   <YAxis
@@ -786,116 +798,45 @@ const Dashboard = () => {
                     dataKey="kinerja"
                     name="Kinerja"
                     domain={[0, 100]}
-                    ticks={[0, 50, 75, 100]}
+                    ticks={(() => {
+                      const k = kotakConfig?.intervals?.kinerja || [{ max: 50 }, { max: 75 }, { max: 100 }];
+                      return [0, k[0].max, k[1].max, 100];
+                    })()}
                     stroke="#6B7280"
                   />
                   <ZAxis range={[100, 100]} />
                   <Tooltip content={<CustomTooltip />} />
 
-                  {/* Background areas untuk Kotak - menggunakan koordinat data aktual */}
-                  {/* Row 1 (bottom): Kotak 1, 3, 6 */}
-                  <ReferenceArea
-                    x1={0}
-                    x2={50}
-                    y1={0}
-                    y2={50}
-                    fill="#EF4444"
-                    fillOpacity={0.15}
-                  />
-                  <ReferenceArea
-                    x1={50}
-                    x2={75}
-                    y1={0}
-                    y2={50}
-                    fill="#F59E0B"
-                    fillOpacity={0.15}
-                  />
-                  <ReferenceArea
-                    x1={75}
-                    x2={100}
-                    y1={0}
-                    y2={50}
-                    fill="#84CC16"
-                    fillOpacity={0.15}
-                  />
-                  {/* Row 2 (middle): Kotak 2, 5, 8 */}
-                  <ReferenceArea
-                    x1={0}
-                    x2={50}
-                    y1={50}
-                    y2={75}
-                    fill="#F97316"
-                    fillOpacity={0.15}
-                  />
-                  <ReferenceArea
-                    x1={50}
-                    x2={75}
-                    y1={50}
-                    y2={75}
-                    fill="#EAB308"
-                    fillOpacity={0.15}
-                  />
-                  <ReferenceArea
-                    x1={75}
-                    x2={100}
-                    y1={50}
-                    y2={75}
-                    fill="#22C55E"
-                    fillOpacity={0.15}
-                  />
-                  {/* Row 3 (top): Kotak 4, 7, 9 */}
-                  <ReferenceArea
-                    x1={0}
-                    x2={50}
-                    y1={75}
-                    y2={100}
-                    fill="#F59E0B"
-                    fillOpacity={0.15}
-                  />
-                  <ReferenceArea
-                    x1={50}
-                    x2={75}
-                    y1={75}
-                    y2={100}
-                    fill="#84CC16"
-                    fillOpacity={0.15}
-                  />
-                  <ReferenceArea
-                    x1={75}
-                    x2={100}
-                    y1={75}
-                    y2={100}
-                    fill="#10B981"
-                    fillOpacity={0.15}
-                  />
+                  {/* Background areas for each kotak using configured ranges */}
+                  {(() => {
+                    const cfg = kotakConfig || loadKotakConfig();
+                    return (cfg.kotak || []).map((kotak) => (
+                      <ReferenceArea
+                        key={`ra-${kotak.id}`}
+                        x1={kotak.potensialRange.min}
+                        x2={kotak.potensialRange.max}
+                        y1={kotak.kinerjaRange.min}
+                        y2={kotak.kinerjaRange.max}
+                        fill={kotak.warna || '#3B82F6'}
+                        fillOpacity={0.12}
+                      />
+                    ));
+                  })()}
 
-                  {/* Garis pembatas vertikal */}
-                  <ReferenceLine
-                    x={50}
-                    stroke="#9CA3AF"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                  />
-                  <ReferenceLine
-                    x={75}
-                    stroke="#9CA3AF"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                  />
-
-                  {/* Garis pembatas horizontal */}
-                  <ReferenceLine
-                    y={50}
-                    stroke="#9CA3AF"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                  />
-                  <ReferenceLine
-                    y={75}
-                    stroke="#9CA3AF"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                  />
+                  {/* Boundary lines based on interval maxima */}
+                  {(() => {
+                    const cfg = kotakConfig || loadKotakConfig();
+                    const p = cfg?.intervals?.potensial || [{ max: 50 }, { max: 75 }, { max: 100 }];
+                    const k = cfg?.intervals?.kinerja || [{ max: 50 }, { max: 75 }, { max: 100 }];
+                    return (
+                      <>
+                        <ReferenceLine x={p[0].max} stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" />
+                        <ReferenceLine x={p[1].max} stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" />
+                        <ReferenceLine y={k[0].max} stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" />
+                        <ReferenceLine y={k[1].max} stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" />
+                      </>
+                    );
+                  })()}
 
                   {/* Label Kotak di tengah setiap area - render sebagai Scatter + LabelList sehingga menggunakan koordinat data */}
                   <Layer key="labels-layer">
@@ -951,12 +892,20 @@ const Dashboard = () => {
                 <div>
                   Sumbu X (Potensial):
                   <br />
-                  <b> 0-50 | 50-75 | 75-100</b>
+                  <b>
+                    {((kotakConfig && kotakConfig.intervals && kotakConfig.intervals.potensial) || [{ min: 0, max: 50 }, { min: 50, max: 75 }, { min: 75, max: 100 }])
+                      .map((it) => `${it.min}-${it.max}`)
+                      .join(' | ')}
+                  </b>
                 </div>
                 <div>
                   Sumbu Y (Kinerja):
                   <br />
-                  <b>0-50 | 50-75 | 75-100</b>
+                  <b>
+                    {((kotakConfig && kotakConfig.intervals && kotakConfig.intervals.kinerja) || [{ min: 0, max: 50 }, { min: 50, max: 75 }, { min: 75, max: 100 }])
+                      .map((it) => `${it.min}-${it.max}`)
+                      .join(' | ')}
+                  </b>
                 </div>
               </div>
 
@@ -967,26 +916,25 @@ const Dashboard = () => {
                 </h3>
                 <div className="grid grid-cols-1 gap-2 text-md">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
-                    const colorMap = {
-                      1: "#EF4444",
-                      2: "#F97316",
-                      3: "#F59E0B",
-                      4: "#F59E0B",
-                      5: "#EAB308",
-                      6: "#84CC16",
-                      7: "#84CC16",
-                      8: "#22C55E",
-                      9: "#10B981",
-                    };
+                    const kotak = kotakConfig?.kotak.find(k => k.id === q);
+                    const warna = kotak?.warna || "#3B82F6";
+                    const kategori = kotak?.kategori;
                     return (
-                      <div key={q} className="flex items-center gap-2">
+                      <div key={q} className="flex items-start gap-2">
                         <div
-                          className="w-4 h-4 rounded"
-                          style={{ backgroundColor: colorMap[q], opacity: 0.5 }}
+                          className="flex-shrink-0 w-4 h-4 rounded mt-0.5"
+                          style={{ backgroundColor: warna, opacity: 0.5 }}
                         ></div>
-                        <span className="text-gray-700 dark:text-gray-300">
-                          Kotak {q}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-gray-700 dark:text-gray-300 font-medium">
+                            Kotak {q}
+                          </div>
+                          {kategori && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                              {kategori}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -1005,12 +953,14 @@ const Dashboard = () => {
         onClose={handleCloseModal}
         employees={empEmployees}
         title={modalState.title}
+        description={modalState.description}
         color={modalState.color || POINT_COLOR}
         serverSearch={true}
         loading={empLoading}
         meta={empMeta}
         onSearch={handleModalSearch}
         skipInitialSearch={true}
+        kotakConfig={modalState.kotakConfig}
       />
     </div>
   );

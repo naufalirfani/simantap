@@ -1,23 +1,28 @@
 import { useEffect, useCallback, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSettings } from "../../context/SettingsContext";
-import {
-  fetchPegawai,
-  fetchPetaJabatan,
-  syncPegawai,
-} from "../../services/apiService";
+import { fetchPegawaiList, fetchPetaJabatan, syncPegawai, fetchSubIndikators, bulkUploadPenilaian } from "../../services/apiService";
+import Swal from "sweetalert2";
 import ServerDataTable from "../../components/ServerDataTable";
 import IconButton from "../../components/IconButton";
-import Swal from "sweetalert2";
+import BulkUploadModal from "../../components/BulkUploadModal";
 
-const Pegawai = () => {
+const PenilaianPegawai = () => {
   const { t } = useSettings();
+  const navigate = useNavigate();
   const [filterOptions, setFilterOptions] = useState({
     organisasi: [],
     jabatan: [],
   });
 
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [subIndikators, setSubIndikators] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+
   useEffect(() => {
-    document.title = `${t("pegawai")} | SIMANTAP`;
+    document.title = `Penilaian Pegawai | SIMANTAP`;
   }, [t]);
 
   // Fetch unique values for filters from ANJAB API
@@ -68,10 +73,17 @@ const Pegawai = () => {
 
   useEffect(() => {
     loadFilterOptions();
+    // load subindikators for template
+    const loadSub = async () => {
+      try {
+        const subs = await fetchSubIndikators();
+        setSubIndikators(subs || []);
+      } catch (err) {
+        console.error('Failed to load subindikators', err);
+      }
+    };
+    loadSub();
   }, []);
-
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleSync = async () => {
     const result = await Swal.fire({
@@ -114,8 +126,25 @@ const Pegawai = () => {
 
   // Memoize fetch function to prevent unnecessary re-renders
   const fetchData = useCallback(async (params) => {
-    return await fetchPegawai(params);
+    return await fetchPegawaiList({ ...params, withPenilaian: true });
   }, []);
+
+  const handlePenilaian = (nip) => {
+    navigate(`/masterdata/penilaian-pegawai/input/${nip}`);
+  };
+
+  const handleBulkUpload = async (dataRows) => {
+    setIsUploading(true);
+    try {
+      const result = await bulkUploadPenilaian(dataRows);
+      setRefreshKey((k) => k + 1);
+      return result;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const columns = [
     {
@@ -137,7 +166,7 @@ const Pegawai = () => {
           {item.avatar ? (
             <img
               src={item.avatar}
-              alt={item.name}
+              alt={item.nama}
               className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
               onError={(e) => {
                 e.target.style.display = "none";
@@ -149,18 +178,18 @@ const Pegawai = () => {
             className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm"
             style={{ display: item.avatar ? "none" : "flex" }}
           >
-            {item.name?.charAt(0)?.toUpperCase() || "?"}
+            {item.nama?.charAt(0)?.toUpperCase() || "?"}
           </div>
         </div>
       ),
     },
     {
       key: "nama",
-      label: t("nama"),
+      label: "Nama",
       render: (item) => (
         <div>
           <div className="font-medium text-gray-900 dark:text-gray-100">
-            {item.name}
+            {item.nama}
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
             {item.email}
@@ -170,7 +199,7 @@ const Pegawai = () => {
     },
     {
       key: "nip",
-      label: t("nip"),
+      label: "NIP",
       width: "w-48",
       render: (item) => (
         <span className="text-md text-gray-700 dark:text-gray-300">
@@ -180,11 +209,11 @@ const Pegawai = () => {
     },
     {
       key: "jabatan",
-      label: t("jabatan"),
+      label: "Jabatan",
       render: (item) => (
         <div>
           <div className="text-md font-medium text-gray-900 dark:text-gray-100">
-            {item.jabatan_name || "-"}
+            {item.jabatan || "-"}
           </div>
           <div className="flex gap-2 mt-1">
             {item.jenis_jabatan && (
@@ -203,15 +232,55 @@ const Pegawai = () => {
     },
     {
       key: "unit_kerja",
-      label: t("unitKerja"),
+      label: "Unit Kerja",
       render: (item) => (
         <div>
           <div className="text-md text-gray-900 dark:text-gray-100">
-            {item.unit_organisasi_name || "-"}
+            {item.unit_kerja || "-"}
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {item.json?.lokasiKerja || ""}
+            {item.lokasi_kerja || ""}
           </div>
+        </div>
+      ),
+    },
+    {
+      key: "penilaian_status",
+      label: "Penilaian",
+      width: "w-28",
+      render: (item) => {
+        const hasPenilaian =
+          Boolean(item.penilaian) ||
+          Boolean(item.has_penilaian) ||
+          (Array.isArray(item.penilaian_list) && item.penilaian_list.length > 0) ||
+          (Array.isArray(item.penilaian_entries) && item.penilaian_entries.length > 0) ||
+          (item.penilaian_count && item.penilaian_count > 0);
+        return (
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-sm font-medium ${
+            hasPenilaian
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+          }`}>
+            {hasPenilaian ? 'Sudah' : 'Belum'}
+          </span>
+        );
+      },
+    },
+    {
+      key: "aksi",
+      label: "",
+      width: "w-32",
+      render: (item) => (
+        <div className="flex items-center justify-center">
+          <IconButton
+            onClick={() => handlePenilaian(item.nip)}
+            variant="primary"
+            size="lg"
+            title="Penilaian"
+          >
+            <i className="fas fa-edit mr-2" />
+            Penilaian
+          </IconButton>
         </div>
       ),
     },
@@ -222,33 +291,56 @@ const Pegawai = () => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
-          {t("pegawai")}
+          Penilaian Pegawai
         </h1>
         <p className="mt-2 text-md md:text-base text-gray-600 dark:text-gray-300">
-          {t("pegawaiDesc")}
+          Kelola penilaian kinerja dan potensi pegawai
         </p>
       </div>
 
-      <div className="mb-4 flex justify-end">
+      {/* Action Buttons */}
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 justify-end">
+              <IconButton
+          onClick={() => setShowBulkUploadModal(true)}
+          variant="success"
+          size="lg"
+          disabled={isUploading}
+          title="Import Data Penilaian"
+        >
+          {isUploading ? (
+            <i className="fas fa-spinner fa-spin mr-2" />
+          ) : (
+            <i className="fas fa-file-import mr-2" />
+          )}
+          Import Data
+        </IconButton>
         <IconButton
           onClick={handleSync}
           variant="primary"
           size="lg"
           disabled={isSyncing}
-          title="Sinkronisasi"
+          title="Sinkronisasi Pegawai"
         >
           {isSyncing ? (
             <i className="fas fa-spinner fa-spin mr-2" />
           ) : (
             <i className="fas fa-sync mr-2" />
           )}
-          Sinkronisasi
+          Sinkronisasi Pegawai
         </IconButton>
       </div>
 
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        isOpen={showBulkUploadModal}
+        onClose={() => setShowBulkUploadModal(false)}
+        subIndikators={subIndikators}
+        onUploadSuccess={handleBulkUpload}
+      />
+
       {/* Data Table */}
-      <ServerDataTable
-        key={refreshKey}
+          <ServerDataTable
+            key={refreshKey}
         columns={columns}
         fetchData={fetchData}
         itemsPerPageOptions={[10, 25, 50, 100]}
@@ -260,13 +352,13 @@ const Pegawai = () => {
         }}
         filterConfigs={[
           {
-            key: "unit_organisasi",
+            key: "unit_organisasi_name",
             label: "Organisasi",
             placeholder: "Semua Organisasi",
             options: filterOptions.organisasi,
           },
           {
-            key: "jabatan",
+            key: "jabatan_name",
             label: "Jabatan",
             placeholder: "Semua Jabatan",
             options: filterOptions.jabatan,
@@ -311,4 +403,4 @@ const Pegawai = () => {
   );
 };
 
-export default Pegawai;
+export default PenilaianPegawai;

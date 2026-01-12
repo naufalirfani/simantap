@@ -30,6 +30,7 @@ const translations = {
     sedang: 'Sedang',
     besar: 'Besar',
     warnaSidebar: 'Warna Sidebar',
+    warnaTeksSidebar: 'Warna Teks Sidebar',
     bahasa: 'Bahasa',
     indonesia: 'Indonesia',
     inggris: 'Inggris',
@@ -95,6 +96,7 @@ const translations = {
     sedang: 'Medium',
     besar: 'Large',
     warnaSidebar: 'Sidebar Color',
+    warnaTeksSidebar: 'Sidebar Text Color',
     bahasa: 'Language',
     indonesia: 'Indonesian',
     inggris: 'English',
@@ -162,11 +164,15 @@ export function SettingsProvider({ children }) {
   });
 
   const [fontSize, setFontSize] = useState(() => {
-    return localStorage.getItem('fontSize') || 'medium';
+    return localStorage.getItem('fontSize') || 'small';
   });
 
   const [sidebarColor, setSidebarColor] = useState(() => {
     return localStorage.getItem('sidebarColor') || '#1e293b';
+  });
+
+  const [sidebarTextColor, setSidebarTextColor] = useState(() => {
+    return localStorage.getItem('sidebarTextColor') || '#ffffff';
   });
 
   const [language, setLanguage] = useState(() => {
@@ -197,6 +203,10 @@ export function SettingsProvider({ children }) {
   }, [sidebarColor]);
 
   useEffect(() => {
+    localStorage.setItem('sidebarTextColor', sidebarTextColor);
+  }, [sidebarTextColor]);
+
+  useEffect(() => {
     localStorage.setItem('language', language);
   }, [language]);
 
@@ -209,6 +219,8 @@ export function SettingsProvider({ children }) {
     setFontSize,
     sidebarColor,
     setSidebarColor,
+    sidebarTextColor,
+    setSidebarTextColor,
     language,
     setLanguage,
     sidebarExpanded,

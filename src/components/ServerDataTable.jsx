@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useSettings } from "../context/SettingsContext";
 import SearchableSelect from "./SearchableSelect";
+import IconButton from "./IconButton";
 
 const ServerDataTable = ({
   columns,
@@ -138,7 +139,7 @@ const ServerDataTable = ({
   const startIndex = (meta.current_page - 1) * meta.per_page;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
       {/* Header with search, filters, and items per page */}
       <div className="p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col gap-4">
@@ -151,7 +152,7 @@ const ServerDataTable = ({
                 placeholder={t("search")}
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all shadow-sm"
+                className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] dark:text-white transition-all shadow-sm"
               />
               <svg
                 className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 dark:text-gray-500"
@@ -172,9 +173,12 @@ const ServerDataTable = ({
             <div className="flex flex-col-reverse md:flex-row justify-between space-y-4 gap-4 md:space-y-0">
               {/* Filter Button */}
               {Object.keys(filters).length > 0 && (
-                <button
+                <IconButton
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm cursor-pointer"
+                  title={t("filterBy")}
+                  variant="default"
+                  size="md"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm"
                 >
                   <svg
                     className="w-5 h-5"
@@ -189,8 +193,8 @@ const ServerDataTable = ({
                       d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                     />
                   </svg>
-                  {t("filterBy")}
-                </button>
+                  <span>{t("filterBy")}</span>
+                </IconButton>
               )}
 
               <div className="flex items-center gap-3">
@@ -201,7 +205,7 @@ const ServerDataTable = ({
                   <select
                     value={itemsPerPage}
                     onChange={handleItemsPerPageChange}
-                    className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600"
+                    className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] cursor-pointer transition-all shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600"
                   >
                     {itemsPerPageOptions.map((option) => (
                       <option key={option} value={option}>
@@ -260,12 +264,15 @@ const ServerDataTable = ({
                 ))}
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <button
+                <IconButton
                   onClick={handleResetFilters}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-lg transition-colors cursor-pointer"
+                  title={t("resetFilter")}
+                  variant="ghost"
+                  size="md"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-lg transition-colors"
                 >
                   {t("resetFilter")}
-                </button>
+                </IconButton>
               </div>
             </div>
           </div>
@@ -275,7 +282,7 @@ const ServerDataTable = ({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-100 dark:bg-gray-700">
+          <thead className="bg-gray-200 dark:bg-gray-700">
             <tr>
               {columns.map((column) => (
                 <th
@@ -296,7 +303,7 @@ const ServerDataTable = ({
                   <div className="flex flex-col items-center justify-center">
                     <div className="relative">
                       <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3B82F6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
                     </div>
                     <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                       {t("loadingData")}
@@ -331,7 +338,7 @@ const ServerDataTable = ({
               data.map((item, index) => (
                 <tr
                   key={item.id || index}
-                  className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className={`${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50' : ''} dark:hover:bg-gray-700 transition-colors`}
                 >
                   {columns.map((column) => (
                     <td
@@ -366,7 +373,7 @@ const ServerDataTable = ({
               <button
                 onClick={() => goToPage(1)}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"
@@ -387,7 +394,7 @@ const ServerDataTable = ({
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"
@@ -413,10 +420,10 @@ const ServerDataTable = ({
                     disabled={page === "..."}
                     className={`min-w-[2.5rem] px-3 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm ${
                       page === currentPage
-                        ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md scale-105 cursor-pointer"
+                        ? "bg-gradient-to-r from-[#3B82F6] to-[#3B82F6] text-white shadow-md scale-105 cursor-pointer"
                         : page === "..."
                         ? "cursor-default text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none"
-                        : "text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 cursor-pointer"
+                        : "text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] cursor-pointer"
                     }`}
                   >
                     {page}
@@ -428,7 +435,7 @@ const ServerDataTable = ({
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === meta.last_page}
-                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"
@@ -449,7 +456,7 @@ const ServerDataTable = ({
               <button
                 onClick={() => goToPage(meta.last_page)}
                 disabled={currentPage === meta.last_page}
-                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"

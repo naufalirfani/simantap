@@ -11,6 +11,11 @@ import UnitKerja from './pages/masterdata/UnitKerja';
 import Jabatan from './pages/masterdata/Jabatan';
 import Pegawai from './pages/masterdata/Pegawai';
 import Indikator from './pages/masterdata/Indikator';
+import Instrumen from './pages/masterdata/Instrumen';
+import KotakInterval from './pages/masterdata/KotakInterval';
+import PenilaianPegawai from './pages/masterdata/PenilaianPegawai';
+import InputPenilaian from './pages/masterdata/InputPenilaian';
+import StandarKompetensiMSK from './pages/masterdata/StandarKompetensiMSK';
 import Settings from './pages/Settings';
 import SSOLogin from './pages/SSOLogin';
 
@@ -40,7 +45,12 @@ function App() {
                         <Route path="/masterdata/jabatan" element={<Jabatan />} />
                         <Route path="/masterdata/pegawai" element={<Pegawai />} />
                         <Route path="/masterdata/indikator" element={<Indikator />} />
+                        <Route path="/masterdata/instrumen" element={<Instrumen />} />
+                        <Route path="/masterdata/kotak-interval" element={<KotakInterval />} />
+                        <Route path="/masterdata/penilaian-pegawai" element={<PenilaianPegawai />} />
+                        <Route path="/masterdata/penilaian-pegawai/input/:nip" element={<InputPenilaian />} />
                         <Route path="/pengaturan" element={<Settings />} />
+                        <Route path="/masterdata/standar-kompetensi-msk" element={<StandarKompetensiMSK />} />
                       </Routes>
                     </main>
                   </div>

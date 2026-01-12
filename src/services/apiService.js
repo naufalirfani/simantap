@@ -166,12 +166,12 @@ export const fetchPegawai = async (params = {}) => {
     if (params.q) queryParams.append("q", params.q);
 
     // Add filter params
-    if (params.unit_organisasi)
-      queryParams.append("unit_organisasi", params.unit_organisasi);
-    if (params.jabatan) queryParams.append("jabatan", params.jabatan);
+    if (params.unit_organisasi_name)
+      queryParams.append("unit_organisasi_name", params.unit_organisasi_name);
+    if (params.jabatan_name) queryParams.append("jabatan_name", params.jabatan_name);
     if (params.jenis_jabatan)
       queryParams.append("jenis_jabatan", params.jenis_jabatan);
-    if (params.role) queryParams.append("role", params.role);
+    if (params.jenis_jabatan) queryParams.append("jenis_jabatan", params.jenis_jabatan);
     if (params.golongan) queryParams.append("golongan", params.golongan);
 
     // Add sort params
@@ -199,6 +199,31 @@ export const fetchPegawai = async (params = {}) => {
     return await response.json();
   } catch (error) {
     console.error("Fetch pegawai error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch single pegawai by NIP from main API
+ */
+export const fetchPegawaiByNip = async (nip) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/pegawai/${nip}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(result?.message || "Failed to fetch pegawai");
+    }
+
+    const result = await response.json().catch(() => null);
+    return (result && (result.data || result)) || null;
+  } catch (error) {
+    console.error("fetchPegawaiByNip error:", error);
     throw error;
   }
 };
@@ -271,7 +296,7 @@ export const fetchPegawaiList = async ({ filter, page = 1, per_page = 20, q = ""
   try {
     const base = API_BASE_URL || "http://192.168.0.111:8000";
     const params = new URLSearchParams();
-    if (filter) params.append("filter", filter);
+    if (filter) params.append("jenis_jabatan", filter);
     if (page) params.append("page", page);
     if (per_page) params.append("per_page", per_page);
     if (q) params.append("q", q);
@@ -484,6 +509,253 @@ export const deleteSubIndikator = async (id) => {
   }
 };
 
+/**
+ * Bulk update bobot for subindikators
+ * Expected payload: { subindikators: [{ id, bobot }, ...] }
+ */
+export const bulkUpdateSubBobot = async (subindikators) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/subindikators/bulk-bobot`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ subindikators }),
+    });
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(result?.message || 'Failed to bulk update subindikator bobot');
+    }
+
+    if (result && result.success === false) {
+      throw new Error(result.message || 'Failed to bulk update subindikator bobot');
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Bulk update subindikator bobot error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch all subindikators
+ */
+export const fetchSubIndikators = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/subindikators`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch subindikators');
+    }
+
+    const result = await response.json().catch(() => null);
+    if (!result || result.success === false) {
+      throw new Error(result?.message || 'Invalid subindikator response');
+    }
+
+    return result.data || [];
+  } catch (error) {
+    console.error('fetchSubIndikators error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Bulk upload penilaian entries
+ * Expected payload: { penilaians: [ { nip, nama, subindikator1: value, ... }, ... ] }
+ * Endpoint: VITE_API_BASE_URL/penilaians/bulk
+ */
+export const bulkUploadPenilaian = async (payload) => {
+  try {
+    const url = `${API_BASE_URL}/api/penilaians/bulk`;
+    // payload can be either an array (penilaians) or an object { penilaians, headers }
+    let body = null;
+    if (Array.isArray(payload)) {
+      body = { penilaians: payload };
+    } else if (payload && typeof payload === 'object') {
+      body = payload;
+    } else {
+      throw new Error('Invalid payload for bulkUploadPenilaian');
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(result?.message || 'Failed to upload penilaian bulk');
+    }
+
+    return result;
+  } catch (error) {
+    console.error('bulkUploadPenilaian error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch standar kompetensi MSK
+ * Endpoint: VITE_API_BASE_URL/api/standar-kompetensi-msk
+ */
+export const fetchStandarKompetensiMSK = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/standar-kompetensi-msk`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch standar kompetensi MSK');
+    }
+
+    const result = await response.json().catch(() => null);
+    if (!result) {
+      throw new Error('Invalid standar kompetensi MSK response');
+    }
+
+    // Return the data array, handling both { data: [...] } and [...] formats
+    return result.data || result;
+  } catch (error) {
+    console.error('fetchStandarKompetensiMSK error:', error);
+    throw error;
+  }
+};
+
+// ==================== INSTRUMEN API FUNCTIONS ====================
+
+/**
+ * Fetch all instrumens
+ */
+export const fetchInstrumens = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/instrumens`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch instrumens");
+    }
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to fetch instrumens");
+    }
+
+    return result.data || [];
+  } catch (error) {
+    console.error("Fetch instrumens error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Create a new instrumen
+ */
+export const createInstrumen = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/instrumens`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(result?.message || "Failed to create instrumen");
+    }
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to create instrumen");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Create instrumen error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update an instrumen
+ */
+export const updateInstrumen = async (id, data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/instrumens/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(result?.message || "Failed to update instrumen");
+    }
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to update instrumen");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Update instrumen error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Delete an instrumen
+ */
+export const deleteInstrumen = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/instrumens/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(result?.message || "Failed to delete instrumen");
+    }
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to delete instrumen");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Delete instrumen error:", error);
+    throw error;
+  }
+};
+
   /**
    * Trigger sync for peta jabatan on the remote service
    */
@@ -532,6 +804,96 @@ export const syncPegawai = async () => {
     return await response.json().catch(() => ({}));
   } catch (error) {
     console.error('Sync pegawai error:', error);
+    throw error;
+  }
+};
+
+// ==================== PENILAIAN API FUNCTIONS ====================
+
+/**
+ * Fetch penilaian data for a specific pegawai
+ */
+export const fetchPenilaianByNip = async (nip) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/penilaians/${nip}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch penilaian data");
+    }
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to fetch penilaian data");
+    }
+
+    return result || null;
+  } catch (error) {
+    console.error("Fetch penilaian error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Submit penilaian data for a pegawai
+ */
+export const submitPenilaian = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/penilaians`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(result?.message || "Failed to submit penilaian");
+    }
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to submit penilaian");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Submit penilaian error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update penilaian data for a pegawai
+ */
+export const updatePenilaian = async (nip, data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/penilaians/${nip}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(result?.message || "Failed to update penilaian");
+    }
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to update penilaian");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Update penilaian error:", error);
     throw error;
   }
 };

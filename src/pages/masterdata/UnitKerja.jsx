@@ -46,9 +46,9 @@ const UnitKerja = () => {
       title: "Sinkronisasi Peta Jabatan",
       text: "Sinkronisasi akan mengambil data terbaru dari layanan. Lanjutkan?",
       showCancelButton: true,
-      confirmButtonText: "Ya, Sync",
+      confirmButtonText: "Ya",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
+      confirmButtonColor: "#3B82F6",
       cancelButtonColor: "#d33",
       reverseButtons: true,
     });
@@ -71,6 +71,7 @@ const UnitKerja = () => {
         icon: "error",
         title: "Gagal",
         text: err.message || "Sinkronisasi gagal",
+        confirmButtonColor: "#3B82F6",
       });
     } finally {
       setIsSyncing(false);
@@ -128,7 +129,7 @@ const UnitKerja = () => {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
           <div className="flex items-start">
             <svg
-              className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0"
+              className="h-5 w-5 text-[#d33] mt-0.5 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -144,12 +145,12 @@ const UnitKerja = () => {
               <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
                 {t("errorOccurred")}
               </h3>
-              <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+              <p className="mt-1 text-sm text-[#d33] dark:text-[#d33]">
                 {error}
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="mt-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-500 cursor-pointer"
+                className="mt-2 text-sm font-medium text-[#d33] dark:text-[#d33] hover:text-[#d33] cursor-pointer"
               >
                 {t("reload")}
               </button>
