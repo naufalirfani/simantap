@@ -292,7 +292,7 @@ const StandarKompetensiMSK = () => {
                 size="lg"
                 title="Batal"
               >
-                <i className="fas fa-times mr-2" /> Batal
+                <i className="far fa-times-circle mr-2" /> Batal
               </IconButton>
               <IconButton
                 type="submit"

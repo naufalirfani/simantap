@@ -36,12 +36,6 @@ function EmployeeCountBox({ title, count, color, onClick, icon }) {
             </h3>
           </div>
         </div>
-
-        {/* Arrow indicator */}
-        <i
-          className="fas fa-chevron-right text-xl text-gray-400 dark:text-gray-500 transition-transform duration-200"
-          style={{ color }}
-        ></i>
       </div>
 
       {/* Animation keyframes */}

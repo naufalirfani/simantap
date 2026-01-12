@@ -7,14 +7,14 @@
 const DEFAULT_CONFIG = {
   intervals: {
     potensial: [
-      { min: 0, max: 50, label: '0-50' },
-      { min: 50, max: 75, label: '50-75' },
-      { min: 75, max: 100, label: '75-100' }
+      { min: 0, max: 40, label: '0-40' },
+      { min: 40, max: 80, label: '40-80' },
+      { min: 80, max: 100, label: '80-100' }
     ],
     kinerja: [
-      { min: 0, max: 50, label: '0-50' },
-      { min: 50, max: 75, label: '50-75' },
-      { min: 75, max: 100, label: '75-100' }
+      { min: 0, max: 40, label: '0-40' },
+      { min: 40, max: 80, label: '40-80' },
+      { min: 80, max: 100, label: '80-100' }
     ]
   },
   kotak: [
@@ -231,22 +231,40 @@ export const saveKotakConfig = (config) => {
  */
 export const resetKotakConfig = () => {
   try {
-    cachedConfig = DEFAULT_CONFIG;
+    // Use a deep clone so the DEFAULT_CONFIG constant isn't mutated elsewhere
+    const defaultCopy = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
 
-    // Persist default config to backend asynchronously
-    (async () => {
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(DEFAULT_CONFIG)
-        });
-      } catch (err) {
-        console.error('Error persisting default kotak config to API:', err);
-      }
-    })();
+    // Recompute kotak ranges based on the default intervals so they stay consistent
+    const intervals = defaultCopy.intervals;
+    const mapping = [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [0, 2],
+      [1, 1],
+      [2, 0],
+      [1, 2],
+      [2, 1],
+      [2, 2],
+    ];
 
-    return DEFAULT_CONFIG;
+    if (Array.isArray(defaultCopy.kotak)) {
+      defaultCopy.kotak = defaultCopy.kotak.map((k, idx) => {
+        const map = mapping[idx] || [0, 0];
+        const p = (intervals && intervals.potensial && intervals.potensial[map[0]]) || { min: 0, max: 100 };
+        const kf = (intervals && intervals.kinerja && intervals.kinerja[map[1]]) || { min: 0, max: 100 };
+        return {
+          ...k,
+          potensialRange: { min: p.min, max: p.max },
+          kinerjaRange: { min: kf.min, max: kf.max },
+        };
+      });
+    }
+
+    // Use saveKotakConfig to update cache, persist and dispatch change events
+    saveKotakConfig(defaultCopy);
+
+    return defaultCopy;
   } catch (error) {
     console.error('Error resetting kotak config:', error);
     return DEFAULT_CONFIG;

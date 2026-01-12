@@ -196,7 +196,7 @@ const Indikator = () => {
             text: "Mengubah bobot indikator akan mereset bobot semua subindikator menjadi 0. Lanjutkan?",
             showCancelButton: true,
             reverseButtons: true,
-            confirmButtonText: "Ya, Lanjutkan",
+            confirmButtonText: "Lanjutkan",
             cancelButtonText: "Batal",
             confirmButtonColor: "#3B82F6",
             cancelButtonColor: "#d33",
@@ -274,7 +274,7 @@ const Indikator = () => {
       text: `Apakah Anda yakin ingin menghapus indikator "${indikatorName}"?`,
       showCancelButton: true,
       reverseButtons: true,
-      confirmButtonText: "Ya, Hapus",
+      confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
       confirmButtonColor: "#3B82F6",
       cancelButtonColor: "#d33",
@@ -454,7 +454,7 @@ const Indikator = () => {
       text: `Apakah Anda yakin ingin menghapus subindikator "${subIndikatorName}"?`,
       showCancelButton: true,
       reverseButtons: true,
-      confirmButtonText: "Ya, Hapus",
+      confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
       confirmButtonColor: "#3B82F6",
       cancelButtonColor: "#d33",
@@ -1090,7 +1090,7 @@ const Indikator = () => {
                     size="lg"
                     disabled={submitting}
                   >
-                    <i className="fas fa-times-circle mr-2" />
+                    <i className="far fa-times-circle mr-2" />
                     Batal
                   </IconButton>
                   <IconButton
@@ -1301,7 +1301,7 @@ const Indikator = () => {
                     size="lg"
                     disabled={bulkSubmitting}
                   >
-                    <i className="fas fa-times-circle mr-2" /> Batal
+                    <i className="far fa-times-circle mr-2" /> Batal
                   </IconButton>
                   <IconButton
                     type="submit"
@@ -1760,7 +1760,7 @@ const Indikator = () => {
                     size="lg"
                     disabled={submittingSub}
                   >
-                    <i className="fas fa-times-circle mr-2" />
+                    <i className="far fa-times-circle mr-2" />
                     Batal
                   </IconButton>
                   <IconButton

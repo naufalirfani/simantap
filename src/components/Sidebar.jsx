@@ -208,7 +208,7 @@ const Sidebar = () => {
         {/* User Info Card */}
         <div className="p-4 border-b border-gray-200">
           {sidebarExpanded ? (
-            <div className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-all duration-300">
+            <div className="bg-gray-100 rounded-lg p-3 hover:bg-gray-100 transition-all duration-300">
               <div className="flex items-center space-x-3">
                 <div className="relative flex-shrink-0">
                   <div className="flex items-center justify-center">

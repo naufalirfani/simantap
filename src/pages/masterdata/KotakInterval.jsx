@@ -229,7 +229,7 @@ const KotakInterval = () => {
       text: "Semua konfigurasi akan dikembalikan ke pengaturan default. Lanjutkan?",
       showCancelButton: true,
       reverseButtons: true,
-      confirmButtonText: "Ya, Reset",
+      confirmButtonText: "Reset",
       cancelButtonText: "Batal",
       confirmButtonColor: "#3B82F6",
       cancelButtonColor: "#d33",
@@ -310,6 +310,7 @@ const KotakInterval = () => {
                   variant="secondary"
                   size="lg"
                 >
+                  <i className="far fa-times-circle mr-2" />
                   Batal
                 </IconButton>
                 <IconButton
@@ -785,7 +786,7 @@ const KotakInterval = () => {
                     variant="secondary"
                     size="lg"
                   >
-                    <i className="fas fa-times-circle mr-2" />
+                    <i className="far fa-times-circle mr-2" />
                     Batal
                   </IconButton>
                   <IconButton type="submit" variant="primary" size="lg">

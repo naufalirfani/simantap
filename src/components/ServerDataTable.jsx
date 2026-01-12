@@ -281,15 +281,13 @@ const ServerDataTable = ({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full table-auto">
           <thead className="bg-gray-200 dark:bg-gray-700">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`${
-                    column.width || ""
-                  } px-3 py-4 text-center text-sm font-semibold text-gray-500 dark:text-gray-300 tracking-wider`}
+                  className={`${column.noWrap ? "whitespace-nowrap" : ""} px-3 py-4 text-center text-sm font-semibold text-gray-500 dark:text-gray-300 tracking-wider`}
                 >
                   {column.label}
                 </th>
@@ -340,22 +338,30 @@ const ServerDataTable = ({
                   key={item.id || index}
                   className={`${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50' : ''} dark:hover:bg-gray-700 transition-colors`}
                 >
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      className={`${
-                        column.width || ""
-                      } px-3 py-4 text-sm text-gray-500 dark:text-gray-300 font-semibold ${
-                        column.align === "center" || column.key === "no"
-                          ? "text-center"
-                          : "text-left"
-                      }`}
-                    >
-                      {column.render
-                        ? column.render(item, startIndex + index)
-                        : item[column.key]}
-                    </td>
-                  ))}
+                  {columns.map((column) => {
+                    const cellContent = column.render
+                      ? column.render(item, startIndex + index)
+                      : item[column.key];
+
+                    const cellInner = column.compact ? (
+                      <div className="flex items-center justify-center flex-shrink-0">{cellContent}</div>
+                    ) : (
+                      cellContent
+                    );
+
+                    return (
+                      <td
+                        key={column.key}
+                        className={`${column.noWrap ? "whitespace-nowrap" : ""} px-3 py-4 text-sm text-gray-500 dark:text-gray-300 font-semibold ${
+                          column.align === "center" || column.key === "no"
+                            ? "text-center"
+                            : "text-left"
+                        }`}
+                      >
+                        {cellInner}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))
             )}
@@ -503,6 +509,8 @@ ServerDataTable.propTypes = {
       key: PropTypes.string.isRequired,
       label: PropTypes.string.isRequired,
       width: PropTypes.string,
+      noWrap: PropTypes.bool,
+      compact: PropTypes.bool,
       render: PropTypes.func,
     })
   ).isRequired,

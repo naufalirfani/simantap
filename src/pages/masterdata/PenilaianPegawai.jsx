@@ -1,7 +1,14 @@
 import { useEffect, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSettings } from "../../context/SettingsContext";
-import { fetchPegawaiList, fetchPetaJabatan, syncPegawai, fetchSubIndikators, bulkUploadPenilaian } from "../../services/apiService";
+import {
+  fetchPegawaiList,
+  fetchPetaJabatan,
+  syncPegawai,
+  fetchSubIndikators,
+  bulkUploadPenilaian,
+  fetchStatistik,
+} from "../../services/apiService";
 import Swal from "sweetalert2";
 import ServerDataTable from "../../components/ServerDataTable";
 import IconButton from "../../components/IconButton";
@@ -13,6 +20,7 @@ const PenilaianPegawai = () => {
   const [filterOptions, setFilterOptions] = useState({
     organisasi: [],
     jabatan: [],
+    jenis: [],
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -62,9 +70,25 @@ const PenilaianPegawai = () => {
         .sort((a, b) => b.kelas - a.kelas)
         .map((j) => ({ value: j.name, label: j.name }));
 
+      const jenisOptions = [
+        "Jabatan Pimpinan Tinggi Madya",
+        "Jabatan Pimpinan Tinggi Pratama",
+        "Jabatan Administrator",
+        "Jabatan Pengawas",
+        "Jabatan Fungsional Utama",
+        "Jabatan Fungsional Madya",
+        "Jabatan Fungsional Muda",
+        "Jabatan Fungsional Pertama",
+        "Jabatan Fungsional Penyelia",
+        "Jabatan Fungsional Mahir",
+        "Jabatan Fungsional Terampil",
+        "Jabatan Pelaksana",
+      ].map((name) => ({ value: name, label: name }));
+
       setFilterOptions({
         organisasi: uniqueOrganisasi,
         jabatan: uniqueJabatan,
+        jenis: jenisOptions,
       });
     } catch (error) {
       console.error("Error loading filter options:", error);
@@ -79,7 +103,7 @@ const PenilaianPegawai = () => {
         const subs = await fetchSubIndikators();
         setSubIndikators(subs || []);
       } catch (err) {
-        console.error('Failed to load subindikators', err);
+        console.error("Failed to load subindikators", err);
       }
     };
     loadSub();
@@ -150,7 +174,6 @@ const PenilaianPegawai = () => {
     {
       key: "no",
       label: "No",
-      width: "w-16",
       render: (_, index) => (
         <span className="font-semibold text-gray-500 dark:text-gray-400">
           {index + 1}
@@ -160,7 +183,7 @@ const PenilaianPegawai = () => {
     {
       key: "foto",
       label: "",
-      width: "w-20",
+      compact: true,
       render: (item) => (
         <div className="flex items-center justify-center">
           {item.avatar ? (
@@ -186,6 +209,7 @@ const PenilaianPegawai = () => {
     {
       key: "nama",
       label: "Nama",
+      noWrap: true,
       render: (item) => (
         <div>
           <div className="font-medium text-gray-900 dark:text-gray-100">
@@ -200,7 +224,7 @@ const PenilaianPegawai = () => {
     {
       key: "nip",
       label: "NIP",
-      width: "w-48",
+      noWrap: true,
       render: (item) => (
         <span className="text-md text-gray-700 dark:text-gray-300">
           {item.nip}
@@ -247,21 +271,24 @@ const PenilaianPegawai = () => {
     {
       key: "penilaian_status",
       label: "Penilaian",
-      width: "w-28",
       render: (item) => {
         const hasPenilaian =
           Boolean(item.penilaian) ||
           Boolean(item.has_penilaian) ||
-          (Array.isArray(item.penilaian_list) && item.penilaian_list.length > 0) ||
-          (Array.isArray(item.penilaian_entries) && item.penilaian_entries.length > 0) ||
+          (Array.isArray(item.penilaian_list) &&
+            item.penilaian_list.length > 0) ||
+          (Array.isArray(item.penilaian_entries) &&
+            item.penilaian_entries.length > 0) ||
           (item.penilaian_count && item.penilaian_count > 0);
         return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-sm font-medium ${
-            hasPenilaian
-              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-          }`}>
-            {hasPenilaian ? 'Sudah' : 'Belum'}
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded text-sm font-medium ${
+              hasPenilaian
+                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+            }`}
+          >
+            {hasPenilaian ? "Sudah" : "Belum"}
           </span>
         );
       },
@@ -269,7 +296,6 @@ const PenilaianPegawai = () => {
     {
       key: "aksi",
       label: "",
-      width: "w-32",
       render: (item) => (
         <div className="flex items-center justify-center">
           <IconButton
@@ -300,7 +326,7 @@ const PenilaianPegawai = () => {
 
       {/* Action Buttons */}
       <div className="mb-4 flex flex-col sm:flex-row gap-3 justify-end">
-              <IconButton
+        <IconButton
           onClick={() => setShowBulkUploadModal(true)}
           variant="success"
           size="lg"
@@ -339,15 +365,15 @@ const PenilaianPegawai = () => {
       />
 
       {/* Data Table */}
-          <ServerDataTable
-            key={refreshKey}
+      <ServerDataTable
+        key={refreshKey}
         columns={columns}
         fetchData={fetchData}
         itemsPerPageOptions={[10, 25, 50, 100]}
         defaultFilters={{
           unit_organisasi: "",
           jabatan: "",
-          jenis_jabatan: "",
+          filter: "",
           golongan: "",
         }}
         filterConfigs={[
@@ -364,14 +390,10 @@ const PenilaianPegawai = () => {
             options: filterOptions.jabatan,
           },
           {
-            key: "jenis_jabatan",
+            key: "filter",
             label: "Jenis Jabatan",
             placeholder: "Semua Jenis",
-            options: [
-              { value: "Struktural", label: "Struktural" },
-              { value: "Fungsional", label: "Fungsional" },
-              { value: "Pelaksana", label: "Pelaksana" },
-            ],
+            options: filterOptions.jenis,
           },
           {
             key: "golongan",

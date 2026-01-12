@@ -70,44 +70,23 @@ const getValidToken = async () => {
  */
 export const fetchPetaJabatan = async () => {
   try {
-    const token = await getValidToken();
-
-    const response = await fetch(`${ANJAB_API_BASE_URL}/peta-jabatan`, {
+    const response = await fetch(`${API_BASE_URL}/api/peta-jabatan?with_pagination=false`, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
-      // If unauthorized, try to login again
-      if (response.status === 401) {
-        localStorage.removeItem("anjab_token");
-        localStorage.removeItem("anjab_token_expiry");
-        authToken = null;
-
-        // Retry with new token
-        const newToken = await getValidToken();
-        const retryResponse = await fetch(`${ANJAB_API_BASE_URL}/peta-jabatan`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${newToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!retryResponse.ok) {
-          throw new Error("Failed to fetch peta jabatan");
-        }
-
-        return await retryResponse.json();
-      }
-
       throw new Error("Failed to fetch peta jabatan");
     }
 
-    return await response.json();
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to fetch peta jabatan");
+    }
+
+    return result.data || [];
   } catch (error) {
     console.error("Fetch peta jabatan error:", error);
     throw error;
@@ -169,8 +148,6 @@ export const fetchPegawai = async (params = {}) => {
     if (params.unit_organisasi_name)
       queryParams.append("unit_organisasi_name", params.unit_organisasi_name);
     if (params.jabatan_name) queryParams.append("jabatan_name", params.jabatan_name);
-    if (params.jenis_jabatan)
-      queryParams.append("jenis_jabatan", params.jenis_jabatan);
     if (params.jenis_jabatan) queryParams.append("jenis_jabatan", params.jenis_jabatan);
     if (params.golongan) queryParams.append("golongan", params.golongan);
 
@@ -292,11 +269,13 @@ export const fetchStatistik = async () => {
  * Fetch pegawai list with filter key, pagination and optional search query
  * Returns { data: [...], meta: { current_page, per_page, last_page, total } }
  */
-export const fetchPegawaiList = async ({ filter, page = 1, per_page = 20, q = "" } = {}) => {
+export const fetchPegawaiList = async ({ filter, page = 1, per_page = 20, q = "", with_penilaian = false, with_pagination = true } = {}) => {
   try {
     const base = API_BASE_URL || "http://192.168.0.111:8000";
     const params = new URLSearchParams();
     if (filter) params.append("jenis_jabatan", filter);
+    if (with_penilaian) params.append("with_penilaian", "true");
+    if (!with_pagination) params.append("with_pagination", "false");
     if (page) params.append("page", page);
     if (per_page) params.append("per_page", per_page);
     if (q) params.append("q", q);

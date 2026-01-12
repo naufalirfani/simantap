@@ -280,144 +280,43 @@ const Dashboard = () => {
     loadEmployees({ filter: empFilter, q: q || "", page, per_page });
   }, [empFilter, loadEmployees]);
 
-  // Data dummy untuk 9 Kotak (dengan data lengkap pegawai)
-  const quadrantData = [
-    {
-      name: "Budi Santoso",
-      nip: "198501012010011001",
-      jabatan: "Analis Data",
-      unitKerja: "Bagian Kepegawaian",
-      potensial: 35,
-      kinerja: 45,
-      quadrant: 1,
-    },
-    {
-      name: "Siti Rahayu",
-      nip: "198702152011012002",
-      jabatan: "Sekretaris",
-      unitKerja: "Bagian Umum",
-      potensial: 45,
-      kinerja: 85,
-      quadrant: 2,
-    },
-    {
-      name: "Ahmad Hidayat",
-      nip: "199001012015011003",
-      jabatan: "Staf Administrasi",
-      unitKerja: "Bagian Keuangan",
-      potensial: 30,
-      kinerja: 92,
-      quadrant: 4,
-    },
-    {
-      name: "Dewi Lestari",
-      nip: "198803202012012004",
-      jabatan: "Kepala Seksi",
-      unitKerja: "Bagian Perencanaan",
-      potensial: 65,
-      kinerja: 55,
-      quadrant: 3,
-    },
-    {
-      name: "Eko Prasetyo",
-      nip: "198512152013011005",
-      jabatan: "Analis Kebijakan",
-      unitKerja: "Bagian Hukum",
-      potensial: 75,
-      kinerja: 75,
-      quadrant: 5,
-    },
-    {
-      name: "Rina Wijaya",
-      nip: "199105102016012006",
-      jabatan: "Koordinator Program",
-      unitKerja: "Bagian Program",
-      potensial: 88,
-      kinerja: 48,
-      quadrant: 6,
-    },
-    {
-      name: "Dian Permata",
-      nip: "198909252014012007",
-      jabatan: "Kepala Subbagian",
-      unitKerja: "Bagian SDM",
-      potensial: 55,
-      kinerja: 88,
-      quadrant: 7,
-    },
-    {
-      name: "Agus Setiawan",
-      nip: "198406182011011008",
-      jabatan: "Kepala Bagian",
-      unitKerja: "Bagian Operasional",
-      potensial: 87.5,
-      kinerja: 87.5,
-      quadrant: 9,
-    },
-    {
-      name: "Fitri Handayani",
-      nip: "199203152017012009",
-      jabatan: "Supervisor",
-      unitKerja: "Bagian Pelayanan",
-      potensial: 85,
-      kinerja: 78,
-      quadrant: 8,
-    },
-    {
-      name: "Joko Widodo",
-      nip: "198708202013011010",
-      jabatan: "Analis Senior",
-      unitKerja: "Bagian Riset",
-      potensial: 72,
-      kinerja: 65,
-      quadrant: 5,
-    },
-    {
-      name: "Maya Sari",
-      nip: "199006122015012011",
-      jabatan: "Staf Keuangan",
-      unitKerja: "Bagian Keuangan",
-      potensial: 42,
-      kinerja: 38,
-      quadrant: 1,
-    },
-    {
-      name: "Bambang Sutrisno",
-      nip: "198804052012011012",
-      jabatan: "Teknisi",
-      unitKerja: "Bagian IT",
-      potensial: 68,
-      kinerja: 92,
-      quadrant: 7,
-    },
-    {
-      name: "Lina Marlina",
-      nip: "199104202016012013",
-      jabatan: "Administrator",
-      unitKerja: "Bagian Umum",
-      potensial: 38,
-      kinerja: 68,
-      quadrant: 2,
-    },
-    {
-      name: "Hendra Gunawan",
-      nip: "198602102010011014",
-      jabatan: "Manajer",
-      unitKerja: "Bagian Operasional",
-      potensial: 92,
-      kinerja: 85,
-      quadrant: 9,
-    },
-    {
-      name: "Sri Mulyani",
-      nip: "199208152017012015",
-      jabatan: "Auditor",
-      unitKerja: "Bagian Pengawasan",
-      potensial: 78,
-      kinerja: 42,
-      quadrant: 6,
-    },
-  ];
+  // Load pegawai (with penilaian) dari API untuk chart 9 Kotak
+  const [quadrantData, setQuadrantData] = useState([]);
+  const [quadrantLoading, setQuadrantLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    setQuadrantLoading(true);
+    fetchPegawaiList({ with_penilaian: true, with_pagination: false })
+      .then((res) => {
+        if (!mounted) return;
+        const mapped = (res.data || []).map((it) => ({
+          name: (it.nama || it.name || "").toString().replace(/^\-\s*/, ""),
+          nip: it.nip || it.NIP || "",
+          jabatan: it.jabatan || it.nama_jabatan || "",
+          unitKerja: it.unit_kerja || it.unitKerja || "",
+          potensial:
+            it.nilai_potensial ??
+            null,
+          kinerja:
+            it.nilai_kinerja ??
+            null,
+          avatar: it.avatar || null,
+          raw: it,
+        }));
+        setQuadrantData(mapped);
+      })
+      .catch((err) => {
+        console.error("Error loading quadrant data:", err);
+        if (mounted) setQuadrantData([]);
+      })
+      .finally(() => {
+        if (mounted) setQuadrantLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Tentukan Kotak secara dinamis berdasarkan konfigurasi
   const computeQuadrant = (potensial, kinerja) => {
@@ -584,7 +483,7 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-users text-4xl text-slate-500"></i>
+              <i className="fas fa-users text-4xl text-slate-800"></i>
             </div>
           </div>
         </div>
@@ -603,7 +502,7 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-building text-4xl text-indigo-500"></i>
+              <i className="fas fa-building text-4xl text-indigo-700"></i>
             </div>
           </div>
         </div>
@@ -622,7 +521,7 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-award text-4xl text-[#2fa84f]"></i>
+              <i className="fas fa-award text-4xl text-emerald-700"></i>
             </div>
           </div>
         </div>
@@ -641,7 +540,7 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-user-circle text-4xl text-amber-500"></i>
+              <i className="fas fa-user-circle text-4xl text-amber-700"></i>
             </div>
           </div>
         </div>

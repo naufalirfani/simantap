@@ -31,16 +31,31 @@ const BulkUploadModal = ({
       "nip",
       "nama",
       ...subIndikators.map((s, idx) => {
-        const raw = s && (s.nama || s.name || s.label || s.title || s.nama_subindikator || s.subindikator || s.kode || s.code || s.id || s.uuid);
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const raw =
+          s &&
+          (s.nama ||
+            s.name ||
+            s.label ||
+            s.title ||
+            s.nama_subindikator ||
+            s.subindikator ||
+            s.kode ||
+            s.code ||
+            s.id ||
+            s.uuid);
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (!raw) return `subindikator_${idx + 1}`;
-        if (typeof raw === 'string' && uuidRegex.test(raw)) return `subindikator_${idx + 1}`;
+        if (typeof raw === "string" && uuidRegex.test(raw))
+          return `subindikator_${idx + 1}`;
         return String(raw).trim();
       }),
     ];
 
     // Create example data row with empty values for subindikators
-    const exampleRow = headers.map((h, i) => (i === 0 ? "198001012000011001" : i === 1 ? "John Doe" : ""));
+    const exampleRow = headers.map((h, i) =>
+      i === 0 ? "198001012000011001" : i === 1 ? "John Doe" : ""
+    );
 
     // Create workbook using exceljs
     try {
@@ -48,7 +63,11 @@ const BulkUploadModal = ({
       const sheet = workbook.addWorksheet("Template Penilaian");
 
       // Set columns
-      sheet.columns = headers.map((h, i) => ({ header: h, key: h, width: i === 0 ? 20 : i === 1 ? 30 : 18 }));
+      sheet.columns = headers.map((h, i) => ({
+        header: h,
+        key: h,
+        width: i === 0 ? 20 : i === 1 ? 30 : 18,
+      }));
 
       // Ensure NIP and Nama columns are formatted as text (prevent Excel numeric auto-format)
       try {
@@ -57,14 +76,16 @@ const BulkUploadModal = ({
         const namaCol = sheet.getColumn(2);
         namaCol.numFmt = "@";
       } catch (e) {
-        console.warn('Could not set column numFmt', e);
+        console.warn("Could not set column numFmt", e);
       }
 
       // Add only example data row; column headers are taken from sheet.columns
       sheet.addRow(exampleRow);
 
       const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -75,10 +96,21 @@ const BulkUploadModal = ({
       a.remove();
       URL.revokeObjectURL(url);
 
-      Swal.fire({ icon: "success", title: "Template Downloaded", text: "Template berhasil diunduh.", timer: 2000, showConfirmButton: false });
+      Swal.fire({
+        icon: "success",
+        title: "Template Downloaded",
+        text: "Template berhasil diunduh.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
     } catch (err) {
       console.error("generate template error:", err);
-      Swal.fire({ icon: "error", title: "Gagal", text: "Tidak dapat membuat template. Coba lagi.", confirmButtonColor: "#3B82F6" });
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Tidak dapat membuat template. Coba lagi.",
+        confirmButtonColor: "#3B82F6",
+      });
     }
   };
 
@@ -115,17 +147,37 @@ const BulkUploadModal = ({
 
     const processRows = (rows) => {
       if (!rows || rows.length < 2) {
-        Swal.fire({ icon: "error", title: "File Kosong", text: "File tidak mengandung data yang valid.", confirmButtonColor: "#3B82F6" });
+        Swal.fire({
+          icon: "error",
+          title: "File Kosong",
+          text: "File tidak mengandung data yang valid.",
+          confirmButtonColor: "#3B82F6",
+        });
         setFile(null);
         setIsProcessing(false);
         return;
       }
 
-      const fileHeaders = rows[0].map((h) => (h === null || h === undefined ? "" : String(h).trim()));
-      const dataRows = rows.slice(1).filter((row) => row && row.some((cell) => cell !== null && cell !== undefined && cell !== ""));
+      const fileHeaders = rows[0].map((h) =>
+        h === null || h === undefined ? "" : String(h).trim()
+      );
+      const dataRows = rows
+        .slice(1)
+        .filter(
+          (row) =>
+            row &&
+            row.some(
+              (cell) => cell !== null && cell !== undefined && cell !== ""
+            )
+        );
 
       if (dataRows.length === 0) {
-        Swal.fire({ icon: "warning", title: "Tidak Ada Data", text: "File tidak mengandung data untuk diimport.", confirmButtonColor: "#3B82F6" });
+        Swal.fire({
+          icon: "warning",
+          title: "Tidak Ada Data",
+          text: "File tidak mengandung data untuk diimport.",
+          confirmButtonColor: "#3B82F6",
+        });
         setFile(null);
         setIsProcessing(false);
         return;
@@ -134,7 +186,10 @@ const BulkUploadModal = ({
       const parsedData = dataRows.map((row, index) => {
         const obj = { _rowIndex: index + 2 };
         fileHeaders.forEach((header, i) => {
-          obj[header] = row[i] !== undefined && row[i] !== null ? String(row[i]).trim() : "";
+          obj[header] =
+            row[i] !== undefined && row[i] !== null
+              ? String(row[i]).trim()
+              : "";
         });
         return obj;
       });
@@ -153,11 +208,18 @@ const BulkUploadModal = ({
       Papa.parse(file, {
         skipEmptyLines: true,
         complete: function (results) {
-          processRows(results.data.map((r) => (Array.isArray(r) ? r : Object.values(r))));
+          processRows(
+            results.data.map((r) => (Array.isArray(r) ? r : Object.values(r)))
+          );
         },
         error: function (err) {
           console.error("Papa parse error:", err);
-          Swal.fire({ icon: "error", title: "Parsing Error", text: "Gagal membaca CSV.", confirmButtonColor: "#3B82F6" });
+          Swal.fire({
+            icon: "error",
+            title: "Parsing Error",
+            text: "Gagal membaca CSV.",
+            confirmButtonColor: "#3B82F6",
+          });
           setFile(null);
           setIsProcessing(false);
         },
@@ -177,21 +239,33 @@ const BulkUploadModal = ({
         const rows = [];
         worksheet.eachRow((row) => {
           // row.values is 1-based: [ , col1, col2...]
-          const vals = row.values.slice(1).map((v) => (v === undefined ? "" : v));
+          const vals = row.values
+            .slice(1)
+            .map((v) => (v === undefined ? "" : v));
           rows.push(vals);
         });
 
         processRows(rows);
       } catch (err) {
         console.error("Error parsing xlsx:", err);
-        Swal.fire({ icon: "error", title: "Parsing Error", text: "Gagal membaca file. Pastikan format file benar.", confirmButtonColor: "#3B82F6" });
+        Swal.fire({
+          icon: "error",
+          title: "Parsing Error",
+          text: "Gagal membaca file. Pastikan format file benar.",
+          confirmButtonColor: "#3B82F6",
+        });
         setFile(null);
         setIsProcessing(false);
       }
     };
 
     reader.onerror = () => {
-      Swal.fire({ icon: "error", title: "Error", text: "Gagal membaca file.", confirmButtonColor: "#3B82F6" });
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Gagal membaca file.",
+        confirmButtonColor: "#3B82F6",
+      });
       setFile(null);
       setIsProcessing(false);
     };
@@ -231,7 +305,7 @@ const BulkUploadModal = ({
         </div>
       `,
       showCancelButton: true,
-      confirmButtonText: "Ya, Upload",
+      confirmButtonText: "Upload",
       cancelButtonText: "Batal",
       confirmButtonColor: "#3B82F6",
       cancelButtonColor: "#d33",
@@ -252,11 +326,18 @@ const BulkUploadModal = ({
 
       // If backend returned failed rows, show details
       if (result && Array.isArray(result.failed) && result.failed.length > 0) {
-        const createdCount = typeof result.created === 'number' ? result.created : (result.success ? (previewData.length - result.failed.length) : 0);
+        const createdCount =
+          typeof result.created === "number"
+            ? result.created
+            : result.success
+            ? previewData.length - result.failed.length
+            : 0;
         const failedHtml = `
           <div style="text-align:left">
             <p><strong>${createdCount}</strong> baris berhasil disimpan.</p>
-            <p><strong>${result.failed.length}</strong> baris gagal disimpan:</p>
+            <p><strong>${
+              result.failed.length
+            }</strong> baris gagal disimpan:</p>
             <div style="max-height:260px; overflow:auto; margin-top:8px;">
               <table style="width:100%; border-collapse:collapse; font-size:13px;">
                 <thead>
@@ -267,13 +348,23 @@ const BulkUploadModal = ({
                   </tr>
                 </thead>
                 <tbody>
-                  ${result.failed.map(f => `
+                  ${result.failed
+                    .map(
+                      (f) => `
                     <tr>
-                      <td style="padding:6px; border-bottom:1px solid #f3f4f6; text-align:center;">${f.row ?? '-'}</td>
-                      <td style="padding:6px; border-bottom:1px solid #f3f4f6; text-align:center;">${f.nip ?? '-'}</td>
-                      <td style="padding:6px; border-bottom:1px solid #f3f4f6;">${f.reason ?? '-'}</td>
+                      <td style="padding:6px; border-bottom:1px solid #f3f4f6; text-align:center;">${
+                        f.row ?? "-"
+                      }</td>
+                      <td style="padding:6px; border-bottom:1px solid #f3f4f6; text-align:center;">${
+                        f.nip ?? "-"
+                      }</td>
+                      <td style="padding:6px; border-bottom:1px solid #f3f4f6;">${
+                        f.reason ?? "-"
+                      }</td>
                     </tr>
-                  `).join('')}
+                  `
+                    )
+                    .join("")}
                 </tbody>
               </table>
             </div>
@@ -281,11 +372,11 @@ const BulkUploadModal = ({
         `;
 
         Swal.fire({
-          icon: 'warning',
-          title: 'Upload Selesai (Sebagian)',
+          icon: "warning",
+          title: "Upload Selesai (Sebagian)",
           html: failedHtml,
-          width: '640px',
-          confirmButtonColor: '#3B82F6',
+          width: "640px",
+          confirmButtonColor: "#3B82F6",
         });
       } else {
         Swal.fire({
@@ -365,12 +456,10 @@ const BulkUploadModal = ({
               <div className="flex items-center">
                 <div
                   className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-colors ${
-                    currentStep === 1
-                      ? "text-white"
-                      : "text-white"
+                    currentStep === 1 ? "text-white" : "text-white"
                   }`}
                   style={{
-                    backgroundColor: currentStep === 1 ? "#3B82F6" : "#2fa84f"
+                    backgroundColor: currentStep === 1 ? "#3B82F6" : "#2fa84f",
                   }}
                 >
                   {currentStep === 1 ? "1" : <i className="fas fa-check" />}
@@ -390,8 +479,9 @@ const BulkUploadModal = ({
                 <div
                   className={`h-full rounded-full transition-all duration-500`}
                   style={{
-                    backgroundColor: currentStep === 2 ? "#3B82F6" : "transparent",
-                    width: currentStep === 2 ? "100%" : "0"
+                    backgroundColor:
+                      currentStep === 2 ? "#3B82F6" : "transparent",
+                    width: currentStep === 2 ? "100%" : "0",
                   }}
                 />
               </div>
@@ -404,7 +494,7 @@ const BulkUploadModal = ({
                       : "bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400"
                   }`}
                   style={{
-                    backgroundColor: currentStep === 2 ? "#3B82F6" : undefined
+                    backgroundColor: currentStep === 2 ? "#3B82F6" : undefined,
                   }}
                 >
                   2
@@ -423,13 +513,19 @@ const BulkUploadModal = ({
           </div>
 
           {/* Body */}
-          <div className="p-6 overflow-y-auto" style={{ maxHeight: "calc(90vh - 250px)" }}>
+          <div
+            className="p-6 overflow-y-auto"
+            style={{ maxHeight: "calc(90vh - 250px)" }}
+          >
             {currentStep === 1 && (
               <div className="space-y-6">
                 {/* Download Template Section */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
                   <div className="flex items-start space-x-4">
-                    <div className="rounded-lg p-3" style={{ backgroundColor: "#3B82F6" }}>
+                    <div
+                      className="rounded-lg p-3"
+                      style={{ backgroundColor: "#3B82F6" }}
+                    >
                       <i className="fas fa-download text-white text-2xl" />
                     </div>
                     <div className="flex-1">
@@ -456,7 +552,10 @@ const BulkUploadModal = ({
                 {/* Upload Section */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
                   <div className="flex items-start space-x-4">
-                    <div className="rounded-lg p-3" style={{ backgroundColor: "#3B82F6" }}>
+                    <div
+                      className="rounded-lg p-3"
+                      style={{ backgroundColor: "#3B82F6" }}
+                    >
                       <i className="fas fa-upload text-white text-2xl" />
                     </div>
                     <div className="flex-1">
@@ -488,27 +587,39 @@ const BulkUploadModal = ({
                         >
                           {isProcessing ? (
                             <div className="text-center">
-                              <i className="fas fa-spinner fa-spin text-4xl mb-3" style={{ color: "#3B82F6" }} />
+                              <i
+                                className="fas fa-spinner fa-spin text-4xl mb-3"
+                                style={{ color: "#3B82F6" }}
+                              />
                               <p className="text-gray-600 dark:text-gray-300 font-medium">
                                 Memproses file...
                               </p>
                             </div>
                           ) : file ? (
                             <div className="text-center">
-                              <i className="fas fa-file-excel text-5xl mb-3" style={{ color: "#2fa84f" }} />
+                              <i
+                                className="fas fa-file-excel text-5xl mb-3"
+                                style={{ color: "#2fa84f" }}
+                              />
                               <p className="text-gray-900 dark:text-white font-semibold mb-1">
                                 {file.name}
                               </p>
                               <p className="text-sm text-gray-500 dark:text-gray-400">
                                 {(file.size / 1024).toFixed(2)} KB
                               </p>
-                              <p className="text-xs mt-2" style={{ color: "#3B82F6" }}>
+                              <p
+                                className="text-xs mt-2"
+                                style={{ color: "#3B82F6" }}
+                              >
                                 Klik untuk mengganti file
                               </p>
                             </div>
                           ) : (
                             <div className="text-center">
-                              <i className="fas fa-cloud-upload-alt text-5xl mb-3" style={{ color: "#3B82F6" }} />
+                              <i
+                                className="fas fa-cloud-upload-alt text-5xl mb-3"
+                                style={{ color: "#3B82F6" }}
+                              />
                               <p className="text-gray-900 dark:text-white font-semibold mb-1">
                                 Klik untuk upload file
                               </p>
@@ -529,7 +640,10 @@ const BulkUploadModal = ({
                 {/* Info Section */}
                 <div className="bg-amber-50 dark:bg-amber-900 dark:bg-opacity-20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
                   <div className="flex items-start space-x-3">
-                    <i className="fas fa-info-circle text-xl mt-0.5" style={{ color: "#f39c12" }} />
+                    <i
+                      className="fas fa-info-circle text-xl mt-0.5"
+                      style={{ color: "#f39c12" }}
+                    />
                     <div className="flex-1">
                       <h4 className="font-semibold text-amber-900 dark:text-amber-300 mb-2">
                         Catatan Penting:
@@ -561,10 +675,16 @@ const BulkUploadModal = ({
             {currentStep === 2 && (
               <div className="space-y-4">
                 {/* Summary Card */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border dark:border-gray-600" style={{ borderColor: "#2fa84f" }}>
+                <div
+                  className="bg-white dark:bg-gray-800 rounded-xl p-4 border dark:border-gray-600"
+                  style={{ borderColor: "#2fa84f" }}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="rounded-lg p-2" style={{ backgroundColor: "#2fa84f" }}>
+                      <div
+                        className="rounded-lg p-2"
+                        style={{ backgroundColor: "#2fa84f" }}
+                      >
                         <i className="fas fa-check-circle text-white text-xl" />
                       </div>
                       <div>
@@ -573,12 +693,19 @@ const BulkUploadModal = ({
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-300">
                           {previewData.length} baris data ditemukan •{" "}
-                          {headers.filter(h => h && String(h).trim() !== '').length} kolom
+                          {
+                            headers.filter((h) => h && String(h).trim() !== "")
+                              .length
+                          }{" "}
+                          kolom
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-3xl font-bold" style={{ color: "#2fa84f" }}>
+                      <p
+                        className="text-3xl font-bold"
+                        style={{ color: "#2fa84f" }}
+                      >
                         {previewData.length}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -619,7 +746,11 @@ const BulkUploadModal = ({
                         {previewData.slice(0, 50).map((row, rowIndex) => (
                           <tr
                             key={rowIndex}
-                            className={`${rowIndex % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50' : ''} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
+                            className={`${
+                              rowIndex % 2 === 0
+                                ? "bg-gray-50 dark:bg-gray-700/50"
+                                : ""
+                            } hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
                           >
                             <td className="px-4 py-3 text-center text-gray-500 dark:text-gray-400 font-medium">
                               {rowIndex + 1}
@@ -627,7 +758,9 @@ const BulkUploadModal = ({
                             {headers.map((header, colIndex) => (
                               <td
                                 key={colIndex}
-                                className={`px-4 py-3 ${header !== 'nama' ? 'text-center' : ''} text-gray-900 dark:text-gray-100`}
+                                className={`px-4 py-3 ${
+                                  header !== "nama" ? "text-center" : ""
+                                } text-gray-900 dark:text-gray-100`}
                               >
                                 {row[header] || "-"}
                               </td>
@@ -672,7 +805,7 @@ const BulkUploadModal = ({
                 variant="default"
                 size="lg"
               >
-                Batal
+                <i className="far fa-times-circle mr-2" /> Batal
               </IconButton>
               {currentStep === 2 && (
                 <IconButton

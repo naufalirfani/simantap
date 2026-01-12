@@ -185,7 +185,7 @@ const Instrumen = () => {
       text: `Apakah Anda yakin ingin menghapus instrumen "${instrumenName}"?`,
       showCancelButton: true,
       reverseButtons: true,
-      confirmButtonText: "Ya, Hapus",
+      confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
       confirmButtonColor: "#3B82F6",
       cancelButtonColor: "#d33",
@@ -577,7 +577,7 @@ const Instrumen = () => {
                     size="lg"
                     disabled={submitting}
                   >
-                    <i className="fas fa-times-circle mr-2" />
+                    <i className="far fa-times-circle mr-2" />
                     Batal
                   </IconButton>
                   <IconButton

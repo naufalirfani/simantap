@@ -96,32 +96,37 @@ const InputPenilaian = () => {
             };
 
             Object.entries(existingData.penilaian).forEach(
-              ([storedKey, nilai]) => {
+              ([storedKey, storedVal]) => {
                 const matchedSub = findMatchingSub(storedKey);
                 const canonicalId = matchedSub
                   ? String(matchedSub.id)
                   : storedKey;
 
+                // Support both legacy scalar format and new object format { nilai, hasil }
+                const scalarNilai =
+                  storedVal && typeof storedVal === "object" &&
+                  storedVal.nilai !== undefined
+                    ? storedVal.nilai
+                    : storedVal;
+
                 // Attempt to match an instrumen that belongs to this subindikator and has the same skor
                 const matchedInstrumen = instrumenResult.find((instr) => {
-                  // Try matching instrumen's subindikator reference with canonical sub id or storedKey
                   const instrSubId = String(
-                    instr.subindikator_id ||
-                      instr.subindikator?.id ||
-                      instr.subindikator_id
+                    instr.subindikator_id || instr.subindikator?.id || instr.subindikator_id
                   );
                   return (
                     ((matchedSub && instrSubId === String(matchedSub.id)) ||
                       instrSubId === String(storedKey)) &&
-                    parseFloat(instr.skor) === parseFloat(nilai)
+                    parseFloat(instr.skor) === parseFloat(scalarNilai)
                   );
                 });
 
                 initialData[canonicalId] = {
-                  instrumen_id: matchedInstrumen
-                    ? String(matchedInstrumen.id)
-                    : null,
-                  nilai: parseFloat(nilai),
+                  instrumen_id: matchedInstrumen ? String(matchedInstrumen.id) : null,
+                  nilai:
+                    scalarNilai !== undefined && scalarNilai !== null && scalarNilai !== ""
+                      ? parseFloat(scalarNilai)
+                      : "",
                 };
               }
             );
@@ -339,7 +344,14 @@ const InputPenilaian = () => {
             entry.nilai !== undefined &&
             entry.nilai !== ""
           ) {
-            penilaianObj[sub.id] = parseFloat(entry.nilai);
+            // Include both nilai and computed hasil for each subindikator
+            const nilaiNum = parseFloat(entry.nilai);
+            const hasilStr = calculateResult(sub, nilaiNum, indikator.indikator);
+            const hasilNum = parseFloat(hasilStr);
+            penilaianObj[sub.id] = {
+              nilai: nilaiNum,
+              hasil: Number.isNaN(hasilNum) ? 0 : hasilNum,
+            };
           }
         }
       }
@@ -843,7 +855,7 @@ const InputPenilaian = () => {
                 disabled={submitting}
                 title="Batal"
               >
-                <i className="fas fa-times mr-2" />
+                <i className="far fa-times-circle mr-2" />
                 Batal
               </IconButton>
               <IconButton
