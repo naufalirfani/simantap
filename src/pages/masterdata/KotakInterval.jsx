@@ -8,6 +8,7 @@ import {
 } from "../../services/kotakConfigService";
 import Swal from "sweetalert2";
 import IconButton from "../../components/IconButton";
+import Breadcrumb from "../../components/Breadcrumb";
 
 const KotakInterval = () => {
   const { t } = useSettings();
@@ -271,8 +272,11 @@ const KotakInterval = () => {
   }
 
   return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
+    <div className="p-4 md:p-6 lg:p-8">
+      {/* Breadcrumb */}
+      <Breadcrumb />
+      
+      {/* Page Title */}
       <div className="mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
@@ -547,17 +551,12 @@ const KotakInterval = () => {
                           : "48px",
                     }}
                   >
-                    <ul className="list-disc list-inside space-y-0.5 p-0 m-0">
+                    <ul className="list-disc list-outside pl-4 space-y-0.5 p-0 m-0 text-sm text-gray-700 dark:text-gray-300">
                       {(expandedKotakId === kotak.id
                         ? kotak.rekomendasi
                         : kotak.rekomendasi.slice(0, 2)
                       ).map((rek, idx) => (
-                        <li
-                          key={idx}
-                          className={
-                            expandedKotakId === kotak.id ? "" : "truncate"
-                          }
-                        >
+                        <li key={idx} className="leading-tight">
                           {rek}
                         </li>
                       ))}

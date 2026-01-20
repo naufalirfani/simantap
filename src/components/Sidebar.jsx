@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useSettings } from "../context/SettingsContext";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useRef } from "react";
@@ -13,6 +13,9 @@ const Sidebar = () => {
   const navRef = useRef(null);
   const [navScrollable, setNavScrollable] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const canViewDetail =
+    user && user.nip && user.role !== "Super Admin" && user.role !== "Admin";
 
   // Detect mobile screen
   useEffect(() => {
@@ -115,7 +118,7 @@ const Sidebar = () => {
         {
           path: "/masterdata/penilaian-pegawai",
           label: "Penilaian Pegawai",
-          icon: "fas fa-clipboard-check",
+          icon: "fas fa-star",
         },
       ],
     },
@@ -208,7 +211,15 @@ const Sidebar = () => {
         {/* User Info Card */}
         <div className="p-4 border-b border-gray-200">
           {sidebarExpanded ? (
-            <div className="bg-gray-100 rounded-lg p-3 hover:bg-gray-100 transition-all duration-300">
+            <button
+              type="button"
+              onClick={() => canViewDetail && navigate(`/daftar-talenta/detail/${user?.nip}`)}
+              title={canViewDetail ? "Lihat detail pegawai" : "Profil pengguna"}
+              className={`w-full text-left bg-gray-100 rounded-lg p-3 transition-all duration-300 ${
+                canViewDetail ? "hover:bg-blue-50 cursor-pointer" : "cursor-default"
+              }`}
+              disabled={!canViewDetail}
+            >
               <div className="flex items-center space-x-3">
                 <div className="relative flex-shrink-0">
                   <div className="flex items-center justify-center">
@@ -247,9 +258,17 @@ const Sidebar = () => {
                   </p>
                 </div>
               </div>
-            </div>
+            </button>
           ) : (
-            <div className="relative cursor-pointer">
+            <button
+              type="button"
+              onClick={() => canViewDetail && navigate(`/daftar-talenta/detail/${user?.nip}`)}
+              title={canViewDetail ? "Lihat detail pegawai" : "Profil pengguna"}
+              className={`relative flex items-center justify-center w-full bg-transparent rounded-md p-2 transition-colors duration-200 ${
+                canViewDetail ? "hover:bg-blue-50 cursor-pointer" : "cursor-default"
+              }`}
+              disabled={!canViewDetail}
+            >
               <div className="flex items-center justify-center">
                 {user?.avatar ? (
                   <img
@@ -270,7 +289,7 @@ const Sidebar = () => {
                 </div>
               </div>
               <div className="absolute bottom-0 right-1/2 translate-x-1/2 translate-y-1 w-3 h-3 bg-[#2fa84f] rounded-full border-2 border-white"></div>
-            </div>
+            </button>
           )}
         </div>
 

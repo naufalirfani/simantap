@@ -7,6 +7,7 @@ import {
 } from "../../services/apiService";
 import DataTable from "../../components/DataTable";
 import IconButton from "../../components/IconButton";
+import Breadcrumb from "../../components/Breadcrumb";
 import Swal from "sweetalert2";
 
 const UnitKerja = () => {
@@ -94,8 +95,11 @@ const UnitKerja = () => {
   ];
 
   return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
+    <div className="p-4 md:p-6 lg:p-8">
+      {/* Breadcrumb */}
+      <Breadcrumb />
+      
+      {/* Page Title */}
       <div className="mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">

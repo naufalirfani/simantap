@@ -25,10 +25,7 @@ const DEFAULT_CONFIG = {
       potensialRange: { min: 0, max: 50 },
       kinerjaRange: { min: 0, max: 50 },
       rekomendasi: [
-        'Lakukan evaluasi kinerja mendalam',
-        'Identifikasi akar masalah performa',
-        'Buat program peningkatan kompetensi intensif',
-        'Pertimbangkan rotasi atau penempatan ulang'
+        'Diproses sesuai ketentuan peraturan perundangan'
       ]
     },
     {
@@ -38,10 +35,9 @@ const DEFAULT_CONFIG = {
       potensialRange: { min: 0, max: 50 },
       kinerjaRange: { min: 50, max: 75 },
       rekomendasi: [
-        'Berikan pelatihan untuk meningkatkan potensial',
-        'Sediakan mentoring dari pegawai senior',
-        'Fokus pada pengembangan soft skill',
-        'Monitor progress secara berkala'
+        'Bimbingan kinerja',
+        'Pengembangan kompetensi',
+        'Penempatan yang sesuai'
       ]
     },
     {
@@ -51,10 +47,10 @@ const DEFAULT_CONFIG = {
       potensialRange: { min: 50, max: 75 },
       kinerjaRange: { min: 0, max: 50 },
       rekomendasi: [
-        'Identifikasi hambatan dalam pencapaian kinerja',
-        'Berikan tantangan dan tanggung jawab baru',
-        'Sediakan coaching untuk optimalisasi performa',
-        'Ciptakan lingkungan kerja yang mendukung'
+        'Bimbingan kinerja',
+        'Konseling kinerja',
+        'Pengembangan kompetensi',
+        'Penempatan yang sesuai'
       ]
     },
     {
@@ -64,10 +60,8 @@ const DEFAULT_CONFIG = {
       potensialRange: { min: 0, max: 50 },
       kinerjaRange: { min: 75, max: 100 },
       rekomendasi: [
-        'Pertahankan konsistensi kinerja',
-        'Manfaatkan sebagai mentor bagi pegawai lain',
-        'Berikan apresiasi dan reward berkala',
-        'Libatkan dalam proyek strategis'
+        'Rotasi',
+        'Pengembangan kompetensi'
       ]
     },
     {
@@ -77,10 +71,9 @@ const DEFAULT_CONFIG = {
       potensialRange: { min: 50, max: 75 },
       kinerjaRange: { min: 50, max: 75 },
       rekomendasi: [
-        'Berikan pelatihan kepemimpinan',
-        'Siapkan untuk posisi strategis',
-        'Kembangkan kompetensi teknis lanjutan',
-        'Libatkan dalam decision making'
+        'Penempatan yang sesuai',
+        'Bimbingan kinerja',
+        'Pengembangan kompetensi'
       ]
     },
     {
@@ -90,10 +83,9 @@ const DEFAULT_CONFIG = {
       potensialRange: { min: 75, max: 100 },
       kinerjaRange: { min: 0, max: 50 },
       rekomendasi: [
-        'Investigasi penyebab rendahnya kinerja',
-        'Berikan kesempatan pada area yang sesuai minat',
-        'Sediakan fast-track development program',
-        'Lakukan one-on-one coaching intensif'
+        'Penempatan yang sesuai',
+        'Bimbingan kinerja',
+        'Konseling kinerja'
       ]
     },
     {
@@ -103,10 +95,11 @@ const DEFAULT_CONFIG = {
       potensialRange: { min: 50, max: 75 },
       kinerjaRange: { min: 75, max: 100 },
       rekomendasi: [
-        'Persiapkan untuk posisi kepemimpinan',
-        'Berikan proyek strategis dan menantang',
-        'Sediakan program succession planning',
-        'Pastikan engagement dan retensi tinggi'
+        'Dipertahankan',
+        'Masuk Kelompok Rencana Suksesi Instansi',
+        'Rotasi/Pengayaan jabatan',
+        'Pengembangan kompetensi',
+        'Tugas belajar'
       ]
     },
     {
@@ -116,10 +109,10 @@ const DEFAULT_CONFIG = {
       potensialRange: { min: 75, max: 100 },
       kinerjaRange: { min: 50, max: 75 },
       rekomendasi: [
-        'Accelerated development program',
-        'Exposure ke senior management',
-        'Rotasi ke berbagai fungsi strategis',
-        'Leadership coaching dan mentoring'
+        'Dipertahankan',
+        'Masuk Kelompok Rencana Suksesi Instansi',
+        'Rotasi/Perluasan jabatan',
+        'Bimbingan kinerja'
       ]
     },
     {
@@ -129,11 +122,9 @@ const DEFAULT_CONFIG = {
       potensialRange: { min: 75, max: 100 },
       kinerjaRange: { min: 75, max: 100 },
       rekomendasi: [
-        'Prioritas utama untuk retensi',
-        'Fast-track untuk posisi puncak',
-        'Berikan tanggung jawab strategis maksimal',
-        'Sediakan competitive compensation package',
-        'Libatkan dalam transformasi organisasi'
+        'Dipromosikan dan dipertahankan',
+        'Masuk Kelompok Rencana Suksesi Instansi/Nasional',
+        'Penghargaan'
       ]
     }
   ]

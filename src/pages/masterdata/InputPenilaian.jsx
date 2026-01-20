@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import IconButton from "../../components/IconButton";
 import SearchableSelect from "../../components/SearchableSelect";
+import Breadcrumb from "../../components/Breadcrumb";
 import {
   fetchIndikators,
   fetchInstrumens,
@@ -392,7 +393,17 @@ const InputPenilaian = () => {
 
   return (
     <div className="p-4 md:p-8">
-      {/* Header */}
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: "Dashboard", path: "/", icon: "fas fa-home" },
+          { label: "Masterdata", path: "/masterdata", icon: "fas fa-database" },
+          { label: "Penilaian Pegawai", path: "/masterdata/penilaian-pegawai", icon: "fas fa-star" },
+          { label: "Input Penilaian", path: `/masterdata/input-penilaian/${nip}`, icon: "fas fa-edit" },
+        ]}
+      />
+      
+      {/* Page Title */}
       <div className="mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
@@ -405,7 +416,7 @@ const InputPenilaian = () => {
         </div>
       </div>
       {/* Back Button */}
-      <div className="mb-4">
+      {/* <div className="mb-4">
         <IconButton
           onClick={handleBack}
           variant="secondary"
@@ -414,7 +425,7 @@ const InputPenilaian = () => {
         >
           <i className="fas fa-arrow-left mr-2" /> Kembali
         </IconButton>
-      </div>
+      </div> */}
 
       {/* Profile Card */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6 border border-gray-100 dark:border-gray-700">

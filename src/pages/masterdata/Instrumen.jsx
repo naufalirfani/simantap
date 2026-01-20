@@ -10,6 +10,7 @@ import {
 import Swal from "sweetalert2";
 import IconButton from "../../components/IconButton";
 import SearchableSelect from "../../components/SearchableSelect";
+import Breadcrumb from "../../components/Breadcrumb";
 
 const Instrumen = () => {
   const { t } = useSettings();
@@ -232,8 +233,11 @@ const Instrumen = () => {
   }, [formData.skor]);
 
   return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
+    <div className="p-4 md:p-6 lg:p-8">
+      {/* Breadcrumb */}
+      <Breadcrumb />
+      
+      {/* Page Title */}
       <div className="mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">

@@ -520,7 +520,7 @@ const BulkUploadModal = ({
             {currentStep === 1 && (
               <div className="space-y-6">
                 {/* Download Template Section */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
                   <div className="flex items-start space-x-4">
                     <div
                       className="rounded-lg p-3"
@@ -550,7 +550,7 @@ const BulkUploadModal = ({
                 </div>
 
                 {/* Upload Section */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
                   <div className="flex items-start space-x-4">
                     <div
                       className="rounded-lg p-3"
@@ -579,7 +579,7 @@ const BulkUploadModal = ({
                         />
                         <label
                           htmlFor="bulk-upload-file"
-                          className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                          className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
                             isProcessing
                               ? "border-gray-300 bg-gray-50 cursor-not-allowed"
                               : "border-gray-400 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 hover:border-gray-500"
@@ -638,7 +638,7 @@ const BulkUploadModal = ({
                 </div>
 
                 {/* Info Section */}
-                <div className="bg-amber-50 dark:bg-amber-900 dark:bg-opacity-20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
+                <div className="bg-amber-50 dark:bg-amber-900 dark:bg-opacity-20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
                   <div className="flex items-start space-x-3">
                     <i
                       className="fas fa-info-circle text-xl mt-0.5"
@@ -676,7 +676,7 @@ const BulkUploadModal = ({
               <div className="space-y-4">
                 {/* Summary Card */}
                 <div
-                  className="bg-white dark:bg-gray-800 rounded-xl p-4 border dark:border-gray-600"
+                  className="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-600"
                   style={{ borderColor: "#2fa84f" }}
                 >
                   <div className="flex items-center justify-between">
@@ -716,7 +716,7 @@ const BulkUploadModal = ({
                 </div>
 
                 {/* Preview Table */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                   <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                     <h4 className="font-semibold text-gray-900 dark:text-white">
                       Preview Data

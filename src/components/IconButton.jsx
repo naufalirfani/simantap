@@ -5,7 +5,7 @@ const IconButton = ({ onClick, title, variant = 'default', children, className =
   const sizes = {
     sm: 'px-2 py-1 text-md',
     md: 'px-3 py-1.5 text-md',
-    lg: 'px-6 py-3 text-md',
+    lg: 'px-4 py-2.5 text-md',
   };
   const variants = {
     default: 'bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200',

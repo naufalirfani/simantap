@@ -7,6 +7,7 @@ import {
 } from "../../services/apiService";
 import ServerDataTable from "../../components/ServerDataTable";
 import IconButton from "../../components/IconButton";
+import Breadcrumb from "../../components/Breadcrumb";
 import Swal from "sweetalert2";
 
 const Pegawai = () => {
@@ -138,7 +139,7 @@ const Pegawai = () => {
             <img
               src={item.avatar}
               alt={item.name}
-              className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
               onError={(e) => {
                 e.target.style.display = "none";
                 e.target.nextSibling.style.display = "flex";
@@ -146,7 +147,7 @@ const Pegawai = () => {
             />
           ) : null}
           <div
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm"
             style={{ display: item.avatar ? "none" : "flex" }}
           >
             {item.name?.charAt(0)?.toUpperCase() || "?"}
@@ -218,8 +219,11 @@ const Pegawai = () => {
   ];
 
   return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
+    <div className="p-4 md:p-6 lg:p-8">
+      {/* Breadcrumb */}
+      <Breadcrumb />
+      
+      {/* Page Title */}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
           {t("pegawai")}

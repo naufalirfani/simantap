@@ -49,7 +49,7 @@ function EmployeeListModal({
       {/* Modal with slide-up + scale animation */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div className="w-full max-w-5xl max-h-full bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl sticky top-0">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl bg-white dark:bg-gray-800 sticky top-0 z-10">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
                 {title}
@@ -179,7 +179,7 @@ function EmployeeTableView({
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(meta?.current_page || 1);
-  const [itemsPerPage, setItemsPerPage] = useState(meta?.per_page || 20);
+  const [itemsPerPage, setItemsPerPage] = useState(meta?.per_page || 10);
 
   // Sync current page / per_page when meta changes
   useEffect(() => {
@@ -395,19 +395,35 @@ function EmployeeTableView({
                     <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap top-0 z-10">
                       Unit Kerja
                     </th>
-                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10">
-                      Jenis Jabatan
-                    </th>
-                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10">
-                      Golongan
-                    </th>
+                    {meta?.tabel === "jabatan" && (
+                      <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10">
+                        Golongan
+                      </th>
+                    )}
+                    {meta?.tabel === "kuadran" && (
+                      <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10">
+                        Nilai Potensial
+                      </th>
+                    )}
+                    {meta?.tabel === "kuadran" && (
+                      <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10">
+                        Nilai Kinerja
+                      </th>
+                    )}
+                    {meta?.tabel === "kuadran" && (
+                      <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10">
+                        Nilai Talenta
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {employees.map((e, idx) => (
                     <tr
                       key={idx}
-                      className={`${idx % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50' : ''} align-top border-t border-gray-100 dark:border-gray-700 dark:hover:bg-gray-800`}
+                      className={`${
+                        idx % 2 === 0 ? "bg-gray-50 dark:bg-gray-700/50" : ""
+                      } align-top border-t border-gray-100 dark:border-gray-700 dark:hover:bg-gray-800`}
                     >
                       <td className="py-2 px-3 align-top w-12">
                         <div
@@ -460,12 +476,26 @@ function EmployeeTableView({
                       <td className="py-2 px-3 text-gray-700 dark:text-gray-300 truncate text-md">
                         {e.unitKerja || "-"}
                       </td>
-                      <td className="py-2 px-3 text-gray-700 dark:text-gray-300 truncate text-md">
-                        {e.jenisJabatan || e.unitKerja || "-"}
-                      </td>
-                      <td className="py-2 px-3 text-gray-700 dark:text-gray-300 text-md text-center">
-                        {e.golongan || "-"}
-                      </td>
+                      {meta?.tabel === "jabatan" && (
+                        <td className="py-2 px-3 text-gray-700 dark:text-gray-300 text-md text-center">
+                          {e.golongan || "-"}
+                        </td>
+                      )}
+                      {meta?.tabel === "kuadran" && (
+                        <td className="py-2 px-3 text-gray-800 dark:text-white font-semibold text-md text-center">
+                          {e.potensial ?? "-"}
+                        </td>
+                      )}
+                      {meta?.tabel === "kuadran" && (
+                        <td className="py-2 px-3 text-gray-800 dark:text-white font-semibold text-md text-center">
+                          {e.kinerja ?? "-"}
+                        </td>
+                      )}
+                      {meta?.tabel === "kuadran" && (
+                        <td className="py-2 px-3 text-gray-800 dark:text-white font-semibold text-md text-center">
+                          {(e.potensial ? e.potensial*50/100 : 0) + (e.kinerja ? e.kinerja*50/100 : 0)}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -508,7 +538,9 @@ function EmployeeTableView({
                 {filtered.map((e, idx) => (
                   <tr
                     key={idx}
-                    className={`${idx % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50' : ''} align-top border-t border-gray-100 dark:border-gray-700 dark:hover:bg-gray-800`}
+                    className={`${
+                      idx % 2 === 0 ? "bg-gray-50 dark:bg-gray-700/50" : ""
+                    } align-top border-t border-gray-100 dark:border-gray-700 dark:hover:bg-gray-800`}
                   >
                     <td className="py-2 px-3 align-top">
                       <div className="flex items-center gap-3">

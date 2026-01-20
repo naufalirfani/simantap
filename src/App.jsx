@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import DaftarTalenta from './pages/DaftarTalenta';
+import DetailPegawai from './pages/DetailPegawai';
 import Suksesi from './pages/Suksesi';
 import Pengembangan from './pages/Pengembangan';
 import UnitKerja from './pages/masterdata/UnitKerja';
@@ -39,7 +40,9 @@ function App() {
                       <Routes>
                         <Route path="/" element={<Dashboard />} />
                         <Route path="/daftar-talenta" element={<DaftarTalenta />} />
+                        <Route path="/daftar-talenta/detail/:nip" element={<DetailPegawai />} />
                         <Route path="/suksesi" element={<Suksesi />} />
+                        <Route path="/suksesi/detail/:nip" element={<DetailPegawai />} />
                         <Route path="/pengembangan" element={<Pengembangan />} />
                         <Route path="/masterdata/unit-kerja" element={<UnitKerja />} />
                         <Route path="/masterdata/jabatan" element={<Jabatan />} />

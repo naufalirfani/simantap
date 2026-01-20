@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import IconButton from "../../components/IconButton";
+import Breadcrumb from "../../components/Breadcrumb";
 import { fetchStandarKompetensiMSK } from "../../services/apiService";
 import Swal from "sweetalert2";
 
@@ -160,8 +161,11 @@ const StandarKompetensiMSK = () => {
   }, []);
 
   return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
+    <div className="p-4 md:p-6 lg:p-8">
+      {/* Breadcrumb */}
+      <Breadcrumb />
+      
+      {/* Page Title */}
       <div className="mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
@@ -172,7 +176,7 @@ const StandarKompetensiMSK = () => {
           </p>
         </div>
       </div>
-      <div className="mb-4">
+      {/* <div className="mb-4">
         <IconButton
           onClick={handleBack}
           variant="secondary"
@@ -181,7 +185,7 @@ const StandarKompetensiMSK = () => {
         >
           <i className="fas fa-arrow-left mr-2" /> Kembali
         </IconButton>
-      </div>
+      </div> */}
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6 border border-gray-100 dark:border-gray-700">
         <div className="bg-[#3B82F6] px-6 py-4">

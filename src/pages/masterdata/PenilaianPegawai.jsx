@@ -5,6 +5,7 @@ import {
   fetchPegawaiList,
   fetchPetaJabatan,
   syncPegawai,
+  syncPenilaian,
   fetchSubIndikators,
   bulkUploadPenilaian,
   fetchStatistik,
@@ -12,6 +13,7 @@ import {
 import Swal from "sweetalert2";
 import ServerDataTable from "../../components/ServerDataTable";
 import IconButton from "../../components/IconButton";
+import Breadcrumb from "../../components/Breadcrumb";
 import BulkUploadModal from "../../components/BulkUploadModal";
 
 const PenilaianPegawai = () => {
@@ -24,6 +26,7 @@ const PenilaianPegawai = () => {
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingPenilaian, setIsSyncingPenilaian] = useState(false);
   const [subIndikators, setSubIndikators] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -148,6 +151,44 @@ const PenilaianPegawai = () => {
     }
   };
 
+  const handleSyncPenilaian = async () => {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Sinkronisasi Penilaian",
+      text: "Sinkronisasi akan mengambil data penilaian terbaru dari layanan. Lanjutkan?",
+      showCancelButton: true,
+      confirmButtonText: "Ya",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#3B82F6",
+      cancelButtonColor: "#d33",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsSyncingPenilaian(true);
+      await syncPenilaian();
+      setRefreshKey((k) => k + 1);
+      Swal.fire({
+        icon: "success",
+        title: "Sukses",
+        text: "Sinkronisasi penilaian selesai",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.message || "Sinkronisasi penilaian gagal",
+        confirmButtonColor: "#3B82F6",
+      });
+    } finally {
+      setIsSyncingPenilaian(false);
+    }
+  };
+
   // Memoize fetch function to prevent unnecessary re-renders
   const fetchData = useCallback(async (params) => {
     return await fetchPegawaiList({ ...params, withPenilaian: true });
@@ -190,7 +231,7 @@ const PenilaianPegawai = () => {
             <img
               src={item.avatar}
               alt={item.nama}
-              className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
               onError={(e) => {
                 e.target.style.display = "none";
                 e.target.nextSibling.style.display = "flex";
@@ -198,7 +239,7 @@ const PenilaianPegawai = () => {
             />
           ) : null}
           <div
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm"
             style={{ display: item.avatar ? "none" : "flex" }}
           >
             {item.nama?.charAt(0)?.toUpperCase() || "?"}
@@ -313,8 +354,11 @@ const PenilaianPegawai = () => {
   ];
 
   return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
+    <div className="p-4 md:p-6 lg:p-8">
+      {/* Breadcrumb */}
+      <Breadcrumb />
+      
+      {/* Page Title */}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
           Penilaian Pegawai
@@ -339,6 +383,20 @@ const PenilaianPegawai = () => {
             <i className="fas fa-file-import mr-2" />
           )}
           Import Data
+        </IconButton>
+        <IconButton
+          onClick={handleSyncPenilaian}
+          variant="primary"
+          size="lg"
+          disabled={isSyncingPenilaian}
+          title="Sinkronisasi Penilaian"
+        >
+          {isSyncingPenilaian ? (
+            <i className="fas fa-spinner fa-spin mr-2" />
+          ) : (
+            <i className="fas fa-sync mr-2" />
+          )}
+          Sinkronisasi Penilaian
         </IconButton>
         <IconButton
           onClick={handleSync}

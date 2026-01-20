@@ -70,12 +70,15 @@ const getValidToken = async () => {
  */
 export const fetchPetaJabatan = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/peta-jabatan?with_pagination=false`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/peta-jabatan?with_pagination=false`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch peta jabatan");
@@ -89,6 +92,68 @@ export const fetchPetaJabatan = async () => {
     return result.data || [];
   } catch (error) {
     console.error("Fetch peta jabatan error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch peta jabatan as hierarchical tree (by unit kerja)
+ */
+export const fetchPetaJabatanTree = async () => {
+  try {
+    const base = API_BASE_URL || "http://192.168.0.111:8000";
+    const url = `${base}/api/peta-jabatan/tree-by-unit-kerja`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(result?.message || "Failed to fetch peta jabatan tree");
+    }
+
+    if (!result || result.success === false) {
+      throw new Error(result?.message || "Invalid peta jabatan tree response");
+    }
+
+    return result.data || [];
+  } catch (error) {
+    console.error("fetchPetaJabatanTree error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch peta jabatan kosong data for succession planning
+ */
+export const fetchPetaJabatanKosong = async () => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/peta-jabatan?with_pagination=false&jabatan_kosong=true`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch peta jabatan kosong");
+    }
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to fetch peta jabatan kosong");
+    }
+
+    return result.data || [];
+  } catch (error) {
+    console.error("Fetch peta jabatan kosong error:", error);
     throw error;
   }
 };
@@ -147,8 +212,10 @@ export const fetchPegawai = async (params = {}) => {
     // Add filter params
     if (params.unit_organisasi_name)
       queryParams.append("unit_organisasi_name", params.unit_organisasi_name);
-    if (params.jabatan_name) queryParams.append("jabatan_name", params.jabatan_name);
-    if (params.jenis_jabatan) queryParams.append("jenis_jabatan", params.jenis_jabatan);
+    if (params.jabatan_name)
+      queryParams.append("jabatan_name", params.jabatan_name);
+    if (params.jenis_jabatan)
+      queryParams.append("jenis_jabatan", params.jenis_jabatan);
     if (params.golongan) queryParams.append("golongan", params.golongan);
 
     // Add sort params
@@ -183,24 +250,59 @@ export const fetchPegawai = async (params = {}) => {
 /**
  * Fetch single pegawai by NIP from main API
  */
-export const fetchPegawaiByNip = async (nip) => {
+export const fetchPegawaiByNip = async (nip, with_penilaian = false) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/pegawai/${nip}`, {
+    const base = API_BASE_URL || "http://192.168.0.111:8000";
+    const params = new URLSearchParams();
+    if (with_penilaian) params.append("with_penilaian", "true");
+
+    const url = `${base}/api/pegawai/${nip}${
+      params.toString() ? "?" + params.toString() : ""
+    }`;
+
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
     });
 
-    if (!response.ok) {
-      const result = await response.json().catch(() => null);
-      throw new Error(result?.message || "Failed to fetch pegawai");
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to fetch pegawai by NIP");
     }
 
-    const result = await response.json().catch(() => null);
-    return (result && (result.data || result)) || null;
+    return result.data || [];
   } catch (error) {
     console.error("fetchPegawaiByNip error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch rekomendasi pegawai for succession planning
+ */
+export const fetchRekomendasiPegawai = async (petaJabatanId, isRotasi = false) => {
+  try {
+    const base = API_BASE_URL || "http://192.168.0.111:8000";
+    const params = isRotasi ? "?retensi=true" : "";
+    const url = `${base}/api/pegawai/rekomendasi/${petaJabatanId}${params}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Failed to fetch rekomendasi pegawai");
+    }
+
+    return result.data || [];
+  } catch (error) {
+    console.error("fetchRekomendasiPegawai error:", error);
     throw error;
   }
 };
@@ -269,7 +371,15 @@ export const fetchStatistik = async () => {
  * Fetch pegawai list with filter key, pagination and optional search query
  * Returns { data: [...], meta: { current_page, per_page, last_page, total } }
  */
-export const fetchPegawaiList = async ({ filter, kuadran, page = 1, per_page = 20, q = "", with_penilaian = false, with_pagination = true } = {}) => {
+export const fetchPegawaiList = async ({
+  filter,
+  kuadran,
+  page = 1,
+  per_page = 20,
+  q = "",
+  with_penilaian = false,
+  with_pagination = true,
+} = {}) => {
   try {
     const base = API_BASE_URL || "http://192.168.0.111:8000";
     const params = new URLSearchParams();
@@ -281,7 +391,9 @@ export const fetchPegawaiList = async ({ filter, kuadran, page = 1, per_page = 2
     if (per_page) params.append("per_page", per_page);
     if (q) params.append("q", q);
 
-    const url = `${base}/api/pegawai${params.toString() ? "?" + params.toString() : ""}`;
+    const url = `${base}/api/pegawai${
+      params.toString() ? "?" + params.toString() : ""
+    }`;
 
     const response = await fetch(url, {
       method: "GET",
@@ -344,16 +456,13 @@ export const createIndikator = async (data) => {
  */
 export const updateIndikator = async (id, data) => {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/indikators/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/indikators/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
 
     const result = await response.json();
     if (!response.ok) {
@@ -372,15 +481,12 @@ export const updateIndikator = async (id, data) => {
  */
 export const deleteIndikator = async (id) => {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/indikators/${id}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/indikators/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     const result = await response.json();
     if (!response.ok) {
@@ -399,16 +505,13 @@ export const deleteIndikator = async (id) => {
  */
 export const createSubIndikator = async (data) => {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/subindikators`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/subindikators`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
 
     if (!response.ok) {
       throw new Error("Failed to create subindikator");
@@ -431,16 +534,13 @@ export const createSubIndikator = async (data) => {
  */
 export const updateSubIndikator = async (id, data) => {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/subindikators/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/subindikators/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
 
     if (!response.ok) {
       throw new Error("Failed to update subindikator");
@@ -463,15 +563,12 @@ export const updateSubIndikator = async (id, data) => {
  */
 export const deleteSubIndikator = async (id) => {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/subindikators/${id}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/subindikators/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     if (!response.ok) {
       throw new Error("Failed to delete subindikator");
@@ -495,27 +592,34 @@ export const deleteSubIndikator = async (id) => {
  */
 export const bulkUpdateSubBobot = async (subindikators) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/subindikators/bulk-bobot`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ subindikators }),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/subindikators/bulk-bobot`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ subindikators }),
+      }
+    );
 
     const result = await response.json().catch(() => null);
 
     if (!response.ok) {
-      throw new Error(result?.message || 'Failed to bulk update subindikator bobot');
+      throw new Error(
+        result?.message || "Failed to bulk update subindikator bobot"
+      );
     }
 
     if (result && result.success === false) {
-      throw new Error(result.message || 'Failed to bulk update subindikator bobot');
+      throw new Error(
+        result.message || "Failed to bulk update subindikator bobot"
+      );
     }
 
     return result;
   } catch (error) {
-    console.error('Bulk update subindikator bobot error:', error);
+    console.error("Bulk update subindikator bobot error:", error);
     throw error;
   }
 };
@@ -526,24 +630,24 @@ export const bulkUpdateSubBobot = async (subindikators) => {
 export const fetchSubIndikators = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/subindikators`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch subindikators');
+      throw new Error("Failed to fetch subindikators");
     }
 
     const result = await response.json().catch(() => null);
     if (!result || result.success === false) {
-      throw new Error(result?.message || 'Invalid subindikator response');
+      throw new Error(result?.message || "Invalid subindikator response");
     }
 
     return result.data || [];
   } catch (error) {
-    console.error('fetchSubIndikators error:', error);
+    console.error("fetchSubIndikators error:", error);
     throw error;
   }
 };
@@ -560,16 +664,16 @@ export const bulkUploadPenilaian = async (payload) => {
     let body = null;
     if (Array.isArray(payload)) {
       body = { penilaians: payload };
-    } else if (payload && typeof payload === 'object') {
+    } else if (payload && typeof payload === "object") {
       body = payload;
     } else {
-      throw new Error('Invalid payload for bulkUploadPenilaian');
+      throw new Error("Invalid payload for bulkUploadPenilaian");
     }
 
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });
@@ -577,12 +681,12 @@ export const bulkUploadPenilaian = async (payload) => {
     const result = await response.json().catch(() => null);
 
     if (!response.ok) {
-      throw new Error(result?.message || 'Failed to upload penilaian bulk');
+      throw new Error(result?.message || "Failed to upload penilaian bulk");
     }
 
     return result;
   } catch (error) {
-    console.error('bulkUploadPenilaian error:', error);
+    console.error("bulkUploadPenilaian error:", error);
     throw error;
   }
 };
@@ -591,28 +695,32 @@ export const bulkUploadPenilaian = async (payload) => {
  * Fetch standar kompetensi MSK
  * Endpoint: VITE_API_BASE_URL/api/standar-kompetensi-msk
  */
-export const fetchStandarKompetensiMSK = async () => {
+export const fetchStandarKompetensiMSK = async (jenisJabatanId = null) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/standar-kompetensi-msk`, {
-      method: 'GET',
+    const url = new URL(`${API_BASE_URL}/api/standar-kompetensi-msk`);
+    if (jenisJabatanId)
+      url.searchParams.append("jenis_jabatan_id", jenisJabatanId);
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch standar kompetensi MSK');
+      throw new Error("Failed to fetch standar kompetensi MSK");
     }
 
     const result = await response.json().catch(() => null);
     if (!result) {
-      throw new Error('Invalid standar kompetensi MSK response');
+      throw new Error("Invalid standar kompetensi MSK response");
     }
 
     // Return the data array, handling both { data: [...] } and [...] formats
     return result.data || result;
   } catch (error) {
-    console.error('fetchStandarKompetensiMSK error:', error);
+    console.error("fetchStandarKompetensiMSK error:", error);
     throw error;
   }
 };
@@ -736,32 +844,32 @@ export const deleteInstrumen = async (id) => {
   }
 };
 
-  /**
-   * Trigger sync for peta jabatan on the remote service
-   */
-  export const syncPetaJabatan = async () => {
-    try {
-      const token = await getValidToken();
+/**
+ * Trigger sync for peta jabatan on the remote service
+ */
+export const syncPetaJabatan = async () => {
+  try {
+    const token = await getValidToken();
 
-      const response = await fetch(`${API_BASE_URL}/api/peta-jabatan/sync`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+    const response = await fetch(`${API_BASE_URL}/api/peta-jabatan/sync`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-      if (!response.ok) {
-        const errResp = await response.json().catch(() => null);
-        throw new Error(errResp?.message || 'Failed to sync peta jabatan');
-      }
-
-      return await response.json().catch(() => ({}));
-    } catch (error) {
-      console.error('Sync peta jabatan error:', error);
-      throw error;
+    if (!response.ok) {
+      const errResp = await response.json().catch(() => null);
+      throw new Error(errResp?.message || "Failed to sync peta jabatan");
     }
-  };
+
+    return await response.json().catch(() => ({}));
+  } catch (error) {
+    console.error("Sync peta jabatan error:", error);
+    throw error;
+  }
+};
 
 /**
  * Trigger sync for pegawai on the remote service
@@ -770,20 +878,44 @@ export const syncPegawai = async () => {
   try {
     // This endpoint uses the same API base URL from the main service
     const response = await fetch(`${API_BASE_URL}/api/pegawai/sync`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
       const errResp = await response.json().catch(() => null);
-      throw new Error(errResp?.message || 'Failed to sync pegawai');
+      throw new Error(errResp?.message || "Failed to sync pegawai");
     }
 
     return await response.json().catch(() => ({}));
   } catch (error) {
-    console.error('Sync pegawai error:', error);
+    console.error("Sync pegawai error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Trigger sync for penilaian on the remote service
+ */
+export const syncPenilaian = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/penilaians/sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errResp = await response.json().catch(() => null);
+      throw new Error(errResp?.message || "Failed to sync penilaian");
+    }
+
+    return await response.json().catch(() => ({}));
+  } catch (error) {
+    console.error("Sync penilaian error:", error);
     throw error;
   }
 };

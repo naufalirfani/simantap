@@ -20,7 +20,14 @@ import {
 } from "chart.js";
 import EmployeeCountBox from "../components/EmployeeCountBox";
 import EmployeeListModal from "../components/EmployeeListModal";
-import { fetchStatistik, fetchPegawaiList } from "../services/apiService";
+import Breadcrumb from "../components/Breadcrumb";
+import IconButton from "../components/IconButton";
+import SearchableSelect from "../components/SearchableSelect";
+import {
+  fetchStatistik,
+  fetchPegawaiList,
+  fetchPetaJabatanTree,
+} from "../services/apiService";
 import {
   loadKotakConfig,
   computeQuadrantDynamic,
@@ -239,61 +246,73 @@ const Dashboard = () => {
           name: "Jabatan Pimpinan Tinggi Madya",
           count: stats.total_jabatan_pimpinan_tinggi_madya || 0,
           filterKey: "jabatan_pimpinan_tinggi_madya",
+          key: "JPT Madya",
         },
         {
           name: "Jabatan Pimpinan Tinggi Pratama",
           count: stats.total_jabatan_pimpinan_tinggi_pratama || 0,
           filterKey: "jabatan_pimpinan_tinggi_pratama",
+          key: "JPT Pratama",
         },
         {
           name: "Jabatan Administrator",
           count: stats.total_jabatan_administrator || 0,
           filterKey: "jabatan_administrator",
+          key: "Jabatan Administrator",
         },
         {
           name: "Jabatan Pengawas",
           count: stats.total_jabatan_pengawas || 0,
           filterKey: "jabatan_pengawas",
+          key: "Jabatan Pengawas",
         },
         {
           name: "Jabatan Fungsional Utama",
           count: stats.total_fungsional_utama || 0,
           filterKey: "fungsional_utama",
+          key: "JF Utama",
         },
         {
           name: "Jabatan Fungsional Madya",
           count: stats.total_fungsional_madya || 0,
           filterKey: "fungsional_madya",
+          key: "JF Madya",
         },
         {
           name: "Jabatan Fungsional Muda",
           count: stats.total_fungsional_muda || 0,
           filterKey: "fungsional_muda",
+          key: "JF Muda",
         },
         {
           name: "Jabatan Fungsional Pertama",
           count: stats.total_fungsional_pertama || 0,
           filterKey: "fungsional_pertama",
+          key: "JF Pertama",
         },
         {
           name: "Jabatan Fungsional Penyelia",
           count: stats.total_fungsional_penyelia || 0,
           filterKey: "fungsional_penyelia",
+          key: "JF Penyelia",
         },
         {
           name: "Jabatan Fungsional Mahir",
           count: stats.total_fungsional_mahir || 0,
           filterKey: "fungsional_mahir",
+          key: "JF Mahir",
         },
         {
           name: "Jabatan Fungsional Terampil",
           count: stats.total_fungsional_terampil || 0,
           filterKey: "fungsional_terampil",
+          key: "JF Terampil",
         },
         {
           name: "Jabatan Pelaksana",
           count: stats.total_pelaksana || 0,
           filterKey: "pelaksana",
+          key: "Jabatan Pelaksana",
         },
       ]
     : [
@@ -322,6 +341,19 @@ const Dashboard = () => {
   const [empFilter, setEmpFilter] = useState(null);
   const [empKuadran, setEmpKuadran] = useState(null);
 
+  // Filter states untuk Unit Kerja dan Jenis Jabatan
+  const [selectedUnitKerja, setSelectedUnitKerja] = useState("");
+  const [selectedJenisJabatan, setSelectedJenisJabatan] = useState("");
+  const [unitKerjaList, setUnitKerjaList] = useState([]);
+  const [unitTree, setUnitTree] = useState([]);
+  const [unitOptions, setUnitOptions] = useState([]);
+  const [jenisJabatanList, setJenisJabatanList] = useState([]);
+  const unitMapsRef = useRef({ nameToId: {}, parentMap: {} });
+
+  // Load pegawai (with penilaian) dari API untuk chart 9 Kotak
+  const [quadrantData, setQuadrantData] = useState([]);
+  const [quadrantLoading, setQuadrantLoading] = useState(true);
+
   const loadEmployees = useCallback(
     async ({
       filter,
@@ -334,31 +366,66 @@ const Dashboard = () => {
         setEmpLoading(true);
         setEmpEmployees([]);
         setEmpMeta(null);
-
+        
         if (kuadran != null) {
           const kotakId = Number(kuadran);
-          // prefer computedQuadrantData; if not available yet, fetch full penilaian list
-          let sourceData = computedQuadrantData;
+          // use quadrantData and recompute quadrant
+          let sourceData = quadrantData.map((item) => ({
+            ...item,
+            quadrant: computeQuadrant(item.potensial, item.kinerja),
+          }));
+          
           if (!sourceData || sourceData.length === 0) {
             try {
-              const resAll = await fetchPegawaiList({ with_penilaian: true, with_pagination: false });
+              const resAll = await fetchPegawaiList({
+                with_penilaian: true,
+                with_pagination: false,
+              });
               sourceData = (resAll.data || []).map((it) => ({
-                name: (it.nama || it.name || "").toString().replace(/^\-\s*/, ""),
+                name: (it.nama || it.name || "")
+                  .toString()
+                  .replace(/^\-\s*/, ""),
                 nip: it.nip || it.NIP || "",
                 jabatan: it.jabatan || it.nama_jabatan || "",
                 unitKerja: it.unit_kerja || it.unitKerja || "",
+                jenisJabatan: it.jenis_jabatan || it.jenisJabatan || "",
                 potensial: it.nilai_potensial ?? null,
                 kinerja: it.nilai_kinerja ?? null,
-                quadrant: computeQuadrant(it.nilai_potensial ?? null, it.nilai_kinerja ?? null),
+                quadrant: computeQuadrant(
+                  it.nilai_potensial ?? null,
+                  it.nilai_kinerja ?? null
+                ),
                 avatar: it.avatar || null,
                 raw: it,
               }));
+              setQuadrantData(sourceData);
             } catch (e) {
               sourceData = [];
             }
           }
-          
-          const filtered = (sourceData || []).filter((it) => it.quadrant === kotakId);
+
+          const withUnitIds = (sourceData || []).map((it) => ({
+            ...it,
+            unitId: unitMapsRef.current.nameToId?.[it.unitKerja] || null,
+          }));
+
+          const filtered = withUnitIds.filter((it) => {
+            // Filter by quadrant
+            if (it.quadrant !== kotakId) return false;
+            
+            // Filter by Unit Kerja (with parent-child logic)
+            if (selectedUnitKerja) {
+              const pegawaiUKVal = it.unitId || it.unitKerja || "";
+              if (!isUnitKerjaMatch(pegawaiUKVal, selectedUnitKerja)) return false;
+            }
+            
+            // Filter by Jenis Jabatan
+            if (selectedJenisJabatan && it.jenisJabatan !== selectedJenisJabatan) {
+              return false;
+            }
+            
+            return true;
+          });
           const qnorm = (q || "").toString().trim().toLowerCase();
           const searched = qnorm
             ? filtered.filter((it) => {
@@ -374,6 +441,7 @@ const Dashboard = () => {
           const current_page = Math.min(Math.max(1, page), last_page);
           const start = (current_page - 1) * per_page;
           const paged = searched.slice(start, start + per_page);
+          const tabel = "kuadran";
 
           const mapped = paged.map((it) => ({
             name: it.name || "",
@@ -389,7 +457,7 @@ const Dashboard = () => {
           }));
 
           setEmpEmployees(mapped);
-          setEmpMeta({ current_page, per_page, last_page, total });
+          setEmpMeta({ current_page, per_page, last_page, total, tabel });
           return;
         }
 
@@ -408,7 +476,7 @@ const Dashboard = () => {
           avatar: it.avatar || null,
         }));
         setEmpEmployees(mapped);
-        setEmpMeta(res.meta || null);
+        setEmpMeta(res.meta ? { ...res.meta, tabel: "jabatan" } : null);
       } catch (err) {
         console.error("loadEmployees error:", err);
         setEmpEmployees([]);
@@ -417,7 +485,7 @@ const Dashboard = () => {
         setEmpLoading(false);
       }
     },
-    []
+    [selectedUnitKerja, selectedJenisJabatan, quadrantData]
   );
 
   const handleJobTypeClick = async (item) => {
@@ -427,12 +495,6 @@ const Dashboard = () => {
     setEmpMeta(null);
     setEmpFilter(filter);
     setEmpKuadran(null);
-
-    if (filter) {
-      // await server load so modal mounts with meta/employees already present
-      await loadEmployees({ filter, q: "", page: 1, per_page: 10 });
-    }
-
     setModalState({
       isOpen: true,
       quadrant: null,
@@ -440,42 +502,80 @@ const Dashboard = () => {
       title: item.name,
       color: POINT_COLOR,
     });
+
+    if (filter) {
+      // await server load so modal mounts with meta/employees already present
+      loadEmployees({ filter, q: "", page: 1, per_page: 10 });
+    }
   };
 
   const handleModalSearch = useCallback(
     (q, page = 1, per_page = 10) => {
-      // If empKuadran is set, perform frontend search/pagination
-      if (empKuadran != null) {
-        loadEmployees({ kuadran: empKuadran, q: q || "", page, per_page });
-        return;
-      }
+      if (!empKuadran) return;
+      loadEmployees({ kuadran: empKuadran, q: q || "", page, per_page });
+
       if (!empFilter) return;
       loadEmployees({ filter: empFilter, q: q || "", page, per_page });
     },
     [empFilter, empKuadran, loadEmployees]
   );
 
-  // Load pegawai (with penilaian) dari API untuk chart 9 Kotak
-  const [quadrantData, setQuadrantData] = useState([]);
-  const [quadrantLoading, setQuadrantLoading] = useState(true);
-
   useEffect(() => {
     let mounted = true;
     setQuadrantLoading(true);
     fetchPegawaiList({ with_penilaian: true, with_pagination: false })
-      .then((res) => {
+      .then(async (res) => {
         if (!mounted) return;
         const mapped = (res.data || []).map((it) => ({
           name: (it.nama || it.name || "").toString().replace(/^\-\s*/, ""),
           nip: it.nip || it.NIP || "",
           jabatan: it.jabatan || it.nama_jabatan || "",
           unitKerja: it.unit_kerja || it.unitKerja || "",
+          jenisJabatan: it.jenis_jabatan || it.jenisJabatan || "",
           potensial: it.nilai_potensial ?? null,
           kinerja: it.nilai_kinerja ?? null,
           avatar: it.avatar || null,
           raw: it,
         }));
-        setQuadrantData(mapped);
+        // Also fetch unit tree to build unit options + maps, then augment employees with unitId
+        try {
+          const tree = await fetchPetaJabatanTree();
+          setUnitTree(tree || []);
+          const flat = [];
+          const nameToId = {};
+          const parentMap = {};
+
+          const walk = (nodes, parent = null) => {
+            (nodes || []).forEach((n) => {
+              flat.push(n);
+              if (n.unit_kerja) nameToId[n.unit_kerja] = n.id;
+              parentMap[n.id] = n.parent_id || parent || null;
+              if (n.children && n.children.length) walk(n.children, n.id);
+            });
+          };
+
+          walk(tree || []);
+
+          unitMapsRef.current = { nameToId, parentMap };
+          setUnitOptions(flat.map((n) => ({ value: n.id, label: n.unit_kerja })));
+          // keep backwards-compatible list of names as well (if needed elsewhere)
+          setUnitKerjaList(flat.map((n) => n.unit_kerja).sort());
+
+          const mappedWithUnitId = mapped.map((m) => ({
+            ...m,
+            unitId: nameToId[m.unitKerja] || null,
+          }));
+          setQuadrantData(mappedWithUnitId);
+        } catch (e) {
+          console.error("Failed loading unit tree:", e);
+          // fallback: still set quadrant data without unitId
+          const mappedWithUnitId = mapped.map((m) => ({ ...m, unitId: null }));
+          setQuadrantData(mappedWithUnitId);
+        }
+
+        // Extract unique jenis jabatan for filters
+        const uniqueJenisJabatan = [...new Set(mapped.map((p) => p.jenisJabatan).filter(Boolean))];
+        setJenisJabatanList(uniqueJenisJabatan.sort());
       })
       .catch((err) => {
         console.error("Error loading quadrant data:", err);
@@ -494,11 +594,67 @@ const Dashboard = () => {
     return computeQuadrantDynamic(potensial, kinerja);
   };
 
+  // Fungsi helper untuk cek parent-child unit kerja
+  const isUnitKerjaMatch = (pegawaiUnitKerja, filterUnitKerja) => {
+    // filterUnitKerja is expected to be a unit id (string). pegawaiUnitKerja may be id or name.
+    if (!filterUnitKerja) return true;
+    if (!pegawaiUnitKerja) return false;
+
+    const { nameToId, parentMap } = unitMapsRef.current || {};
+
+    // If pegawaiUnitKerja is an id, check ancestry using parentMap
+    if (parentMap && typeof pegawaiUnitKerja === "string" && parentMap[pegawaiUnitKerja]) {
+      let cur = pegawaiUnitKerja;
+      while (cur) {
+        if (cur === filterUnitKerja) return true;
+        cur = parentMap[cur];
+      }
+      return false;
+    }
+
+    // If pegawaiUnitKerja is a name (legacy), try map to id first
+    const unitId = nameToId ? nameToId[pegawaiUnitKerja] : null;
+    if (unitId) {
+      let cur = unitId;
+      while (cur) {
+        if (cur === filterUnitKerja) return true;
+        cur = parentMap[cur];
+      }
+      return false;
+    }
+
+    // Fallback to string-based parent-child detection
+    if (pegawaiUnitKerja === filterUnitKerja) return true;
+    if (pegawaiUnitKerja.startsWith(filterUnitKerja + " -") ||
+        pegawaiUnitKerja.startsWith(filterUnitKerja + ",") ||
+        pegawaiUnitKerja.includes(`${filterUnitKerja} -`) ||
+        pegawaiUnitKerja.includes(`${filterUnitKerja},`)) {
+      return true;
+    }
+
+    return false;
+  };
+
   // Buat data baru dengan Kotak yang dihitung
-  const computedQuadrantData = quadrantData.map((item) => ({
+  const computedQuadrantDataFull = quadrantData.map((item) => ({
     ...item,
     quadrant: computeQuadrant(item.potensial, item.kinerja),
   }));
+
+  // Apply filters
+  const computedQuadrantData = computedQuadrantDataFull.filter((item) => {
+    // Filter by Unit Kerja (with parent-child logic)
+    if (selectedUnitKerja && !isUnitKerjaMatch(item.unitId || item.unitKerja, selectedUnitKerja)) {
+      return false;
+    }
+    
+    // Filter by Jenis Jabatan
+    if (selectedJenisJabatan && item.jenisJabatan !== selectedJenisJabatan) {
+      return false;
+    }
+    
+    return true;
+  });
 
   // Hitung jumlah data per Kotak (1..9) berdasarkan data yang dihitung
   const quadrantCounts = computedQuadrantData.reduce((acc, item) => {
@@ -705,8 +861,9 @@ const Dashboard = () => {
             afterLabel: (item) => {
               const data = item.raw || item;
               return [
-                `Potensial: ${data.x}`,
-                `Kinerja: ${data.y}`,
+                `Nilai Potensial: ${data.x}`,
+                `Nilai Kinerja: ${data.y}`,
+                `Nilai Talenta: ${(data.x*50/100) + (data.y*50/100)}`,
                 `Kotak: ${data.quadrant}`,
                 "",
               ];
@@ -789,7 +946,10 @@ const Dashboard = () => {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      {/* Header */}
+      {/* Breadcrumb */}
+      <Breadcrumb />
+      
+      {/* Page Title */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
           {t("dashboard")}
@@ -979,6 +1139,74 @@ const Dashboard = () => {
         <p className="text-md text-gray-600 dark:text-gray-400 mb-4">
           Pemetaan posisi pegawai berdasarkan nilai potensial dan kinerja
         </p>
+        
+        {/* Filter Section */}
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+          <h3 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+            <i className="fas fa-filter mr-2 text-[#3B82F6]" aria-hidden="true"></i>
+            Filter Data
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Filter Unit Kerja */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Unit Kerja
+              </label>
+              <SearchableSelect
+                value={selectedUnitKerja}
+                onChange={(value) => setSelectedUnitKerja(value)}
+                options={[
+                  { value: "", label: "Semua Unit Kerja" },
+                  ...unitOptions
+                ]}
+                placeholder="Pilih Unit Kerja..."
+                label="Unit Kerja"
+              />
+            </div>
+            
+            {/* Filter Jenis Jabatan */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Jenis Jabatan
+              </label>
+              <SearchableSelect
+                value={selectedJenisJabatan}
+                onChange={(value) => setSelectedJenisJabatan(value)}
+                options={[
+                  { value: "", label: "Semua Jenis Jabatan" },
+                  ...jobTypeData.map((j) => {
+                    const match = jenisJabatanList.find(
+                      (jj) => j.key === jj
+                    );
+                    return { value: match, label: j.name };
+                  })
+                ]}
+                placeholder="Pilih Jenis Jabatan..."
+                label="Jenis Jabatan"
+              />
+            </div>
+          </div>
+          
+          {/* Reset Filter Button */}
+          {(selectedUnitKerja || selectedJenisJabatan) && (
+            <div className="mt-4">
+              <IconButton
+                title="Reset Filter"
+                onClick={() => {
+                  setSelectedUnitKerja("");
+                  setSelectedJenisJabatan("");
+                }}
+                variant="default"
+                size="lg"
+                className="inline-flex items-center"
+              >
+                <i className="fas fa-times-circle mr-2" aria-hidden="true"></i>
+                Reset Filter
+              </IconButton>
+            </div>
+          )}
+        </div>
+        
         {/* Jumlah data per Kotak - single row above chart */}
         <div className="mb-0">
           {/* responsive: wrap on small screens, single-row on large */}
