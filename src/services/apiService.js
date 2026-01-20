@@ -8,6 +8,7 @@ const CMB_API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
 // Indikator API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
 // Store token in memory (could be moved to context or localStorage)
 let authToken = null;
@@ -76,6 +77,7 @@ export const fetchPetaJabatan = async () => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "X-API-TOKEN": API_TOKEN,
         },
       }
     );
@@ -107,6 +109,7 @@ export const fetchPetaJabatanTree = async () => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -138,6 +141,7 @@ export const fetchPetaJabatanKosong = async () => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "X-API-TOKEN": API_TOKEN,
         },
       }
     );
@@ -264,6 +268,7 @@ export const fetchPegawaiByNip = async (nip, with_penilaian = false) => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -292,6 +297,7 @@ export const fetchRekomendasiPegawai = async (petaJabatanId, isRotasi = false) =
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -318,6 +324,7 @@ export const fetchIndikators = async () => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -347,6 +354,7 @@ export const fetchStatistik = async () => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -399,6 +407,7 @@ export const fetchPegawaiList = async ({
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -431,6 +440,7 @@ export const createIndikator = async (data) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
       body: JSON.stringify(data),
     });
@@ -460,6 +470,7 @@ export const updateIndikator = async (id, data) => {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
       body: JSON.stringify(data),
     });
@@ -485,6 +496,7 @@ export const deleteIndikator = async (id) => {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -509,6 +521,7 @@ export const createSubIndikator = async (data) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
       body: JSON.stringify(data),
     });
@@ -538,6 +551,7 @@ export const updateSubIndikator = async (id, data) => {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
       body: JSON.stringify(data),
     });
@@ -567,6 +581,7 @@ export const deleteSubIndikator = async (id) => {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -598,6 +613,7 @@ export const bulkUpdateSubBobot = async (subindikators) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-API-TOKEN": API_TOKEN,
         },
         body: JSON.stringify({ subindikators }),
       }
@@ -633,6 +649,7 @@ export const fetchSubIndikators = async () => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -674,6 +691,7 @@ export const bulkUploadPenilaian = async (payload) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
       body: JSON.stringify(body),
     });
@@ -705,6 +723,7 @@ export const fetchStandarKompetensiMSK = async (jenisJabatanId = null) => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -736,6 +755,7 @@ export const fetchInstrumens = async () => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -764,6 +784,7 @@ export const createInstrumen = async (data) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
       body: JSON.stringify(data),
     });
@@ -794,6 +815,7 @@ export const updateInstrumen = async (id, data) => {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
       body: JSON.stringify(data),
     });
@@ -824,6 +846,7 @@ export const deleteInstrumen = async (id) => {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -856,6 +879,7 @@ export const syncPetaJabatan = async () => {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -881,6 +905,7 @@ export const syncPegawai = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -905,6 +930,7 @@ export const syncPenilaian = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -931,6 +957,7 @@ export const fetchPenilaianByNip = async (nip) => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
     });
 
@@ -959,6 +986,7 @@ export const submitPenilaian = async (data) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
       body: JSON.stringify(data),
     });
@@ -989,6 +1017,7 @@ export const updatePenilaian = async (nip, data) => {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        "X-API-TOKEN": API_TOKEN,
       },
       body: JSON.stringify(data),
     });

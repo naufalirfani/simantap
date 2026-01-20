@@ -143,11 +143,14 @@ const API_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_BASE
   ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api/daftar-kotak`
   : '/api/daftar-kotak';
 
+// API token untuk endpoint Indikator/API utama
+const API_TOKEN = (import.meta && import.meta.env && import.meta.env.VITE_API_TOKEN) || null;
+
 let cachedConfig = DEFAULT_CONFIG;
 
 const fetchConfig = async () => {
   try {
-    const res = await fetch(API_URL, { method: 'GET', headers: { 'Accept': 'application/json' } });
+    const res = await fetch(API_URL, { method: 'GET', headers: { 'Accept': 'application/json', 'X-API-TOKEN': API_TOKEN } });
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === 'object') {
@@ -189,7 +192,7 @@ export const saveKotakConfig = (config) => {
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-API-TOKEN': API_TOKEN },
           body: JSON.stringify(config)
         });
         if (!res.ok) {
