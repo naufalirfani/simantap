@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-const SearchableSelect = ({ value, onChange, options, placeholder, label }) => {
+const SearchableSelect = ({ value, onChange, options, placeholder, label, multiple = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -64,9 +64,18 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label }) => {
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Get selected option label
-  const selectedOption = options.find((opt) => opt.value === value);
-  const displayValue = selectedOption ? selectedOption.label : '';
+  // Get selected option label(s)
+  const getDisplayValue = () => {
+    if (multiple) {
+      const selectedOptions = options.filter((opt) => value.includes(opt.value));
+      return selectedOptions.map((opt) => opt.label).join(', ');
+    } else {
+      const selectedOption = options.find((opt) => opt.value === value);
+      return selectedOption ? selectedOption.label : '';
+    }
+  };
+
+  const displayValue = getDisplayValue();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -118,16 +127,35 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label }) => {
   };
 
   const handleSelect = (selectedValue) => {
-    onChange(selectedValue);
-    setIsOpen(false);
-    setSearchTerm('');
-    setHighlightedIndex(-1);
+    if (multiple) {
+      const newValue = value.includes(selectedValue)
+        ? value.filter((v) => v !== selectedValue)
+        : [...value, selectedValue];
+      onChange(newValue);
+      setSearchTerm('');
+      setHighlightedIndex(-1);
+      // Keep dropdown open for multiple selection
+    } else {
+      onChange(selectedValue);
+      setIsOpen(false);
+      setSearchTerm('');
+      setHighlightedIndex(-1);
+    }
   };
 
   const handleClear = (e) => {
     e.stopPropagation();
-    onChange('');
+    onChange(multiple ? [] : '');
     setSearchTerm('');
+  };
+
+  const hasValue = multiple ? value.length > 0 : value;
+
+  const isSelected = (optionValue) => {
+    if (multiple) {
+      return value.includes(optionValue);
+    }
+    return optionValue === value;
   };
 
   return (
@@ -149,11 +177,11 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label }) => {
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full px-3 pr-20 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-[#3B82F6] dark:text-white cursor-pointer"
+          className="w-full px-3 pr-20 py-2.5 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-[#3085d6] dark:text-white cursor-pointer"
           readOnly={!isOpen}
         />
         <div className="absolute right-2 top-2 flex items-center gap-1">
-          {value && (
+          {hasValue && (
             <button
               onClick={handleClear}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-500 rounded transition-colors cursor-pointer  "
@@ -212,17 +240,25 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label }) => {
               <div
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
-                className={`px-3 py-2 text-sm cursor-pointer transition-colors ${
+                className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 ${
                   index === highlightedIndex
-                    ? 'bg-blue-100 dark:bg-blue-900'
+                    ? 'bg-[#E7F3FF] dark:bg-blue-900'
                     : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                 } ${
-                  option.value === value
+                  isSelected(option.value)
                     ? 'bg-blue-50 dark:bg-blue-950 font-medium'
                     : ''
                 } text-gray-900 dark:text-gray-100`}
               >
-                {option.label}
+                {multiple && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected(option.value)}
+                    onChange={() => {}}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                )}
+                <span className="flex-1">{option.label}</span>
               </div>
             ))
           )}
@@ -233,7 +269,10 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label }) => {
 };
 
 SearchableSelect.propTypes = {
-  value: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.arrayOf(PropTypes.string)
+  ]).isRequired,
   onChange: PropTypes.func.isRequired,
   options: PropTypes.arrayOf(
     PropTypes.shape({
@@ -243,6 +282,7 @@ SearchableSelect.propTypes = {
   ).isRequired,
   placeholder: PropTypes.string,
   label: PropTypes.string,
+  multiple: PropTypes.bool,
 };
 
 export default SearchableSelect;

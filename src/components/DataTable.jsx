@@ -111,7 +111,7 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
               placeholder={t('search')}
               value={searchTerm}
               onChange={handleSearchChange}
-              className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] dark:text-white transition-all shadow-sm"
+              className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] dark:text-white transition-all shadow-sm"
             />
             <svg
               className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 dark:text-gray-500"
@@ -137,13 +137,13 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
               <select
                 value={itemsPerPage}
                 onChange={handleItemsPerPageChange}
-                className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] cursor-pointer transition-all shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 [&>option]:bg-white [&>option]:dark:bg-gray-700 [&>option]:py-2 [&>option]:px-4 [&>option]:text-gray-900 [&>option]:dark:text-gray-100"
+                className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] cursor-pointer transition-all shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 [&>option]:bg-white [&>option]:dark:bg-gray-700 [&>option]:py-2 [&>option]:px-4 [&>option]:text-gray-900 [&>option]:dark:text-gray-100"
               >
                 {itemsPerPageOptions.map((option) => (
                   <option 
                     key={option} 
                     value={option}
-                    className="py-2 px-4 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600"
+                    className="py-2 px-4 hover:bg-[#3085d6]/10 dark:hover:bg-gray-600"
                   >
                     {option}
                   </option>
@@ -193,11 +193,11 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
                       <div className="flex flex-col">
                         {sortConfig.key === column.key ? (
                           sortConfig.direction === 'asc' ? (
-                            <svg className="w-4 h-4 text-[#3B82F6]" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-4 h-4 text-[#3085d6]" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M5 10l5-5 5 5H5z" />
                             </svg>
                           ) : (
-                            <svg className="w-4 h-4 text-[#3B82F6]" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-4 h-4 text-[#3085d6]" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M15 10l-5 5-5-5h10z" />
                             </svg>
                           )
@@ -220,7 +220,7 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
                   <div className="flex flex-col items-center justify-center">
                     <div className="relative">
                       <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3B82F6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
                     </div>
                     <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                       {t('loadingData')}
@@ -292,7 +292,7 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
               <button
                 onClick={() => goToPage(1)}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3085d6]/10 dark:hover:bg-gray-600 hover:border-[#3085d6]/50 dark:hover:border-[#3085d6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
                 title={t('page') + ' pertama'}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,7 +304,7 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3085d6]/10 dark:hover:bg-gray-600 hover:border-[#3085d6]/50 dark:hover:border-[#3085d6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
                 title={t('page') + ' sebelumnya'}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -321,10 +321,10 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
                     disabled={page === '...'}
                     className={`min-w-[2.5rem] px-3 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm ${
                       page === currentPage
-                        ? 'bg-gradient-to-r from-[#3B82F6] to-[#3B82F6] text-white shadow-md scale-105 cursor-pointer'
+                        ? 'bg-gradient-to-r from-[#3085d6] to-[#3085d6] text-white shadow-md scale-105 cursor-pointer'
                         : page === '...'
                         ? 'cursor-default text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none'
-                        : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] cursor-pointer'
+                        : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3085d6]/10 dark:hover:bg-gray-600 hover:border-[#3085d6]/50 dark:hover:border-[#3085d6] cursor-pointer'
                     }`}
                   >
                     {page}
@@ -336,7 +336,7 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3085d6]/10 dark:hover:bg-gray-600 hover:border-[#3085d6]/50 dark:hover:border-[#3085d6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
                 title={t('page') + ' berikutnya'}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -348,7 +348,7 @@ const DataTable = ({ data, columns, itemsPerPageOptions = [10, 25, 50, 100], loa
               <button
                 onClick={() => goToPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3B82F6]/10 dark:hover:bg-gray-600 hover:border-[#3B82F6]/50 dark:hover:border-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-[#3085d6]/10 dark:hover:bg-gray-600 hover:border-[#3085d6]/50 dark:hover:border-[#3085d6] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
                 title={t('page') + ' terakhir'}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

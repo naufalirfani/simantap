@@ -29,7 +29,6 @@ const BulkUploadModal = ({
   const handleDownloadTemplate = async () => {
     const headers = [
       "nip",
-      "nama",
       ...subIndikators.map((s, idx) => {
         const raw =
           s &&
@@ -109,7 +108,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "Gagal",
         text: "Tidak dapat membuat template. Coba lagi.",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     }
   };
@@ -133,7 +132,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "File Tidak Valid",
         text: "Hanya file Excel (.xlsx, .xls) atau CSV (.csv) yang diperbolehkan.",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
       return;
     }
@@ -151,7 +150,7 @@ const BulkUploadModal = ({
           icon: "error",
           title: "File Kosong",
           text: "File tidak mengandung data yang valid.",
-          confirmButtonColor: "#3B82F6",
+          confirmButtonColor: "#3085d6",
         });
         setFile(null);
         setIsProcessing(false);
@@ -175,8 +174,8 @@ const BulkUploadModal = ({
         Swal.fire({
           icon: "warning",
           title: "Tidak Ada Data",
-          text: "File tidak mengandung data untuk diimport.",
-          confirmButtonColor: "#3B82F6",
+          text: "File tidak mengandung data untuk diimpor.",
+          confirmButtonColor: "#3085d6",
         });
         setFile(null);
         setIsProcessing(false);
@@ -218,7 +217,7 @@ const BulkUploadModal = ({
             icon: "error",
             title: "Parsing Error",
             text: "Gagal membaca CSV.",
-            confirmButtonColor: "#3B82F6",
+            confirmButtonColor: "#3085d6",
           });
           setFile(null);
           setIsProcessing(false);
@@ -252,7 +251,7 @@ const BulkUploadModal = ({
           icon: "error",
           title: "Parsing Error",
           text: "Gagal membaca file. Pastikan format file benar.",
-          confirmButtonColor: "#3B82F6",
+          confirmButtonColor: "#3085d6",
         });
         setFile(null);
         setIsProcessing(false);
@@ -264,7 +263,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "Error",
         text: "Gagal membaca file.",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
       setFile(null);
       setIsProcessing(false);
@@ -278,8 +277,8 @@ const BulkUploadModal = ({
       Swal.fire({
         icon: "warning",
         title: "Tidak Ada Data",
-        text: "Tidak ada data untuk diupload.",
-        confirmButtonColor: "#3B82F6",
+        text: "Tidak ada data untuk diunggah.",
+        confirmButtonColor: "#3085d6",
       });
       return;
     }
@@ -290,7 +289,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "Kolom NIP Tidak Ditemukan",
         text: 'File harus memiliki kolom "nip".',
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
       return;
     }
@@ -307,7 +306,7 @@ const BulkUploadModal = ({
       showCancelButton: true,
       confirmButtonText: "Upload",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
       reverseButtons: true,
     });
@@ -376,13 +375,13 @@ const BulkUploadModal = ({
           title: "Upload Selesai (Sebagian)",
           html: failedHtml,
           width: "640px",
-          confirmButtonColor: "#3B82F6",
+          confirmButtonColor: "#3085d6",
         });
       } else {
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
-          text: `${previewData.length} data penilaian berhasil diupload.`,
+          text: `${previewData.length} data penilaian berhasil diunggah.`,
           timer: 2000,
           showConfirmButton: false,
         });
@@ -400,7 +399,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "Upload Gagal",
         text: error.message || "Terjadi kesalahan saat mengupload data.",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setIsProcessing(false);
@@ -434,10 +433,10 @@ const BulkUploadModal = ({
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                Import Data Penilaian
+                Impor Data Penilaian
               </h2>
               <p className="text-md text-gray-600 dark:text-gray-400 mt-1">
-                Upload file Excel atau CSV
+                Ungggah berkas Excel atau CSV
               </p>
             </div>
             <button
@@ -459,7 +458,7 @@ const BulkUploadModal = ({
                     currentStep === 1 ? "text-white" : "text-white"
                   }`}
                   style={{
-                    backgroundColor: currentStep === 1 ? "#3B82F6" : "#2fa84f",
+                    backgroundColor: currentStep === 1 ? "#3085d6" : "#2fa84f",
                   }}
                 >
                   {currentStep === 1 ? "1" : <i className="fas fa-check" />}
@@ -471,7 +470,7 @@ const BulkUploadModal = ({
                       : "text-gray-500 dark:text-gray-400"
                   }`}
                 >
-                  Upload File
+                  Unggah Berkas
                 </span>
               </div>
 
@@ -480,7 +479,7 @@ const BulkUploadModal = ({
                   className={`h-full rounded-full transition-all duration-500`}
                   style={{
                     backgroundColor:
-                      currentStep === 2 ? "#3B82F6" : "transparent",
+                      currentStep === 2 ? "#3085d6" : "transparent",
                     width: currentStep === 2 ? "100%" : "0",
                   }}
                 />
@@ -494,7 +493,7 @@ const BulkUploadModal = ({
                       : "bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400"
                   }`}
                   style={{
-                    backgroundColor: currentStep === 2 ? "#3B82F6" : undefined,
+                    backgroundColor: currentStep === 2 ? "#3085d6" : undefined,
                   }}
                 >
                   2
@@ -506,7 +505,7 @@ const BulkUploadModal = ({
                       : "text-gray-500 dark:text-gray-400"
                   }`}
                 >
-                  Preview & Konfirmasi
+                  Pratinjau & Konfirmasi
                 </span>
               </div>
             </div>
@@ -524,16 +523,16 @@ const BulkUploadModal = ({
                   <div className="flex items-start space-x-4">
                     <div
                       className="rounded-lg p-3"
-                      style={{ backgroundColor: "#3B82F6" }}
+                      style={{ backgroundColor: "#3085d6" }}
                     >
                       <i className="fas fa-download text-white text-2xl" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        Langkah 1: Download Template
+                        Langkah 1: Unduh Template
                       </h3>
                       <p className="text-gray-600 dark:text-gray-300 mb-4">
-                        Download template Excel untuk memudahkan pengisian data.
+                        Unduh template Excel untuk memudahkan pengisian data.
                         Template sudah berisi kolom yang sesuai dengan
                         subindikator yang tersedia.
                       </p>
@@ -543,7 +542,7 @@ const BulkUploadModal = ({
                         size="lg"
                       >
                         <i className="fas fa-download mr-2" />
-                        Download Template Excel
+                        Unduh Template Excel
                       </IconButton>
                     </div>
                   </div>
@@ -554,17 +553,17 @@ const BulkUploadModal = ({
                   <div className="flex items-start space-x-4">
                     <div
                       className="rounded-lg p-3"
-                      style={{ backgroundColor: "#3B82F6" }}
+                      style={{ backgroundColor: "#3085d6" }}
                     >
                       <i className="fas fa-upload text-white text-2xl" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        Langkah 2: Upload File
+                        Langkah 2: Unggah Berkas
                       </h3>
                       <p className="text-gray-600 dark:text-gray-300 mb-4">
-                        Setelah mengisi data di template, upload file Excel atau
-                        CSV untuk diimport.
+                        Setelah mengisi data di template, unggah berkas Excel atau
+                        CSV untuk diimpor.
                       </p>
 
                       {/* File Upload Area */}
@@ -589,7 +588,7 @@ const BulkUploadModal = ({
                             <div className="text-center">
                               <i
                                 className="fas fa-spinner fa-spin text-4xl mb-3"
-                                style={{ color: "#3B82F6" }}
+                                style={{ color: "#3085d6" }}
                               />
                               <p className="text-gray-600 dark:text-gray-300 font-medium">
                                 Memproses file...
@@ -609,7 +608,7 @@ const BulkUploadModal = ({
                               </p>
                               <p
                                 className="text-xs mt-2"
-                                style={{ color: "#3B82F6" }}
+                                style={{ color: "#3085d6" }}
                               >
                                 Klik untuk mengganti file
                               </p>
@@ -618,13 +617,13 @@ const BulkUploadModal = ({
                             <div className="text-center">
                               <i
                                 className="fas fa-cloud-upload-alt text-5xl mb-3"
-                                style={{ color: "#3B82F6" }}
+                                style={{ color: "#3085d6" }}
                               />
                               <p className="text-gray-900 dark:text-white font-semibold mb-1">
-                                Klik untuk upload file
+                                Klik untuk unggah berkas
                               </p>
                               <p className="text-sm text-gray-500 dark:text-gray-400">
-                                atau drag & drop file di sini
+                                atau tarik & letakkan berkas di sini
                               </p>
                               <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                                 Format: Excel (.xlsx, .xls) atau CSV (.csv)
@@ -689,7 +688,7 @@ const BulkUploadModal = ({
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          Data siap diupload
+                          Data siap diunggah
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-300">
                           {previewData.length} baris data ditemukan •{" "}
@@ -719,7 +718,7 @@ const BulkUploadModal = ({
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                   <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                     <h4 className="font-semibold text-gray-900 dark:text-white">
-                      Preview Data
+                      Pratinjau Data
                     </h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Periksa data sebelum melanjutkan
@@ -774,7 +773,7 @@ const BulkUploadModal = ({
                     <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
                       <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
                         Menampilkan 50 dari {previewData.length} baris • Semua
-                        data akan diupload
+                        data akan diunggah
                       </p>
                     </div>
                   )}

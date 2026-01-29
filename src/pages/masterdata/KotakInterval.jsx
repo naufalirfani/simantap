@@ -6,6 +6,7 @@ import {
   resetKotakConfig,
   updateIntervals,
 } from "../../services/kotakConfigService";
+import { BG_COLORS, TEXT_ON_BG_COLORS } from "../../config/colors";
 import Swal from "sweetalert2";
 import IconButton from "../../components/IconButton";
 import Breadcrumb from "../../components/Breadcrumb";
@@ -66,16 +67,16 @@ const KotakInterval = () => {
         const maxVal = arr[idx].max;
         const newMin = Math.min(parsed, maxVal - 1);
         arr[idx].min = newMin;
-        // sync previous interval's max to this min
-        arr[idx - 1].max = newMin;
+        // sync previous interval's max to this min - 1 (no overlap)
+        arr[idx - 1].max = newMin - 1;
       } else if (field === "max") {
         // Interval 3 (last) upper bound is fixed
         if (idx === lastIdx) return prev;
         const minVal = arr[idx].min;
         const newMax = Math.max(parsed, minVal + 1);
         arr[idx].max = newMax;
-        // sync next interval's min to this max
-        arr[idx + 1].min = newMax;
+        // sync next interval's min to this max + 1 (no overlap)
+        arr[idx + 1].min = newMax + 1;
       } else {
         arr[idx][field] = parsed;
       }
@@ -113,7 +114,7 @@ const KotakInterval = () => {
         icon: "error",
         title: "Validasi Gagal",
         text: "Pastikan setiap interval memiliki nilai min < max.",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
       return;
     }
@@ -133,7 +134,7 @@ const KotakInterval = () => {
         icon: "error",
         title: "Gagal",
         text: "Terjadi kesalahan saat menyimpan interval",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     }
   };
@@ -218,7 +219,7 @@ const KotakInterval = () => {
         icon: "error",
         title: "Gagal!",
         text: error.message || "Terjadi kesalahan saat menyimpan konfigurasi",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     }
   };
@@ -232,7 +233,7 @@ const KotakInterval = () => {
       reverseButtons: true,
       confirmButtonText: "Reset",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
     });
 
@@ -252,7 +253,7 @@ const KotakInterval = () => {
           icon: "error",
           title: "Gagal!",
           text: "Terjadi kesalahan saat mereset konfigurasi",
-          confirmButtonColor: "#3B82F6",
+          confirmButtonColor: "#3085d6",
         });
       }
     }
@@ -262,7 +263,7 @@ const KotakInterval = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-[#3B82F6] mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-[#3085d6] mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-300">
             Memuat konfigurasi...
           </p>
@@ -300,13 +301,13 @@ const KotakInterval = () => {
       </div>
 
       {/* Interval Info Card (editable) */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-lg shadow-md p-6 mb-6">
+      <div className="dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6" style={{ backgroundColor: BG_COLORS.blue.light }}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-            <i className="fas fa-ruler-combined text-[#3B82F6] dark:text-[#3B82F6]"></i>
+            <i className="fas fa-ruler-combined text-[#3085d6] dark:text-[#3085d6]"></i>
             Interval Sumbu
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {intervalsEditingMode ? (
               <>
                 <IconButton
@@ -340,7 +341,7 @@ const KotakInterval = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
             <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-              <i className="fas fa-arrow-right text-sm text-[#3B82F6]"></i>
+              <i className="fas fa-arrow-right text-sm text-[#3085d6]"></i>
               Sumbu X (Potensial)
             </h3>
             <div className="space-y-2">
@@ -399,7 +400,7 @@ const KotakInterval = () => {
                         </span>
                       </div>
                     ) : (
-                      <span className="font-semibold text-gray-800 dark:text-white bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full">
+                      <span className="font-semibold text-gray-800 dark:text-white bg-[#E7F3FF] dark:bg-blue-900 px-3 py-1 rounded-full">
                         {interval.label}
                       </span>
                     )}
@@ -411,7 +412,7 @@ const KotakInterval = () => {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
             <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-              <i className="fas fa-arrow-up text-sm text-[#10B981]"></i>
+              <i className="fas fa-arrow-up text-sm text-[#2fa84f]"></i>
               Sumbu Y (Kinerja)
             </h3>
             <div className="space-y-2">
@@ -468,7 +469,7 @@ const KotakInterval = () => {
                         </span>
                       </div>
                     ) : (
-                      <span className="font-semibold text-gray-800 dark:text-white bg-[#10B981]/20 dark:bg-[#10B981] px-3 py-1 rounded-full">
+                      <span className="font-semibold text-gray-800 dark:text-white bg-[#2fa84f]/20 dark:bg-[#2fa84f] px-3 py-1 rounded-full">
                         {interval.label}
                       </span>
                     )}
@@ -483,7 +484,7 @@ const KotakInterval = () => {
       {/* Kotak Grid */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-          <i className="fas fa-th text-[#3B82F6] dark:text-[#3B82F6]"></i>
+          <i className="fas fa-th text-[#3085d6] dark:text-[#3085d6]"></i>
           Konfigurasi 9 Kotak
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -569,7 +570,7 @@ const KotakInterval = () => {
                           expandedKotakId === kotak.id ? null : kotak.id
                         )
                       }
-                      className="mt-2 text-[#3B82F6] dark:text-[#3B82F6] font-medium hover:underline cursor-pointer flex items-center gap-2 select-none"
+                      className="mt-2 text-[#3085d6] dark:text-[#3085d6] font-medium hover:underline cursor-pointer flex items-center gap-2 select-none"
                     >
                       <span
                         className={`transform transition-transform duration-300 ${
@@ -665,7 +666,7 @@ const KotakInterval = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, kategori: e.target.value })
                       }
-                      className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
                       placeholder="Contoh: Talenta Kunci"
                     />
                   </div>
@@ -691,8 +692,8 @@ const KotakInterval = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, warna: e.target.value })
                         }
-                        className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
-                        placeholder="#10B981"
+                        className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                        placeholder="#2fa84f"
                         pattern="^#[0-9A-Fa-f]{6}$"
                       />
                     </div>
@@ -727,7 +728,7 @@ const KotakInterval = () => {
                             onChange={(e) =>
                               handleRekomendasiChange(index, e.target.value)
                             }
-                            className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all resize-none"
+                            className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all resize-none"
                             placeholder="Masukkan rekomendasi..."
                             rows="1"
                           />
@@ -751,7 +752,7 @@ const KotakInterval = () => {
                   {/* Range Info (Read-only) */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                      <i className="fas fa-info-circle mr-2 text-[#3B82F6]"></i>
+                      <i className="fas fa-info-circle mr-2 text-[#3085d6]"></i>
                       Range (Otomatis berdasarkan posisi kotak)
                     </h4>
                     <div className="grid grid-cols-2 gap-4">

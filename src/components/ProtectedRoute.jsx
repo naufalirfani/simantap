@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children }) => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#3B82F6] mx-auto"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#3085d6] mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
@@ -18,7 +18,8 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     // Redirect to NUSA dashboard
-    window.location.href = import.meta.env.VITE_NUSA_URL + '/dashboard';
+    const redirectUrl = window.location.origin + location.pathname + location.search + location.hash;
+    window.location.href = import.meta.env.VITE_NUSA_URL + '?app=SIMANTAP&redirect=' + encodeURIComponent(redirectUrl);
     return null;
   }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { BG_COLORS, TEXT_ON_BG_COLORS } from "../../config/colors";
 import IconButton from "../../components/IconButton";
 import SearchableSelect from "../../components/SearchableSelect";
 import Breadcrumb from "../../components/Breadcrumb";
@@ -45,15 +46,6 @@ const InputPenilaian = () => {
       const instrumenResult = await fetchInstrumens();
       setInstrumens(instrumenResult);
 
-      // Load standar kompetensi MSK
-      try {
-        const standarResult = await fetchStandarKompetensiMSK();
-        setStandarMSK(standarResult || []);
-      } catch (err) {
-        console.error("Could not load standar MSK:", err);
-        setStandarMSK([]);
-      }
-
       // Try to load existing penilaian
       try {
         const existingData = await fetchPenilaianByNip(nip);
@@ -84,7 +76,7 @@ const InputPenilaian = () => {
               found = allSubs.find(
                 (s) =>
                   String(s.uuid || s.uuid_id || s.kode || s.slug || s.id) ===
-                  kStr
+                  kStr,
               );
               if (found) return found;
               // Try numeric match
@@ -105,7 +97,8 @@ const InputPenilaian = () => {
 
                 // Support both legacy scalar format and new object format { nilai, hasil }
                 const scalarNilai =
-                  storedVal && typeof storedVal === "object" &&
+                  storedVal &&
+                  typeof storedVal === "object" &&
                   storedVal.nilai !== undefined
                     ? storedVal.nilai
                     : storedVal;
@@ -113,7 +106,9 @@ const InputPenilaian = () => {
                 // Attempt to match an instrumen that belongs to this subindikator and has the same skor
                 const matchedInstrumen = instrumenResult.find((instr) => {
                   const instrSubId = String(
-                    instr.subindikator_id || instr.subindikator?.id || instr.subindikator_id
+                    instr.subindikator_id ||
+                      instr.subindikator?.id ||
+                      instr.subindikator_id,
                   );
                   return (
                     ((matchedSub && instrSubId === String(matchedSub.id)) ||
@@ -123,13 +118,17 @@ const InputPenilaian = () => {
                 });
 
                 initialData[canonicalId] = {
-                  instrumen_id: matchedInstrumen ? String(matchedInstrumen.id) : null,
+                  instrumen_id: matchedInstrumen
+                    ? String(matchedInstrumen.id)
+                    : null,
                   nilai:
-                    scalarNilai !== undefined && scalarNilai !== null && scalarNilai !== ""
+                    scalarNilai !== undefined &&
+                    scalarNilai !== null &&
+                    scalarNilai !== ""
                       ? parseFloat(scalarNilai)
                       : "",
                 };
-              }
+              },
             );
           }
           setPenilaianData(initialData);
@@ -142,7 +141,19 @@ const InputPenilaian = () => {
       // Load pegawai profile
       try {
         const peg = await fetchPegawaiByNip(nip);
-        if (peg) setPegawai(peg);
+        if (peg) {
+          setPegawai(peg);
+          // Load standar kompetensi MSK
+          try {
+            const standarResult = await fetchStandarKompetensiMSK(
+              peg?.jenis_jabatan_id,
+            );
+            setStandarMSK(standarResult || []);
+          } catch (err) {
+            console.error("Could not load standar MSK:", err);
+            setStandarMSK([]);
+          }
+        }
       } catch (err) {
         console.log("Could not load pegawai profile:", err);
       }
@@ -152,7 +163,7 @@ const InputPenilaian = () => {
         icon: "error",
         title: "Error",
         text: error.message || "Gagal memuat data",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setLoading(false);
@@ -177,7 +188,7 @@ const InputPenilaian = () => {
       (s) =>
         s.subindikator_id === subindikatorId ||
         String(s.subindikator_id) === String(subindikatorId) ||
-        s.subindikator_id == subindikatorId
+        s.subindikator_id == subindikatorId,
     );
     if (!found) return null;
     const v =
@@ -199,9 +210,21 @@ const InputPenilaian = () => {
       indikatorName?.toLowerCase() ===
       "penilaian kompetensi manajerial dan sosial kultural";
 
+    const isPotensiTalenta =
+      indikatorName?.toLowerCase() === "penilaian potensi talenta";
+
     if (isMSK) {
       // For MSK: hasil = (skor / standar) * 100, then apply bobot percent
       const standar = getStandarForSub(subindikator.id) || 0;
+      if (standar === 0) return (0).toFixed(2);
+      const pct = (nilaiNum / standar) * 100;
+      const result = pct * (bobot / 100);
+      return result.toFixed(2);
+    }
+
+    if (isPotensiTalenta) {
+      // For Potensi: hasil = (skor / standar) * 100, then apply bobot percent
+      const standar = 5;
       if (standar === 0) return (0).toFixed(2);
       const pct = (nilaiNum / standar) * 100;
       const result = pct * (bobot / 100);
@@ -241,7 +264,7 @@ const InputPenilaian = () => {
 
     const idNum = parseInt(instrumenId);
     const instrumen = instrumens.find(
-      (i) => i.id === idNum || String(i.id) === String(instrumenId)
+      (i) => i.id === idNum || String(i.id) === String(instrumenId),
     );
     if (instrumen) {
       setPenilaianData((prev) => ({
@@ -308,7 +331,7 @@ const InputPenilaian = () => {
         icon: "warning",
         title: "Data Tidak Lengkap",
         text: validation.message,
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
       return;
     }
@@ -322,7 +345,7 @@ const InputPenilaian = () => {
       reverseButtons: true,
       confirmButtonText: "Simpan",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
     });
 
@@ -347,7 +370,11 @@ const InputPenilaian = () => {
           ) {
             // Include both nilai and computed hasil for each subindikator
             const nilaiNum = parseFloat(entry.nilai);
-            const hasilStr = calculateResult(sub, nilaiNum, indikator.indikator);
+            const hasilStr = calculateResult(
+              sub,
+              nilaiNum,
+              indikator.indikator,
+            );
             const hasilNum = parseFloat(hasilStr);
             penilaianObj[sub.id] = {
               nilai: nilaiNum,
@@ -384,7 +411,7 @@ const InputPenilaian = () => {
         icon: "error",
         title: "Error",
         text: error.message || "Gagal menyimpan penilaian",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setSubmitting(false);
@@ -398,11 +425,19 @@ const InputPenilaian = () => {
         items={[
           { label: "Dashboard", path: "/", icon: "fas fa-home" },
           { label: "Masterdata", path: "/masterdata", icon: "fas fa-database" },
-          { label: "Penilaian Pegawai", path: "/masterdata/penilaian-pegawai", icon: "fas fa-star" },
-          { label: "Input Penilaian", path: `/masterdata/input-penilaian/${nip}`, icon: "fas fa-edit" },
+          {
+            label: "Penilaian Pegawai",
+            path: "/masterdata/penilaian-pegawai",
+            icon: "fas fa-star",
+          },
+          {
+            label: "Input Penilaian",
+            path: `/masterdata/input-penilaian/${nip}`,
+            icon: "fas fa-edit",
+          },
         ]}
       />
-      
+
       {/* Page Title */}
       <div className="mb-6">
         <div>
@@ -430,11 +465,25 @@ const InputPenilaian = () => {
       {/* Profile Card */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6 border border-gray-100 dark:border-gray-700">
         {/* Header with gradient */}
-        <div className="bg-[#3B82F6] px-6 py-4">
-          <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-            <i className="fas fa-user"></i>
-            Profil Pegawai
-          </h1>
+        <div className="bg-[#3085d6] px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+              <i className="fas fa-user"></i>
+              Profil Pegawai
+            </h1>
+            <button
+              onClick={() =>
+                navigate(
+                  `/masterdata/penilaian-pegawai/input-penilaian/${nip}/detail`,
+                )
+              }
+              className="cursor-pointer px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-semibold"
+              title="Lihat Detail Pegawai"
+            >
+              <i className="fas fa-eye"></i>
+              <span className="hidden sm:inline">Lihat Detail</span>
+            </button>
+          </div>
         </div>
 
         {pegawai ? (
@@ -462,11 +511,23 @@ const InputPenilaian = () => {
                   {pegawai.nama || pegawai.name || "-"}
                 </h2>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#3B82F6]/10 text-[#3B82F6] dark:bg-[#3B82F6] dark:text-white">
+                  <span
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium dark:bg-[#3085d6] dark:text-white"
+                    style={{
+                      backgroundColor: BG_COLORS.blue.light,
+                      color: TEXT_ON_BG_COLORS.blue,
+                    }}
+                  >
                     <i className="fas fa-id-card mr-1.5 text-sm"></i>
                     {nip}
                   </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#7a5cd6]/10 text-[#7a5cd6] dark:bg-[#7a5cd6] dark:text-white">
+                  <span
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium dark:bg-[#7a5cd6] dark:text-white"
+                    style={{
+                      backgroundColor: BG_COLORS.purple.light,
+                      color: TEXT_ON_BG_COLORS.purple,
+                    }}
+                  >
                     <i className="fas fa-envelope mr-1.5 text-sm"></i>
                     {pegawai.email || pegawai.email_address || "-"}
                   </span>
@@ -504,11 +565,11 @@ const InputPenilaian = () => {
               </div>
               <div className="bg-gradient-to-br from-[#eef8ff] to-[#eaf4ff] dark:from-[#07102a]/5 dark:to-[#15203a]/5 rounded-lg p-4 border border-[#dbeeff] dark:border-[#2b4a7a]">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-[#3B82F6] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 bg-[#3085d6] rounded-lg flex items-center justify-center flex-shrink-0">
                     <i className="fas fa-building text-white text-sm"></i>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#3B82F6] dark:text-[#9ecaf9] mb-1">
+                    <p className="text-sm font-medium text-[#3085d6] dark:text-[#9ecaf9] mb-1">
                       Unit Kerja
                     </p>
                     <p
@@ -573,7 +634,7 @@ const InputPenilaian = () => {
             <div className="flex items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
               <div className="relative">
                 <div className="animate-spin rounded-full h-6 w-6 border-3 border-gray-200 dark:border-gray-700"></div>
-                <div className="animate-spin rounded-full h-6 w-6 border-3 border-t-[#3B82F6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-3 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
               </div>
               <span className="text-sm">Memuat profil pegawai...</span>
             </div>
@@ -584,7 +645,7 @@ const InputPenilaian = () => {
       {/* Form */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
         {/* Header with gradient */}
-        <div className="bg-[#3B82F6] px-6 py-4">
+        <div className="bg-[#3085d6] px-6 py-4">
           <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
             <i className="fas fa-clipboard-check"></i>
             Form Penilaian
@@ -596,7 +657,7 @@ const InputPenilaian = () => {
             <div className="flex flex-col items-center justify-center py-6">
               <div className="relative">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3B82F6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
               </div>
               <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                 Memuat form...
@@ -619,17 +680,17 @@ const InputPenilaian = () => {
                     onClick={() => setActiveTab(idx)}
                     className={`px-6 py-4 text-sm font-semibold transition-all border-b-2 cursor-pointer ${
                       activeTab === idx
-                        ? "border-[#3B82F6] text-[#3B82F6] bg-white dark:bg-gray-800"
+                        ? "border-[#3085d6] text-[#3085d6] bg-white dark:bg-gray-800"
                         : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300"
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <span
                         className={`w-2 h-2 rounded-full ${
-                          activeTab === idx ? "bg-[#3B82F6]" : "bg-gray-400"
+                          activeTab === idx ? "bg-[#3085d6]" : "bg-gray-400"
                         }`}
                       ></span>
-                      {indikator.indikator}
+                      {indikator.indikator} ({indikator.penilaian})
                     </div>
                   </button>
                 );
@@ -655,7 +716,7 @@ const InputPenilaian = () => {
                         <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                           <span
                             className="w-1.5 h-6 rounded-full"
-                            style={{ background: "#3B82F6" }}
+                            style={{ background: "#3085d6" }}
                           ></span>
                           {indikator.indikator}
                         </h2>
@@ -664,7 +725,7 @@ const InputPenilaian = () => {
                             className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-sm font-semibold"
                             style={{
                               background: "rgba(48,133,214,0.12)",
-                              color: "#3B82F6",
+                              color: "#3085d6",
                             }}
                           >
                             {indikator.penilaian}
@@ -681,7 +742,7 @@ const InputPenilaian = () => {
                   <div className="p-6 space-y-5">
                     {activeSubindikators.map((subindikator, sidx) => {
                       const subInstrumens = getInstrumensForSubindikator(
-                        subindikator.id
+                        subindikator.id,
                       );
                       const hasInstrumens = subInstrumens.length > 0;
                       const currentData =
@@ -694,18 +755,18 @@ const InputPenilaian = () => {
                       const currentResult = calculateResult(
                         subindikator,
                         currentNilai,
-                        indikator.indikator
+                        indikator.indikator,
                       );
 
                       return (
                         <div
                           key={subindikator.id}
-                          className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 rounded-lg p-5 border border-gray-200 dark:border-gray-600 hover:border-[#3B82F6] dark:hover:border-[#7a5cd6] transition-colors"
+                          className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 rounded-lg p-5 border border-gray-200 dark:border-gray-600 hover:border-[#3085d6] dark:hover:border-[#7a5cd6] transition-colors"
                         >
                           <div className="flex items-start gap-3 mb-4">
                             <div
                               className="flex items-center justify-center w-8 h-8 rounded-lg text-white text-sm font-bold flex-shrink-0"
-                              style={{ background: "#3B82F6" }}
+                              style={{ background: "#3085d6" }}
                             >
                               {sidx + 1}
                             </div>
@@ -736,7 +797,7 @@ const InputPenilaian = () => {
                                       onChange={(value) =>
                                         handleInstrumenChange(
                                           subindikator.id,
-                                          value
+                                          value,
                                         )
                                       }
                                       options={subInstrumens.map((instr) => ({
@@ -752,7 +813,9 @@ const InputPenilaian = () => {
                                       min="0"
                                       max={
                                         indikator.indikator?.toLowerCase() ===
-                                        "Penilaian Kompetensi Manajerial dan Sosial Kultural".toLowerCase()
+                                          "Penilaian Kompetensi Manajerial dan Sosial Kultural".toLowerCase() ||
+                                        indikator.indikator?.toLowerCase() ===
+                                          "Penilaian Potensi Talenta".toLowerCase()
                                           ? "5"
                                           : "100"
                                       }
@@ -761,10 +824,10 @@ const InputPenilaian = () => {
                                         handleInputChange(
                                           subindikator.id,
                                           "nilai",
-                                          e.target.value
+                                          e.target.value,
                                         )
                                       }
-                                      className="block w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium transition-all"
+                                      className="block w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium transition-all"
                                       placeholder="0.00"
                                       required
                                     />
@@ -784,7 +847,7 @@ const InputPenilaian = () => {
                                     type="number"
                                     value={currentNilai}
                                     readOnly
-                                    className="block w-full px-4 py-2.5 border-2 border-gray-200 dark:border-gray-600 rounded-lg shadow-sm bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white font-semibold cursor-not-allowed"
+                                    className="block w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg shadow-sm bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white font-semibold cursor-not-allowed"
                                     placeholder="0.00"
                                   />
                                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -794,8 +857,10 @@ const InputPenilaian = () => {
                               </div>
                             )}
 
-                            {indikator.indikator?.toLowerCase() ===
-                              "penilaian kompetensi manajerial dan sosial kultural" && (
+                            {(indikator.indikator?.toLowerCase() ===
+                              "penilaian kompetensi manajerial dan sosial kultural" ||
+                              indikator.indikator?.toLowerCase() ===
+                                "penilaian potensi talenta") && (
                               <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                   Standar
@@ -804,12 +869,16 @@ const InputPenilaian = () => {
                                   <input
                                     type="text"
                                     value={
-                                      getStandarForSub(subindikator.id) !== null
-                                        ? getStandarForSub(subindikator.id)
-                                        : "-"
+                                      indikator.indikator?.toLowerCase() ===
+                                      "penilaian kompetensi manajerial dan sosial kultural"
+                                        ? getStandarForSub(subindikator.id) !==
+                                          null
+                                          ? getStandarForSub(subindikator.id)
+                                          : "-"
+                                        : 5
                                     }
                                     readOnly
-                                    className="block w-full px-4 py-2.5 border-2 border-gray-200 dark:border-gray-600 rounded-lg shadow-sm bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white font-semibold cursor-not-allowed"
+                                    className="block w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg shadow-sm bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white font-semibold cursor-not-allowed"
                                   />
                                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                                     <i className="fas fa-lock text-gray-400 text-sm"></i>
@@ -822,7 +891,9 @@ const InputPenilaian = () => {
                             <div>
                               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                 {indikator.indikator?.toLowerCase() ===
-                                "penilaian kompetensi manajerial dan sosial kultural"
+                                  "penilaian kompetensi manajerial dan sosial kultural" ||
+                                indikator.indikator?.toLowerCase() ===
+                                  "penilaian potensi talenta"
                                   ? "Hasil (Skor ÷ Standar × 100 × Bobot)"
                                   : "Hasil (Skor × Bobot)"}
                               </label>
@@ -831,18 +902,18 @@ const InputPenilaian = () => {
                                   type="text"
                                   value={currentResult}
                                   readOnly
-                                  className="block w-full px-4 py-2.5 rounded-lg shadow-sm font-bold cursor-not-allowed text-lg"
+                                  className="block w-full px-3 py-1.5 rounded-lg shadow-sm font-bold cursor-not-allowed text-lg"
                                   style={{
                                     border: "2px solid rgba(48,133,214,0.18)",
                                     background: "#eaf4ff",
-                                    color: "#3B82F6",
+                                    color: "#3085d6",
                                   }}
                                   placeholder="0.00"
                                 />
                                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                                   <i
                                     className="fas fa-calculator text-sm"
-                                    style={{ color: "#3B82F6" }}
+                                    style={{ color: "#3085d6" }}
                                   ></i>
                                 </div>
                               </div>

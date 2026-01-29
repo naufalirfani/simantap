@@ -82,7 +82,7 @@ const Pegawai = () => {
       showCancelButton: true,
       confirmButtonText: "Ya",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
       reverseButtons: true,
     });
@@ -106,7 +106,7 @@ const Pegawai = () => {
         icon: "error",
         title: "Gagal",
         text: err.message || "Sinkronisasi gagal",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setIsSyncing(false);
@@ -189,7 +189,7 @@ const Pegawai = () => {
           </div>
           <div className="flex gap-2 mt-1">
             {item.jenis_jabatan && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium bg-blue-100 text-[#3B82F6] dark:bg-blue-900 dark:text-blue-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium bg-[#E7F3FF] text-[#1e40af] dark:bg-blue-900 dark:text-blue-200">
                 {item.jenis_jabatan}
               </span>
             )}

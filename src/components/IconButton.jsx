@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
+import { PRIMARY_COLORS, SECONDARY_COLORS, DARK_COLORS } from '../config/colors';
 
 const IconButton = ({ onClick, title, variant = 'default', children, className = '', size = 'md', type = 'button', disabled = false, ...rest }) => {
-  const base = 'inline-flex items-center justify-center rounded-lg transition-all duration-200 focus:outline-none';
+  const base = 'inline-flex items-center justify-center rounded-lg transition-all duration-200 focus:outline-none whitespace-nowrap';
   const sizes = {
     sm: 'px-2 py-1 text-md',
     md: 'px-3 py-1.5 text-md',
@@ -9,10 +10,10 @@ const IconButton = ({ onClick, title, variant = 'default', children, className =
   };
   const variants = {
     default: 'bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200',
-    primary: 'bg-[#3B82F6] text-white hover:bg-[#296eb8] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#296eb8] focus:ring-offset-2 transition-all duration-200',
-    danger: 'bg-[#d33] text-white hover:bg-[#b22] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#b22] focus:ring-offset-2 transition-all duration-200',
-    success: 'bg-[#28a745] text-white hover:bg-[#218838] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#218838] focus:ring-offset-2 transition-all duration-200',
-    warn: 'bg-[#f39c12] text-white hover:bg-[#f39c12] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f39c12] focus:ring-offset-2 transition-all duration-200',
+    primary: `bg-[${PRIMARY_COLORS.blue}] text-white hover:bg-[${DARK_COLORS.blue}] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[${DARK_COLORS.blue}] focus:ring-offset-2 transition-all duration-200`,
+    danger: `bg-[${PRIMARY_COLORS.red}] text-white hover:bg-[${DARK_COLORS.red}] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[${DARK_COLORS.red}] focus:ring-offset-2 transition-all duration-200`,
+    success: `bg-[${PRIMARY_COLORS.green}] text-white hover:bg-[${DARK_COLORS.green}] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[${DARK_COLORS.green}] focus:ring-offset-2 transition-all duration-200`,
+    warn: `bg-[${PRIMARY_COLORS.orange}] text-white hover:bg-[${DARK_COLORS.orange}] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[${DARK_COLORS.orange}] focus:ring-offset-2 transition-all duration-200`,
     ghost: 'bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700',
   };
 

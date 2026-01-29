@@ -17,6 +17,7 @@ import KotakInterval from './pages/masterdata/KotakInterval';
 import PenilaianPegawai from './pages/masterdata/PenilaianPegawai';
 import InputPenilaian from './pages/masterdata/InputPenilaian';
 import StandarKompetensiMSK from './pages/masterdata/StandarKompetensiMSK';
+import SyaratSuksesi from './pages/masterdata/SyaratSuksesi';
 import Settings from './pages/Settings';
 import SSOLogin from './pages/SSOLogin';
 
@@ -51,7 +52,9 @@ function App() {
                         <Route path="/masterdata/instrumen" element={<Instrumen />} />
                         <Route path="/masterdata/kotak-interval" element={<KotakInterval />} />
                         <Route path="/masterdata/penilaian-pegawai" element={<PenilaianPegawai />} />
-                        <Route path="/masterdata/penilaian-pegawai/input/:nip" element={<InputPenilaian />} />
+                        <Route path="/masterdata/penilaian-pegawai/input-penilaian/:nip" element={<InputPenilaian />} />
+                        <Route path="/masterdata/penilaian-pegawai/input-penilaian/:nip/detail" element={<DetailPegawai />} />
+                        <Route path="/masterdata/jabatan/:jabatanId/syarat-suksesi" element={<SyaratSuksesi />} />
                         <Route path="/pengaturan" element={<Settings />} />
                         <Route path="/masterdata/standar-kompetensi-msk" element={<StandarKompetensiMSK />} />
                       </Routes>

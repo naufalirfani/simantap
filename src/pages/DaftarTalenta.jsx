@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSettings } from "../context/SettingsContext";
+import { BG_COLORS, TEXT_ON_BG_COLORS } from "../config/colors";
 import { fetchPegawaiList, fetchPetaJabatan } from "../services/apiService";
 import { computeQuadrantDynamic } from "../services/kotakConfigService";
 import Swal from "sweetalert2";
@@ -170,7 +171,7 @@ const DaftarTalenta = () => {
           </div>
           <div className="flex gap-2 mt-1">
             {item.jenis_jabatan && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium bg-blue-100 text-[#3B82F6] dark:bg-blue-900 dark:text-blue-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-blue-900 dark:text-blue-200 whitespace-nowrap" style={{ backgroundColor: BG_COLORS.blue.light, color: TEXT_ON_BG_COLORS.blue }}>
                 {item.jenis_jabatan}
               </span>
             )}
@@ -259,7 +260,7 @@ const DaftarTalenta = () => {
     },
     {
       key: "kuadran",
-      label: "Kuadran",
+      label: "Kotak Talenta",
       align: "center",
       render: (item) => {
         const p = parseFloat(

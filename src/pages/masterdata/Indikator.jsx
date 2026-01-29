@@ -9,6 +9,7 @@ import {
   updateSubIndikator,
   deleteSubIndikator,
   bulkUpdateSubBobot,
+  fetchInstrumens,
 } from "../../services/apiService";
 import Swal from "sweetalert2";
 import IconButton from "../../components/IconButton";
@@ -28,6 +29,9 @@ const Indikator = () => {
   const [currentSubIndikator, setCurrentSubIndikator] = useState(null);
   const [selectedIndikator, setSelectedIndikator] = useState(null);
   const [subSearchTerm, setSubSearchTerm] = useState("");
+  const [instrumens, setInstrumens] = useState([]);
+  const [showInstrumenModal, setShowInstrumenModal] = useState(false);
+  const [selectedSubForInstrumen, setSelectedSubForInstrumen] = useState(null);
 
   const [formData, setFormData] = useState({
     indikator: "",
@@ -199,7 +203,7 @@ const Indikator = () => {
             reverseButtons: true,
             confirmButtonText: "Lanjutkan",
             cancelButtonText: "Batal",
-            confirmButtonColor: "#3B82F6",
+            confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
           });
 
@@ -225,7 +229,7 @@ const Indikator = () => {
         icon: "error",
         title: "Gagal!",
         text: err.message || "Terjadi kesalahan saat menyimpan data",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setSubmitting(false);
@@ -277,7 +281,7 @@ const Indikator = () => {
       reverseButtons: true,
       confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
     });
 
@@ -297,22 +301,41 @@ const Indikator = () => {
           icon: "error",
           title: "Gagal!",
           text: err.message || "Terjadi kesalahan saat menghapus data",
-          confirmButtonColor: "#3B82F6",
+          confirmButtonColor: "#3085d6",
         });
       }
     }
   };
 
   // Detail Modal Functions
-  const handleOpenDetailModal = (indikator) => {
+  const handleOpenDetailModal = async (indikator) => {
     setSelectedIndikator(indikator);
     setSubSearchTerm("");
     setShowDetailModal(true);
+    // Load instrumens data
+    try {
+      const result = await fetchInstrumens();
+      setInstrumens(result || []);
+    } catch (err) {
+      console.error("Error loading instrumens:", err);
+      setInstrumens([]);
+    }
   };
 
   const handleCloseDetailModal = () => {
     setShowDetailModal(false);
     setSelectedIndikator(null);
+  };
+
+  // Instrumen Modal Functions
+  const handleOpenInstrumenModal = (subindikator) => {
+    setSelectedSubForInstrumen(subindikator);
+    setShowInstrumenModal(true);
+  };
+
+  const handleCloseInstrumenModal = () => {
+    setShowInstrumenModal(false);
+    setSelectedSubForInstrumen(null);
   };
 
   // Subindikator Modal Functions
@@ -391,7 +414,7 @@ const Indikator = () => {
         icon: "error",
         title: "Gagal!",
         text: err.message || "Terjadi kesalahan saat menyimpan data",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setSubmittingSub(false);
@@ -457,7 +480,7 @@ const Indikator = () => {
       reverseButtons: true,
       confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
     });
 
@@ -487,7 +510,7 @@ const Indikator = () => {
           icon: "error",
           title: "Gagal!",
           text: err.message || "Terjadi kesalahan saat menghapus data",
-          confirmButtonColor: "#3B82F6",
+          confirmButtonColor: "#3085d6",
         });
       }
     }
@@ -592,7 +615,7 @@ const Indikator = () => {
         icon: "error",
         title: "Gagal!",
         text: err.message || "Gagal menyimpan bobot subindikator",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setBulkSubmitting(false);
@@ -681,58 +704,82 @@ const Indikator = () => {
 
       {/* Totals for Kinerja & Potensial */}
       <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div
-          className={`${
-            totalKinerja === 100
-              ? "bg-green-50 border border-green-200 dark:bg-green-900/30 dark:border-green-800 text-green-800 dark:text-green-200"
-              : "bg-red-50 border border-red-200 dark:bg-red-900/30 dark:border-red-800 text-red-800 dark:text-red-200"
-          } border rounded-lg p-3 flex items-center gap-3`}
-        >
-          <div className="flex-1">
-            <div className="text-sm font-semibold">Total Bobot Kinerja</div>
-            <div className="text-lg font-bold">{totalKinerja}%</div>
-          </div>
-          <div className="text-sm">
-            {totalKinerja === 100 ? (
-              <span className="inline-block bg-[#2fa84f]/10 text-[#2fa84f] px-2 py-1 rounded-full">
-                OK
-              </span>
-            ) : (
-              <span className="inline-block bg-[#d33]/10 text-[#d33] px-2 py-1 rounded-full">
-                Harus 100%
-              </span>
-            )}
-          </div>
-        </div>
+        {loading ? (
+          <>
+            {/* Loading skeleton for Total Bobot Kinerja */}
+            <div className="bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 flex items-center gap-3 animate-pulse">
+              <div className="flex-1">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
+                <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+              </div>
+              <div className="h-8 w-20 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+            </div>
 
-        <div
-          className={`${
-            totalPotensial === 100
-              ? "bg-green-50 border border-green-200 dark:bg-green-900/30 dark:border-green-800 text-green-800 dark:text-green-200"
-              : "bg-red-50 border border-red-200 dark:bg-red-900/30 dark:border-red-800 text-red-800 dark:text-red-200"
-          } border rounded-lg p-3 flex items-center gap-3`}
-        >
-          <div className="flex-1">
-            <div className="text-sm font-semibold">Total Bobot Potensial</div>
-            <div className="text-lg font-bold">{totalPotensial}%</div>
-          </div>
-          <div className="text-sm">
-            {totalPotensial === 100 ? (
-              <span className="inline-block bg-[#2fa84f]/10 text-[#2fa84f] px-2 py-1 rounded-full">
-                OK
-              </span>
-            ) : (
-              <span className="inline-block bg-[#d33]/10 text-[#d33] px-2 py-1 rounded-full">
-                Harus 100%
-              </span>
-            )}
-          </div>
-        </div>
+            {/* Loading skeleton for Total Bobot Potensial */}
+            <div className="bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 flex items-center gap-3 animate-pulse">
+              <div className="flex-1">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
+                <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+              </div>
+              <div className="h-8 w-20 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div
+              className={`${
+                totalKinerja === 100
+                  ? "bg-[#E9F7EF] border border-[#2fa84f] dark:bg-green-900/30 dark:border-green-800 text-[#166534] dark:text-green-200"
+                  : "bg-[#FDECEA] border border-[#d33] dark:bg-red-900/30 dark:border-red-800 text-[#991b1b] dark:text-red-200"
+              } border rounded-lg p-3 flex items-center gap-3`}
+            >
+              <div className="flex-1">
+                <div className="text-sm font-semibold">Total Bobot Kinerja</div>
+                <div className="text-lg font-bold">{totalKinerja}%</div>
+              </div>
+              <div className="text-sm">
+                {totalKinerja === 100 ? (
+                  <span className="inline-block bg-[#2fa84f]/10 text-[#2fa84f] px-2 py-1 rounded-full">
+                    OK
+                  </span>
+                ) : (
+                  <span className="inline-block bg-[#d33]/10 text-[#d33] px-2 py-1 rounded-full">
+                    Harus 100%
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div
+              className={`${
+                totalPotensial === 100
+                  ? "bg-[#E9F7EF] border border-[#2fa84f] dark:bg-green-900/30 dark:border-green-800 text-[#166534] dark:text-green-200"
+                  : "bg-[#FDECEA] border border-[#d33] dark:bg-red-900/30 dark:border-red-800 text-[#991b1b] dark:text-red-200"
+              } border rounded-lg p-3 flex items-center gap-3`}
+            >
+              <div className="flex-1">
+                <div className="text-sm font-semibold">Total Bobot Potensial</div>
+                <div className="text-lg font-bold">{totalPotensial}%</div>
+              </div>
+              <div className="text-sm">
+                {totalPotensial === 100 ? (
+                  <span className="inline-block bg-[#2fa84f]/10 text-[#2fa84f] px-2 py-1 rounded-full">
+                    OK
+                  </span>
+                ) : (
+                  <span className="inline-block bg-[#d33]/10 text-[#d33] px-2 py-1 rounded-full">
+                    Harus 100%
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Error State */}
       {error && !loading && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+        <div className="bg-[#FDECEA] dark:bg-red-900/20 border border-[#d33] dark:border-red-800 rounded-lg p-4 mb-6">
           <div className="flex items-start">
             <svg
               className="h-5 w-5 text-[#d33] mt-0.5 flex-shrink-0"
@@ -781,7 +828,7 @@ const Indikator = () => {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] dark:text-white transition-all shadow-sm"
+                  className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] dark:text-white transition-all shadow-sm"
                 />
                 <svg
                   className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 dark:text-gray-500"
@@ -826,7 +873,7 @@ const Indikator = () => {
                       <div className="flex flex-col items-center justify-center">
                         <div className="relative">
                           <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3B82F6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
                         </div>
                         <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                           {t("loadingData")}
@@ -877,7 +924,7 @@ const Indikator = () => {
                                 rowSpan={items.length}
                                 className="px-3 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white text-center align-middle"
                               >
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-md font-medium bg-[#3B82F6] text-white">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-md font-medium bg-[#3085d6] text-white">
                                   {penilaian}
                                 </span>
                               </td>
@@ -888,7 +935,7 @@ const Indikator = () => {
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-center">
                               {indikator.bobot}
                               {isSubMismatch(indikator) && (
-                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-md font-medium bg-[#f4c430]/10 text-yellow-800 dark:bg-[#f4c430]/10 dark:text-[#f4c430]">
+                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-md font-medium bg-[#FFF8E1] text-[#854d0e] dark:bg-[#f4c430]/10 dark:text-[#f4c430]">
                                   <i className="fas fa-exclamation-triangle mr-1" />{" "}
                                   Bobot sub: {sumActiveSub(indikator)}
                                 </span>
@@ -904,7 +951,7 @@ const Indikator = () => {
                                   handleOpenDetailModal(indikator);
                               }}
                             >
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-md font-medium bg-[#7a5cd6]/10 text-[#7a5cd6] dark:bg-[#7a5cd6] dark:text-white cursor-pointer hover:opacity-90">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-md font-medium bg-[#F3E8FF] border border-[#7a5cd6] text-[#6b21a8] dark:bg-[#7a5cd6] dark:text-white cursor-pointer hover:bg-[#d8b4fe] dark:hover:bg-[#8a6ce6] transition-all duration-200">
                                 {indikator.sub_indikators?.length || 0}{" "}
                                 Subindikator
                               </span>
@@ -1010,7 +1057,7 @@ const Indikator = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, indikator: e.target.value })
                       }
-                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
                       placeholder="Masukkan nama indikator"
                     />
                   </div>
@@ -1031,7 +1078,7 @@ const Indikator = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, bobot: e.target.value })
                         }
-                        className="block w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                        className="block w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
                         placeholder="0.00"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-600 dark:text-gray-300">
@@ -1039,7 +1086,7 @@ const Indikator = () => {
                       </span>
                     </div>
                     {indikatorWarning && (
-                      <div className="mt-2 text-sm text-yellow-800 bg-[#f4c430]/10 dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
+                      <div className="mt-2 text-sm text-[#854d0e] bg-[#FFF8E1] dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
                         {indikatorWarning}
                       </div>
                     )}
@@ -1061,7 +1108,7 @@ const Indikator = () => {
                             penilaian: e.target.value,
                           })
                         }
-                        className="appearance-none block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] cursor-pointer transition-all shadow-sm"
+                        className="appearance-none block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] cursor-pointer transition-all shadow-sm"
                       >
                         <option value="">-- Pilih Penilaian --</option>
                         <option value="Kinerja">Kinerja</option>
@@ -1172,7 +1219,7 @@ const Indikator = () => {
                         onChange={(e) =>
                           handleSelectBulkIndikator(e.target.value)
                         }
-                        className="appearance-none block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] cursor-pointer transition-all shadow-sm"
+                        className="appearance-none block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] cursor-pointer transition-all shadow-sm"
                       >
                         <option value="">-- Pilih Indikator --</option>
                         {data.map((ind) => (
@@ -1266,7 +1313,7 @@ const Indikator = () => {
                                   }}
                                   className={`inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
                                     s.isactive
-                                      ? "bg-[#3B82F6]"
+                                      ? "bg-[#3085d6]"
                                       : "bg-gray-300 dark:bg-gray-600"
                                   }`}
                                 >
@@ -1285,12 +1332,12 @@ const Indikator = () => {
                       </table>
                     </div>
                     {bulkErrors && (
-                      <div className="mt-2 text-sm text-yellow-800 bg-[#f4c430]/10 dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
+                      <div className="mt-2 text-sm text-[#854d0e] bg-[#FFF8E1] dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
                         {bulkErrors}
                       </div>
                     )}
                     {bulkWarning && (
-                      <div className="mt-2 text-sm text-yellow-800 bg-[#f4c430]/10 dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
+                      <div className="mt-2 text-sm text-[#854d0e] bg-[#FFF8E1] dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
                         {bulkWarning}
                       </div>
                     )}
@@ -1353,7 +1400,7 @@ const Indikator = () => {
           {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col min-h-0 pointer-events-auto"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-5xl max-h-[80vh] flex flex-col min-h-0 pointer-events-auto"
               style={{
                 animation: "modalSlideUp 0.3s ease-out",
               }}
@@ -1380,7 +1427,7 @@ const Indikator = () => {
 
               {/* Content: simplified to a scrollable table only */}
               <div className="flex-1 p-6 flex flex-col min-h-0">
-                <div className="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-900/30 dark:border-blue-800">
+                <div className="mb-6 p-4 rounded-lg bg-[#E7F3FF] border border-[#3085d6] dark:bg-blue-900/30 dark:border-blue-800">
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     {selectedIndikator.indikator}
                   </h4>
@@ -1405,7 +1452,7 @@ const Indikator = () => {
                         placeholder="Cari subindikator..."
                         value={subSearchTerm}
                         onChange={(e) => setSubSearchTerm(e.target.value)}
-                        className="w-56 pl-10 pr-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                        className="w-56 pl-10 pr-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3085d6]"
                       />
                       <svg
                         className="absolute left-3 top-3 h-4 w-4 text-gray-400"
@@ -1435,9 +1482,9 @@ const Indikator = () => {
 
                 {/* Warning if sub total mismatch */}
                 {isSubMismatch(selectedIndikator) && (
-                  <div className="mb-4 p-3 rounded-lg bg-[#f4c430]/10 border border-[#f4c430]/30 text-yellow-800 dark:bg-[#f4c430]/10 dark:border-[#f39c12]/30">
+                  <div className="mb-4 p-3 rounded-lg bg-[#FFF8E1] border border-[#f4c430] text-[#854d0e] dark:bg-[#f4c430]/10 dark:border-[#f39c12]/30">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-[#f4c430]/10 text-yellow-800 dark:bg-[#f4c430]/10 dark:text-[#f4c430] flex-shrink-0">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-[#FFF8E1] text-[#854d0e] dark:bg-[#f4c430]/10 dark:text-[#f4c430] flex-shrink-0">
                         <i className="fas fa-exclamation-triangle" />
                       </div>
                       <div>
@@ -1529,6 +1576,9 @@ const Indikator = () => {
                               <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-30">
                                 Bobot (%)
                               </th>
+                              <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-40">
+                                Instrumen
+                              </th>
                               <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-30">
                                 Status
                               </th>
@@ -1554,12 +1604,38 @@ const Indikator = () => {
                                 <td className="px-3 py-2 whitespace-nowrap text-sm w-20 text-center">
                                   {sub.bobot}
                                 </td>
+                                <td 
+                                  className="px-3 py-2 text-sm w-40 text-center"
+                                  onClick={() => {
+                                    const count = instrumens.filter(inst => inst.subindikator_id === sub.id).length;
+                                    if (count > 0) handleOpenInstrumenModal(sub);
+                                  }}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      const count = instrumens.filter(inst => inst.subindikator_id === sub.id).length;
+                                      if (count > 0) handleOpenInstrumenModal(sub);
+                                    }
+                                  }}
+                                >
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
+                                    instrumens.filter(inst => inst.subindikator_id === sub.id).length > 0
+                                      ? "bg-[#E7F3FF] border border-[#3085d6] dark:bg-blue-900/30 dark:border-blue-800 text-blue-800 dark:text-blue-200 cursor-pointer hover:bg-[#bfdbfe] dark:hover:bg-blue-900/50 transition-all duration-200"
+                                      : "bg-gray-50 border border-gray-200 dark:bg-gray-900/30 dark:border-gray-800 text-gray-600 dark:text-gray-400"
+                                  }`}>
+                                    {(() => {
+                                      const count = instrumens.filter(inst => inst.subindikator_id === sub.id).length;
+                                      return count > 0 ? `${count} Instrumen` : "Belum ada";
+                                    })()}
+                                  </span>
+                                </td>
                                 <td className="px-3 py-2 whitespace-nowrap text-sm w-20 text-center">
                                   <span
                                     className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
                                       sub.isactive
-                                        ? "bg-green-50 border border-green-200 dark:bg-green-900/30 dark:border-green-800 text-green-800 dark:text-green-200"
-                                        : "bg-red-50 border border-red-200 dark:bg-red-900/30 dark:border-red-800 text-red-800 dark:text-red-200"
+                                        ? "bg-[#E9F7EF] border border-[#2fa84f] dark:bg-green-900/30 dark:border-green-800 text-[#166534] dark:text-green-200"
+                                        : "bg-[#FDECEA] border border-[#d33] dark:bg-red-900/30 dark:border-red-800 text-[#991b1b] dark:text-red-200"
                                     }`}
                                   >
                                     {sub.isactive ? "Aktif" : "Tidak Aktif"}
@@ -1687,7 +1763,7 @@ const Indikator = () => {
                           subindikator: e.target.value,
                         })
                       }
-                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
                       placeholder="Masukkan nama subindikator"
                     />
                   </div>
@@ -1711,7 +1787,7 @@ const Indikator = () => {
                             bobot: e.target.value,
                           })
                         }
-                        className="block w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                        className="block w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
                         placeholder="0.00"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-600 dark:text-gray-300">
@@ -1719,7 +1795,7 @@ const Indikator = () => {
                       </span>
                     </div>
                     {subWarning && (
-                      <div className="mt-2 text-sm text-yellow-800 bg-[#f4c430]/10 dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
+                      <div className="mt-2 text-sm text-[#854d0e] bg-[#FFF8E1] dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
                         {subWarning}
                       </div>
                     )}
@@ -1736,7 +1812,7 @@ const Indikator = () => {
                       aria-pressed={subFormData.isactive}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none cursor-pointer ${
                         subFormData.isactive
-                          ? "bg-[#3B82F6]"
+                          ? "bg-[#3085d6]"
                           : "bg-gray-300 dark:bg-gray-600"
                       }`}
                       title={subFormData.isactive ? "Aktif" : "Tidak Aktif"}
@@ -1785,6 +1861,152 @@ const Indikator = () => {
                   </IconButton>
                 </div>
               </form>
+            </div>
+          </div>
+
+          {/* Animations */}
+          <style>{`
+            @keyframes modalSlideUp {
+              from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+              }
+            }
+          `}</style>
+        </>
+      )}
+
+      {/* Instrumen List Modal */}
+      {showInstrumenModal && selectedSubForInstrumen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] transition-opacity duration-300 ease-out"
+            onClick={handleCloseInstrumenModal}
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 pointer-events-none">
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col min-h-0 pointer-events-auto"
+              style={{
+                animation: "modalSlideUp 0.3s ease-out",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Daftar Instrumen
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Subindikator: {selectedSubForInstrumen.subindikator}
+                  </p>
+                </div>
+                <button
+                  onClick={handleCloseInstrumenModal}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-120 cursor-pointer"
+                  aria-label="Close"
+                >
+                  <i className="fas fa-times text-xl text-gray-600 dark:text-gray-300"></i>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 p-6 flex flex-col min-h-0">
+                <div className="h-0 flex-1 overflow-auto min-h-0 rounded-lg border border-gray-200 dark:border-gray-700">
+                  {(() => {
+                    const subInstrumens = instrumens.filter(
+                      (inst) => inst.subindikator_id === selectedSubForInstrumen.id
+                    );
+
+                    if (subInstrumens.length === 0) {
+                      return (
+                        <div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <svg
+                            className="mx-auto h-12 w-12 text-gray-400 mb-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                            />
+                          </svg>
+                          <p className="font-medium">Belum ada instrumen</p>
+                          <p className="text-sm mt-1">
+                            Subindikator ini belum memiliki instrumen
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="w-full min-w-0">
+                        <table className="w-full text-sm table-auto min-w-full">
+                          <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
+                            <tr>
+                              <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-12">
+                                No
+                              </th>
+                              <th className="px-3 py-2 text-left text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider">
+                                Nama Instrumen
+                              </th>
+                              <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-24">
+                                Skor
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            {subInstrumens.map((inst, idx) => (
+                              <tr
+                                key={inst.id}
+                                className={`${
+                                  idx % 2 === 0
+                                    ? "bg-gray-50 dark:bg-gray-700/50"
+                                    : ""
+                                } hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors`}
+                              >
+                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white text-center">
+                                  {idx + 1}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">
+                                  {inst.instrumen}
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white text-center">
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-[#E9F7EF] border border-[#2fa84f] dark:bg-green-900/30 dark:border-green-800 text-[#166534] dark:text-green-200">
+                                    {inst.skor}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700 rounded-b-2xl bg-gray-50 dark:bg-gray-700/50">
+                <IconButton
+                  onClick={handleCloseInstrumenModal}
+                  variant="default"
+                  size="lg"
+                >
+                  <i className="fas fa-times-circle mr-2" />
+                  Tutup
+                </IconButton>
+              </div>
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSettings } from "../../context/SettingsContext";
 import {
   fetchPetaJabatan,
@@ -12,6 +13,7 @@ import Swal from "sweetalert2";
 
 const Jabatan = () => {
   const { t } = useSettings();
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,7 +51,7 @@ const Jabatan = () => {
       showCancelButton: true,
       confirmButtonText: "Ya",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
       reverseButtons: true,
     });
@@ -72,7 +74,7 @@ const Jabatan = () => {
         icon: "error",
         title: "Gagal",
         text: err.message || "Sinkronisasi gagal",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setIsSyncing(false);
@@ -137,6 +139,29 @@ const Jabatan = () => {
           >
             {selisih}
           </span>
+        );
+      },
+    },
+    {
+      key: "actions",
+      label: "",
+      sortable: false,
+      align: "center",
+      render: (item) => {
+        return (
+          <IconButton
+            onClick={() => {
+              navigate(`/masterdata/jabatan/${item.id}/syarat-suksesi`, {
+                state: { jabatan: item }
+              });
+            }}
+            variant="primary"
+            size="lg"
+            title="Syarat Suksesi"
+          >
+            <i className="fas fa-clipboard-check mr-2"></i>
+            Syarat Suksesi
+          </IconButton>
         );
       },
     },

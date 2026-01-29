@@ -120,7 +120,7 @@ const PenilaianPegawai = () => {
       showCancelButton: true,
       confirmButtonText: "Ya",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
       reverseButtons: true,
     });
@@ -144,7 +144,7 @@ const PenilaianPegawai = () => {
         icon: "error",
         title: "Gagal",
         text: err.message || "Sinkronisasi gagal",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setIsSyncing(false);
@@ -159,7 +159,7 @@ const PenilaianPegawai = () => {
       showCancelButton: true,
       confirmButtonText: "Ya",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
       reverseButtons: true,
     });
@@ -182,7 +182,7 @@ const PenilaianPegawai = () => {
         icon: "error",
         title: "Gagal",
         text: err.message || "Sinkronisasi penilaian gagal",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setIsSyncingPenilaian(false);
@@ -195,7 +195,7 @@ const PenilaianPegawai = () => {
   }, []);
 
   const handlePenilaian = (nip) => {
-    navigate(`/masterdata/penilaian-pegawai/input/${nip}`);
+    navigate(`/masterdata/penilaian-pegawai/input-penilaian/${nip}`);
   };
 
   const handleBulkUpload = async (dataRows) => {
@@ -282,7 +282,7 @@ const PenilaianPegawai = () => {
           </div>
           <div className="flex gap-2 mt-1">
             {item.jenis_jabatan && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium bg-blue-100 text-[#3B82F6] dark:bg-blue-900 dark:text-blue-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium bg-[#E7F3FF] text-[#1e40af] dark:bg-blue-900 dark:text-blue-200">
                 {item.jenis_jabatan}
               </span>
             )}
@@ -325,8 +325,8 @@ const PenilaianPegawai = () => {
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded text-sm font-medium ${
               hasPenilaian
-                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                ? "bg-[#E9F7EF] text-[#166534] dark:bg-green-900 dark:text-green-200"
+                : "bg-[#FDECEA] text-[#991b1b] dark:bg-red-900 dark:text-red-200"
             }`}
           >
             {hasPenilaian ? "Sudah" : "Belum"}
@@ -375,14 +375,14 @@ const PenilaianPegawai = () => {
           variant="success"
           size="lg"
           disabled={isUploading}
-          title="Import Data Penilaian"
+          title="Impor Data Penilaian"
         >
           {isUploading ? (
             <i className="fas fa-spinner fa-spin mr-2" />
           ) : (
             <i className="fas fa-file-import mr-2" />
           )}
-          Import Data
+          Impor Data
         </IconButton>
         <IconButton
           onClick={handleSyncPenilaian}

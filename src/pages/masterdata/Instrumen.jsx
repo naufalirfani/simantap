@@ -172,7 +172,7 @@ const Instrumen = () => {
         icon: "error",
         title: "Gagal!",
         text: err.message || "Terjadi kesalahan saat menyimpan instrumen",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setSubmitting(false);
@@ -188,7 +188,7 @@ const Instrumen = () => {
       reverseButtons: true,
       confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
     });
 
@@ -208,7 +208,7 @@ const Instrumen = () => {
           icon: "error",
           title: "Gagal!",
           text: err.message || "Gagal menghapus instrumen",
-          confirmButtonColor: "#3B82F6",
+          confirmButtonColor: "#3085d6",
         });
       }
     }
@@ -307,7 +307,7 @@ const Instrumen = () => {
                   placeholder="Cari instrumen, subindikator, skor..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] dark:text-white transition-all shadow-sm"
+                  className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] dark:text-white transition-all shadow-sm"
                 />
                 <svg
                   className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 dark:text-gray-500"
@@ -352,7 +352,7 @@ const Instrumen = () => {
                       <div className="flex flex-col items-center justify-center">
                         <div className="relative">
                           <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3B82F6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
                         </div>
                         <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                           Memuat data...
@@ -539,7 +539,7 @@ const Instrumen = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, instrumen: e.target.value })
                       }
-                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
                       placeholder="Masukkan instrumen"
                     />
                   </div>
@@ -561,7 +561,7 @@ const Instrumen = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, skor: e.target.value })
                       }
-                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-[#3B82F6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
                       placeholder="0.00"
                     />
                     {skorWarning && (

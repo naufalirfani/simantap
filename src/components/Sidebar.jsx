@@ -12,6 +12,7 @@ const Sidebar = () => {
   const [isMobile, setIsMobile] = useState(false);
   const navRef = useRef(null);
   const [navScrollable, setNavScrollable] = useState(false);
+  const [pendingPath, setPendingPath] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const canViewDetail =
@@ -39,6 +40,8 @@ const Sidebar = () => {
     // Auto-open masterdata dropdown when current route is a child of /masterdata
     if (location && location.pathname) {
       setMasterdataOpen(location.pathname.startsWith("/masterdata"));
+      // Clear pending path when location actually changes
+      setPendingPath(null);
     }
   }, [location.pathname, isMobile]);
 
@@ -128,7 +131,7 @@ const Sidebar = () => {
   const MobileMenuButton = () => (
     <button
       onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-      className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-[#3B82F6] hover:bg-[#296eb8] text-white rounded-lg shadow-lg transition-all duration-300 cursor-pointer"
+      className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-[#3085d6] hover:bg-[#2075c6] text-white rounded-lg shadow-lg transition-all duration-300 cursor-pointer"
     >
       <i
         className={`${
@@ -163,11 +166,11 @@ const Sidebar = () => {
           <div className="flex items-center justify-between mb-4">
             {sidebarExpanded ? (
               <div className="flex items-center space-x-3 overflow-hidden">
-                <div className="w-11 h-11 bg-[#3B82F6] rounded-lg flex items-center justify-center shadow-lg overflow-hidden">
+                <div className="w-11 h-11 bg-[#3085d6] rounded-lg flex items-center justify-center shadow-lg overflow-hidden">
                   <img
                     src={logo}
                     alt="Logo"
-                    className="w-full h-full object-contain p-1"
+                    className="w-10 h-10 object-contain p-1 bg-white rounded-full"
                   />
                 </div>
                 <div className="overflow-hidden min-w-0 flex-1">
@@ -180,7 +183,7 @@ const Sidebar = () => {
                 </div>
               </div>
             ) : (
-              <div className="w-11 h-11 bg-[#3B82F6] rounded-lg flex items-center justify-center shadow-lg mx-auto overflow-hidden">
+              <div className="w-11 h-11 bg-[#3085d6] rounded-lg flex items-center justify-center shadow-lg mx-auto overflow-hidden">
                 <img
                   src={logo}
                   alt="Logo"
@@ -244,16 +247,16 @@ const Sidebar = () => {
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#2fa84f] rounded-full border-2 border-white"></div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate text-gray-800">
+                  <p className="font-semibold text-md truncate text-gray-800">
                     {user?.name || "User"}
                   </p>
-                  <p className="text-xs text-[#3B82F6] truncate">
-                    {user?.role || "Pegawai"}
+                  <p className="text-sm text-[#3085d6] truncate">
+                    {user?.role || "Pegawai"} {user?.jenis_jabatan ? `(${user.jenis_jabatan})` : ""}
                   </p>
-                  <p className="text-xs text-gray-500 truncate mt-0.5">
+                  <p className="text-sm text-gray-500 truncate mt-0.5">
                     {user?.role === "Super Admin" || user?.role === "Admin"
                       ? ""
-                      : "NIP: "}
+                      : "NIP. "}
                     {user?.nip || user?.email}
                   </p>
                 </div>
@@ -306,10 +309,10 @@ const Sidebar = () => {
                     <>
                       <button
                         onClick={() => setMasterdataOpen(!masterdataOpen)}
-                        className="w-full flex items-center cursor-pointer px-4 py-3 hover:bg-[#3B82F6] hover:text-white transition-all duration-200 group rounded-lg text-gray-700"
+                        className="w-full flex items-center cursor-pointer px-4 py-3 hover:bg-[#3085d6] hover:text-white group rounded-lg text-gray-700"
                       >
                         <i
-                          className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform text-[#3B82F6] group-hover:text-white`}
+                          className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform text-[#3085d6] group-hover:text-white`}
                         ></i>
                         <span className="ml-3 flex-1 text-left">
                           {item.label}
@@ -328,27 +331,30 @@ const Sidebar = () => {
                         }`}
                       >
                         <div className="space-y-1 py-1">
-                          {item.children.map((child) => (
-                            <NavLink
-                              key={child.path}
-                              to={child.path}
-                            >
-                              {({ isActive }) => (
+                          {item.children.map((child) => {
+                            const currentPath = pendingPath || location.pathname;
+                            const isActive = currentPath === child.path || currentPath.startsWith(child.path + '/');
+                            return (
+                              <NavLink
+                                key={child.path}
+                                to={child.path}
+                                onClick={() => setPendingPath(child.path)}
+                              >
                                 <div
-                                  className={`flex items-center px-4 py-3 pl-12 hover:bg-[#3B82F6] hover:text-white transition-all duration-200 group rounded-lg mx-2 ${
+                                  className={`flex items-center px-4 py-3 pl-12 hover:bg-[#3085d6] hover:text-white group rounded-lg mx-2 ${
                                     isActive
-                                      ? "bg-[#3B82F6] text-white"
+                                      ? "bg-[#3085d6] text-white"
                                       : "text-gray-700"
                                   }`}
                                 >
                                   <i
-                                    className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? 'text-white' : 'text-[#3B82F6]'} group-hover:text-white`}
+                                    className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? 'text-white' : 'text-[#3085d6]'} group-hover:text-white`}
                                   ></i>
                                   <span className="ml-3">{child.label}</span>
                                 </div>
-                              )}
-                            </NavLink>
-                          ))}
+                              </NavLink>
+                            );
+                          })}
                         </div>
                       </div>
                     </>
@@ -358,12 +364,12 @@ const Sidebar = () => {
                       <button
                         onClick={() => setMasterdataOpen(!masterdataOpen)}
                         title={item.label}
-                        className={`masterdata-button w-full flex items-center cursor-pointer px-4 py-3 justify-center hover:bg-[#3B82F6] hover:text-white transition-all duration-200 rounded-lg relative group/tooltip text-gray-700 ${
+                        className={`masterdata-button w-full flex items-center cursor-pointer px-4 py-3 justify-center hover:bg-[#3085d6] hover:text-white transition-all duration-200 rounded-lg relative group/tooltip text-gray-700 ${
                           masterdataOpen ? "bg-gray-100" : ""
                         }`}
                       >
                         <i
-                          className={`${item.icon} text-xl flex-shrink-0 transition-transform text-[#3B82F6] group-hover:text-white`}
+                          className={`${item.icon} text-xl flex-shrink-0 transition-transform text-[#3085d6] group-hover:text-white`}
                         ></i>
                         {/* Tooltip */}
                         <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
@@ -379,32 +385,37 @@ const Sidebar = () => {
                         }`}
                       >
                         <div className="bg-gray-50 space-y-1 py-1">
-                          {item.children.map((child) => (
-                            <NavLink
-                              key={child.path}
-                              to={child.path}
-                              onClick={() => setMasterdataOpen(false)}
-                              title={child.label}
-                            >
-                              {({ isActive }) => (
+                          {item.children.map((child) => {
+                            const currentPath = pendingPath || location.pathname;
+                            const isActive = currentPath === child.path || currentPath.startsWith(child.path + '/');
+                            return (
+                              <NavLink
+                                key={child.path}
+                                to={child.path}
+                                onClick={() => {
+                                  setMasterdataOpen(false);
+                                  setPendingPath(child.path);
+                                }}
+                                title={child.label}
+                              >
                                 <div
-                                  className={`flex items-center justify-center px-4 py-3 hover:bg-[#3B82F6] hover:text-white transition-all duration-200 group relative group/tooltip ${
+                                  className={`flex items-center justify-center px-4 py-3 hover:bg-[#3085d6] hover:text-white group relative group/tooltip ${
                                     isActive
-                                      ? "bg-[#3B82F6] text-white"
+                                      ? "bg-[#3085d6] text-white"
                                       : "text-gray-700"
                                   }`}
                                 >
                                   <i
-                                    className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? 'text-white' : 'text-[#3B82F6]'} group-hover:text-white`}
+                                    className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? 'text-white' : 'text-[#3085d6]'} group-hover:text-white`}
                                   ></i>
                                   {/* Tooltip */}
                                   <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
                                     {child.label}
                                   </span>
                                 </div>
-                              )}
-                            </NavLink>
-                          ))}
+                              </NavLink>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -414,29 +425,34 @@ const Sidebar = () => {
                 <NavLink
                   to={item.path}
                   title={!sidebarExpanded ? item.label : ""}
+                  onClick={() => setPendingPath(item.path)}
                 >
-                  {({ isActive }) => (
-                    <div
-                      className={`flex items-center relative group/tooltip rounded-lg ${
-                        sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
-                      } hover:bg-[#3B82F6] hover:text-white transition-all duration-200 group ${
-                        isActive ? "bg-[#3B82F6] text-white" : "text-gray-700"
-                      }`}
-                    >
-                      <i
-                        className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? 'text-white' : 'text-[#3B82F6]'} group-hover:text-white`}
-                      ></i>
-                      {sidebarExpanded && (
-                        <span className="ml-3">{item.label}</span>
-                      )}
-                      {/* Tooltip for minimized mode */}
-                      {!sidebarExpanded && (
-                        <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
-                          {item.label}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  {() => {
+                    const currentPath = pendingPath || location.pathname;
+                    const isActive = currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path + '/'));
+                    return (
+                      <div
+                        className={`flex items-center relative group/tooltip rounded-lg ${
+                          sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
+                        } hover:bg-[#3085d6] hover:text-white group ${
+                          isActive ? "bg-[#3085d6] text-white" : "text-gray-700"
+                        }`}
+                      >
+                        <i
+                          className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? 'text-white' : 'text-[#3085d6]'} group-hover:text-white`}
+                        ></i>
+                        {sidebarExpanded && (
+                          <span className="ml-3">{item.label}</span>
+                        )}
+                        {/* Tooltip for minimized mode */}
+                        {!sidebarExpanded && (
+                          <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
+                            {item.label}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }}
                 </NavLink>
               )}
             </div>
@@ -468,27 +484,31 @@ const Sidebar = () => {
               <NavLink
                 to="/pengaturan"
                 title={!sidebarExpanded ? t("pengaturan") : ""}
+                onClick={() => setPendingPath("/pengaturan")}
               >
-                {({ isActive }) => (
-                  <div
-                    className={`flex items-center relative group/tooltip ${
-                      sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
-                    } rounded-lg hover:bg-[#3B82F6] hover:text-white transition-all duration-200 group ${
-                      isActive ? "bg-[#3B82F6] text-white" : "text-gray-700"
-                    }`}
-                  >
-                    <i className={`fas fa-cog text-xl flex-shrink-0 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300 ${isActive ? 'text-white' : 'text-[#3B82F6]'} group-hover:text-white`}></i>
-                    {sidebarExpanded && (
-                      <span className="ml-3">{t("pengaturan")}</span>
-                    )}
-                    {/* Tooltip for minimized mode */}
-                    {!sidebarExpanded && (
-                      <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
-                        {t("pengaturan")}
-                      </span>
-                    )}
-                  </div>
-                )}
+                {() => {
+                  const isActive = (pendingPath || location.pathname) === "/pengaturan";
+                  return (
+                    <div
+                      className={`flex items-center relative group/tooltip ${
+                        sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
+                      } rounded-lg hover:bg-[#3085d6] hover:text-white group ${
+                        isActive ? "bg-[#3085d6] text-white" : "text-gray-700"
+                      }`}
+                    >
+                      <i className={`fas fa-cog text-xl flex-shrink-0 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300 ${isActive ? 'text-white' : 'text-[#3085d6]'} group-hover:text-white`}></i>
+                      {sidebarExpanded && (
+                        <span className="ml-3">{t("pengaturan")}</span>
+                      )}
+                      {/* Tooltip for minimized mode */}
+                      {!sidebarExpanded && (
+                        <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
+                          {t("pengaturan")}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }}
               </NavLink>
             </div>
           )}
@@ -518,26 +538,30 @@ const Sidebar = () => {
             <NavLink
               to="/pengaturan"
               title={!sidebarExpanded ? t("pengaturan") : ""}
+              onClick={() => setPendingPath("/pengaturan")}
             >
-              {({ isActive }) => (
-                <div
-                  className={`flex items-center relative group/tooltip ${
-                    sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
-                  } rounded-lg hover:bg-[#3B82F6] hover:text-white transition-all duration-200 group ${
-                    isActive ? "bg-[#3B82F6] text-white" : "text-gray-700"
-                  }`}
-                >
-                  <i className={`fas fa-cog text-xl flex-shrink-0 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300 ${isActive ? 'text-white' : 'text-[#3B82F6]'} group-hover:text-white`}></i>
-                  {sidebarExpanded && (
-                    <span className="ml-3">{t("pengaturan")}</span>
-                  )}
-                  {!sidebarExpanded && (
-                    <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
-                      {t("pengaturan")}
-                    </span>
-                  )}
-                </div>
-              )}
+              {() => {
+                const isActive = (pendingPath || location.pathname) === "/pengaturan";
+                return (
+                  <div
+                    className={`flex items-center relative group/tooltip ${
+                      sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
+                    } rounded-lg hover:bg-[#3085d6] hover:text-white group ${
+                      isActive ? "bg-[#3085d6] text-white" : "text-gray-700"
+                    }`}
+                  >
+                    <i className={`fas fa-cog text-xl flex-shrink-0 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300 ${isActive ? 'text-white' : 'text-[#3085d6]'} group-hover:text-white`}></i>
+                    {sidebarExpanded && (
+                      <span className="ml-3">{t("pengaturan")}</span>
+                    )}
+                    {!sidebarExpanded && (
+                      <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
+                        {t("pengaturan")}
+                      </span>
+                    )}
+                  </div>
+                );
+              }}
             </NavLink>
           </div>
         )}

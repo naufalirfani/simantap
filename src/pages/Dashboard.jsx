@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSettings } from "../context/SettingsContext";
+import { PRIMARY_COLORS } from "../config/colors";
 import {
   PieChart,
   Pie,
@@ -40,7 +41,7 @@ ChartJS.register(
   LineElement,
   ChartTooltip,
   ChartLegend,
-  Filler
+  Filler,
 );
 
 const Dashboard = () => {
@@ -79,7 +80,7 @@ const Dashboard = () => {
     document.title = `${t("dashboard")} | SIMANTAP`;
     setIsDark(
       typeof document !== "undefined" &&
-        document.documentElement.classList.contains("dark")
+        document.documentElement.classList.contains("dark"),
     );
     const checkMobile = () =>
       setIsMobile(typeof window !== "undefined" && window.innerWidth < 1024);
@@ -106,12 +107,12 @@ const Dashboard = () => {
     const fontLinkHref =
       "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap";
     let fontLink = Array.from(
-      document.head.querySelectorAll('link[rel="stylesheet"]')
+      document.head.querySelectorAll('link[rel="stylesheet"]'),
     ).find(
       (l) =>
         l.href &&
         l.href.includes("fonts.googleapis.com") &&
-        l.href.includes("Poppins")
+        l.href.includes("Poppins"),
     );
     if (!fontLink) {
       fontLink = document.createElement("link");
@@ -342,13 +343,15 @@ const Dashboard = () => {
   const [empKuadran, setEmpKuadran] = useState(null);
 
   // Filter states untuk Unit Kerja dan Jenis Jabatan
-  const [selectedUnitKerja, setSelectedUnitKerja] = useState("");
-  const [selectedJenisJabatan, setSelectedJenisJabatan] = useState("");
+  const [selectedUnitKerja, setSelectedUnitKerja] = useState([]);
+  const [selectedJenisJabatan, setSelectedJenisJabatan] = useState([]);
   const [unitKerjaList, setUnitKerjaList] = useState([]);
   const [unitTree, setUnitTree] = useState([]);
   const [unitOptions, setUnitOptions] = useState([]);
   const [jenisJabatanList, setJenisJabatanList] = useState([]);
   const unitMapsRef = useRef({ nameToId: {}, parentMap: {} });
+  // Guard to avoid repeatedly attempting a full fetch when there is no quadrant data
+  const attemptedFullFetchRef = useRef(false);
 
   // Load pegawai (with penilaian) dari API untuk chart 9 Kotak
   const [quadrantData, setQuadrantData] = useState([]);
@@ -366,7 +369,7 @@ const Dashboard = () => {
         setEmpLoading(true);
         setEmpEmployees([]);
         setEmpMeta(null);
-        
+
         if (kuadran != null) {
           const kotakId = Number(kuadran);
           // use quadrantData and recompute quadrant
@@ -374,8 +377,13 @@ const Dashboard = () => {
             ...item,
             quadrant: computeQuadrant(item.potensial, item.kinerja),
           }));
-          
-          if (!sourceData || sourceData.length === 0) {
+
+          // If local quadrantData is empty, try a single full fetch only once.
+          if (
+            (!sourceData || sourceData.length === 0) &&
+            !attemptedFullFetchRef.current
+          ) {
+            attemptedFullFetchRef.current = true;
             try {
               const resAll = await fetchPegawaiList({
                 with_penilaian: true,
@@ -393,15 +401,30 @@ const Dashboard = () => {
                 kinerja: it.nilai_kinerja ?? null,
                 quadrant: computeQuadrant(
                   it.nilai_potensial ?? null,
-                  it.nilai_kinerja ?? null
+                  it.nilai_kinerja ?? null,
                 ),
                 avatar: it.avatar || null,
                 raw: it,
               }));
-              setQuadrantData(sourceData);
+              if (sourceData && sourceData.length > 0)
+                setQuadrantData(sourceData);
             } catch (e) {
               sourceData = [];
             }
+          }
+
+          // If still empty after attempting a single full fetch, bail out early
+          // to avoid repeated fetches / infinite retries.
+          if (!sourceData || sourceData.length === 0) {
+            setEmpEmployees([]);
+            setEmpMeta({
+              current_page: 1,
+              per_page,
+              last_page: 1,
+              total: 0,
+              tabel: "kuadran",
+            });
+            return;
           }
 
           const withUnitIds = (sourceData || []).map((it) => ({
@@ -412,18 +435,23 @@ const Dashboard = () => {
           const filtered = withUnitIds.filter((it) => {
             // Filter by quadrant
             if (it.quadrant !== kotakId) return false;
-            
+
             // Filter by Unit Kerja (with parent-child logic)
-            if (selectedUnitKerja) {
+            if (selectedUnitKerja && selectedUnitKerja.length > 0) {
               const pegawaiUKVal = it.unitId || it.unitKerja || "";
-              if (!isUnitKerjaMatch(pegawaiUKVal, selectedUnitKerja)) return false;
+              if (!isUnitKerjaMatch(pegawaiUKVal, selectedUnitKerja))
+                return false;
             }
-            
+
             // Filter by Jenis Jabatan
-            if (selectedJenisJabatan && it.jenisJabatan !== selectedJenisJabatan) {
+            if (
+              selectedJenisJabatan &&
+              selectedJenisJabatan.length > 0 &&
+              !selectedJenisJabatan.includes(it.jenisJabatan)
+            ) {
               return false;
             }
-            
+
             return true;
           });
           const qnorm = (q || "").toString().trim().toLowerCase();
@@ -485,7 +513,7 @@ const Dashboard = () => {
         setEmpLoading(false);
       }
     },
-    [selectedUnitKerja, selectedJenisJabatan, quadrantData]
+    [selectedUnitKerja, selectedJenisJabatan, quadrantData],
   );
 
   const handleJobTypeClick = async (item) => {
@@ -517,7 +545,7 @@ const Dashboard = () => {
       if (!empFilter) return;
       loadEmployees({ filter: empFilter, q: q || "", page, per_page });
     },
-    [empFilter, empKuadran, loadEmployees]
+    [empFilter, empKuadran, loadEmployees],
   );
 
   useEffect(() => {
@@ -557,7 +585,9 @@ const Dashboard = () => {
           walk(tree || []);
 
           unitMapsRef.current = { nameToId, parentMap };
-          setUnitOptions(flat.map((n) => ({ value: n.id, label: n.unit_kerja })));
+          setUnitOptions(
+            flat.map((n) => ({ value: n.id, label: n.unit_kerja })),
+          );
           // keep backwards-compatible list of names as well (if needed elsewhere)
           setUnitKerjaList(flat.map((n) => n.unit_kerja).sort());
 
@@ -574,7 +604,9 @@ const Dashboard = () => {
         }
 
         // Extract unique jenis jabatan for filters
-        const uniqueJenisJabatan = [...new Set(mapped.map((p) => p.jenisJabatan).filter(Boolean))];
+        const uniqueJenisJabatan = [
+          ...new Set(mapped.map((p) => p.jenisJabatan).filter(Boolean)),
+        ];
         setJenisJabatanList(uniqueJenisJabatan.sort());
       })
       .catch((err) => {
@@ -595,41 +627,50 @@ const Dashboard = () => {
   };
 
   // Fungsi helper untuk cek parent-child unit kerja
-  const isUnitKerjaMatch = (pegawaiUnitKerja, filterUnitKerja) => {
-    // filterUnitKerja is expected to be a unit id (string). pegawaiUnitKerja may be id or name.
-    if (!filterUnitKerja) return true;
+  const isUnitKerjaMatch = (pegawaiUnitKerja, filterUnitKerjaArray) => {
+    // filterUnitKerjaArray is expected to be an array of unit ids.
+    if (!filterUnitKerjaArray || filterUnitKerjaArray.length === 0) return true;
     if (!pegawaiUnitKerja) return false;
 
     const { nameToId, parentMap } = unitMapsRef.current || {};
 
-    // If pegawaiUnitKerja is an id, check ancestry using parentMap
-    if (parentMap && typeof pegawaiUnitKerja === "string" && parentMap[pegawaiUnitKerja]) {
-      let cur = pegawaiUnitKerja;
-      while (cur) {
-        if (cur === filterUnitKerja) return true;
-        cur = parentMap[cur];
+    // Check if pegawaiUnitKerja matches any of the filter values
+    for (const filterUnitKerja of filterUnitKerjaArray) {
+      // If pegawaiUnitKerja is an id, check ancestry using parentMap
+      if (
+        parentMap &&
+        typeof pegawaiUnitKerja === "string" &&
+        parentMap[pegawaiUnitKerja]
+      ) {
+        let cur = pegawaiUnitKerja;
+        while (cur) {
+          if (cur === filterUnitKerja) return true;
+          cur = parentMap[cur];
+        }
+        continue;
       }
-      return false;
-    }
 
-    // If pegawaiUnitKerja is a name (legacy), try map to id first
-    const unitId = nameToId ? nameToId[pegawaiUnitKerja] : null;
-    if (unitId) {
-      let cur = unitId;
-      while (cur) {
-        if (cur === filterUnitKerja) return true;
-        cur = parentMap[cur];
+      // If pegawaiUnitKerja is a name (legacy), try map to id first
+      const unitId = nameToId ? nameToId[pegawaiUnitKerja] : null;
+      if (unitId) {
+        let cur = unitId;
+        while (cur) {
+          if (cur === filterUnitKerja) return true;
+          cur = parentMap[cur];
+        }
+        continue;
       }
-      return false;
-    }
 
-    // Fallback to string-based parent-child detection
-    if (pegawaiUnitKerja === filterUnitKerja) return true;
-    if (pegawaiUnitKerja.startsWith(filterUnitKerja + " -") ||
+      // Fallback to string-based parent-child detection
+      if (pegawaiUnitKerja === filterUnitKerja) return true;
+      if (
+        pegawaiUnitKerja.startsWith(filterUnitKerja + " -") ||
         pegawaiUnitKerja.startsWith(filterUnitKerja + ",") ||
         pegawaiUnitKerja.includes(`${filterUnitKerja} -`) ||
-        pegawaiUnitKerja.includes(`${filterUnitKerja},`)) {
-      return true;
+        pegawaiUnitKerja.includes(`${filterUnitKerja},`)
+      ) {
+        return true;
+      }
     }
 
     return false;
@@ -644,15 +685,19 @@ const Dashboard = () => {
   // Apply filters
   const computedQuadrantData = computedQuadrantDataFull.filter((item) => {
     // Filter by Unit Kerja (with parent-child logic)
-    if (selectedUnitKerja && !isUnitKerjaMatch(item.unitId || item.unitKerja, selectedUnitKerja)) {
+    if (
+      selectedUnitKerja &&
+      selectedUnitKerja.length > 0 &&
+      !isUnitKerjaMatch(item.unitId || item.unitKerja, selectedUnitKerja)
+    ) {
       return false;
     }
-    
+
     // Filter by Jenis Jabatan
-    if (selectedJenisJabatan && item.jenisJabatan !== selectedJenisJabatan) {
+    if (selectedJenisJabatan && selectedJenisJabatan.length > 0 && !selectedJenisJabatan.includes(item.jenisJabatan)) {
       return false;
     }
-    
+
     return true;
   });
 
@@ -672,7 +717,7 @@ const Dashboard = () => {
       employees: [],
       title: `Kotak ${quadrantNumber}`,
       description: kotak?.kategori || "",
-      color: kotak?.warna || "#3B82F6",
+      color: kotak?.warna || PRIMARY_COLORS.blue,
       kotakConfig: kotak,
     });
     setEmpEmployees([]);
@@ -698,9 +743,9 @@ const Dashboard = () => {
     setEmpKuadran(null);
   };
 
-  const GENDER_COLORS = ["#3B82F6", "#EC4899"];
+  const GENDER_COLORS = [PRIMARY_COLORS.blue, "#EC4899"];
   // Warna titik yang kontras dengan warna area; menyesuaikan dark mode
-  const POINT_COLOR = isDark ? "#F3F4F6" : "#3B82F6";
+  const POINT_COLOR = isDark ? "#F3F4F6" : PRIMARY_COLORS.blue;
 
   const chartRef = useRef(null);
 
@@ -729,9 +774,9 @@ const Dashboard = () => {
 
       // Draw background areas
       (cfg.kotak || []).forEach((kotak) => {
-        const x1 = x.getPixelForValue(kotak.potensialRange.min);
+        const x1 = x.getPixelForValue(kotak.potensialRange.min === 0 ? kotak.potensialRange.min : kotak.potensialRange.min-1);
         const x2 = x.getPixelForValue(kotak.potensialRange.max);
-        const y1 = y.getPixelForValue(kotak.kinerjaRange.min);
+        const y1 = y.getPixelForValue(kotak.kinerjaRange.min === 0 ? kotak.kinerjaRange.min : kotak.kinerjaRange.min-1);
         const y2 = y.getPixelForValue(kotak.kinerjaRange.max);
 
         ctx.fillStyle = kotak.warna;
@@ -863,7 +908,7 @@ const Dashboard = () => {
               return [
                 `Nilai Potensial: ${data.x}`,
                 `Nilai Kinerja: ${data.y}`,
-                `Nilai Talenta: ${(data.x*50/100) + (data.y*50/100)}`,
+                `Nilai Talenta: ${(data.x * 50) / 100 + (data.y * 50) / 100}`,
                 `Kotak: ${data.quadrant}`,
                 "",
               ];
@@ -878,7 +923,6 @@ const Dashboard = () => {
           min: 0,
           max: 100,
           ticks: {
-            stepSize: p[0].max,
             color: "#6B7280",
           },
           grid: {
@@ -888,6 +932,12 @@ const Dashboard = () => {
           },
           border: {
             color: "#6B7280",
+          },
+          afterBuildTicks: (axis) => {
+            // Set ticks to show all interval boundaries: 0, p[0].max, p[1].max, 100
+            axis.ticks = [0, p[0].max, p[1].max, 100].map((v) => ({
+              value: v,
+            }));
           },
         },
         y: {
@@ -895,7 +945,6 @@ const Dashboard = () => {
           min: 0,
           max: 100,
           ticks: {
-            stepSize: k[0].max,
             color: "#6B7280",
           },
           grid: {
@@ -905,6 +954,12 @@ const Dashboard = () => {
           },
           border: {
             color: "#6B7280",
+          },
+          afterBuildTicks: (axis) => {
+            // Set ticks to show all interval boundaries: 0, k[0].max, k[1].max, 100
+            axis.ticks = [0, k[0].max, k[1].max, 100].map((v) => ({
+              value: v,
+            }));
           },
         },
       },
@@ -948,7 +1003,7 @@ const Dashboard = () => {
     <div className="p-4 md:p-6 lg:p-8">
       {/* Breadcrumb */}
       <Breadcrumb />
-      
+
       {/* Page Title */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
@@ -1139,11 +1194,15 @@ const Dashboard = () => {
         <p className="text-md text-gray-600 dark:text-gray-400 mb-4">
           Pemetaan posisi pegawai berdasarkan nilai potensial dan kinerja
         </p>
-        
+
         {/* Filter Section */}
         <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
           <h3 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-            <i className="fas fa-filter mr-2 text-[#3B82F6]" aria-hidden="true"></i>
+            <i
+              className="fas fa-filter mr-2"
+              style={{ color: PRIMARY_COLORS.blue }}
+              aria-hidden="true"
+            ></i>
             Filter Data
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1156,14 +1215,14 @@ const Dashboard = () => {
                 value={selectedUnitKerja}
                 onChange={(value) => setSelectedUnitKerja(value)}
                 options={[
-                  { value: "", label: "Semua Unit Kerja" },
-                  ...unitOptions
+                  ...unitOptions,
                 ]}
                 placeholder="Pilih Unit Kerja..."
                 label="Unit Kerja"
+                multiple={true}
               />
             </div>
-            
+
             {/* Filter Jenis Jabatan */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1173,28 +1232,26 @@ const Dashboard = () => {
                 value={selectedJenisJabatan}
                 onChange={(value) => setSelectedJenisJabatan(value)}
                 options={[
-                  { value: "", label: "Semua Jenis Jabatan" },
                   ...jobTypeData.map((j) => {
-                    const match = jenisJabatanList.find(
-                      (jj) => j.key === jj
-                    );
+                    const match = jenisJabatanList.find((jj) => j.key === jj);
                     return { value: match, label: j.name };
-                  })
+                  }),
                 ]}
                 placeholder="Pilih Jenis Jabatan..."
                 label="Jenis Jabatan"
+                multiple={true}
               />
             </div>
           </div>
-          
+
           {/* Reset Filter Button */}
-          {(selectedUnitKerja || selectedJenisJabatan) && (
+          {(selectedUnitKerja.length > 0 || selectedJenisJabatan.length > 0) && (
             <div className="mt-4">
               <IconButton
                 title="Reset Filter"
                 onClick={() => {
-                  setSelectedUnitKerja("");
-                  setSelectedJenisJabatan("");
+                  setSelectedUnitKerja([]);
+                  setSelectedJenisJabatan([]);
                 }}
                 variant="default"
                 size="lg"
@@ -1206,29 +1263,45 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-        
+
         {/* Jumlah data per Kotak - single row above chart */}
         <div className="mb-0">
           {/* responsive: wrap on small screens, single-row on large */}
           <div className="flex flex-wrap gap-3 py-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
-              const kotak = kotakConfig?.kotak.find((k) => k.id === q);
-              const warna = kotak?.warna || "#3B82F6";
-              const nama = `Kotak ${q}`;
-              return (
+            {quadrantLoading ? (
+              // Loading skeleton
+              [1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => (
                 <div
                   key={q}
                   className="w-full sm:w-1/2 md:w-1/3 lg:flex-1 min-w-0"
                 >
-                  <EmployeeCountBox
-                    title={nama}
-                    count={quadrantCounts[q] || 0}
-                    color={warna}
-                    onClick={() => handleBoxClick(q)}
-                  />
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-2 border-gray-200 dark:border-gray-700">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 mb-2 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-12 animate-pulse"></div>
+                  </div>
                 </div>
-              );
-            })}
+              ))
+            ) : (
+              // Actual data
+              [1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
+                const kotak = kotakConfig?.kotak.find((k) => k.id === q);
+                const warna = kotak?.warna || PRIMARY_COLORS.blue;
+                const nama = `Kotak ${q}`;
+                return (
+                  <div
+                    key={q}
+                    className="w-full sm:w-1/2 md:w-1/3 lg:flex-1 min-w-0"
+                  >
+                    <EmployeeCountBox
+                      title={nama}
+                      count={quadrantCounts[q] || 0}
+                      color={warna}
+                      onClick={() => handleBoxClick(q)}
+                    />
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
@@ -1318,7 +1391,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 gap-2 text-md">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
                     const kotak = kotakConfig?.kotak.find((k) => k.id === q);
-                    const warna = kotak?.warna || "#3B82F6";
+                    const warna = kotak?.warna || PRIMARY_COLORS.blue;
                     const kategori = kotak?.kategori;
                     return (
                       <div key={q} className="flex items-start gap-2">

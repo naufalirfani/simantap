@@ -1,3 +1,5 @@
+import CryptoJS from 'crypto-js';
+
 const ANJAB_API_BASE_URL = import.meta.env.VITE_ANJAB_API_BASE_URL;
 const API_EMAIL = import.meta.env.VITE_ANJAB_API_EMAIL;
 const API_PASSWORD = import.meta.env.VITE_ANJAB_API_PASSWORD;
@@ -9,6 +11,49 @@ const CMB_API_TOKEN = import.meta.env.VITE_API_TOKEN;
 // Indikator API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
+
+/**
+ * Encrypt token for secure header transmission
+ * @param {string} token - The token to encrypt
+ * @param {Object} opts - Options for encryption
+ * @returns {string} Encrypted token with v1.aes: prefix
+ */
+export async function encryptTokenForHeader(token, opts = {}) {
+  try {
+    if (!token) return '';
+
+    // Salt (static / env-based, JANGAN dari token itself)
+    const saltStr = opts.salt || 'nusa-dpd-salt';
+
+    // 🔑 FAST key derivation (SHA-256)
+    // 256-bit key, langsung cocok untuk AES-256
+    const key = CryptoJS.SHA256(
+      CryptoJS.enc.Utf8.parse(token + saltStr)
+    );
+
+    // Random 16-byte IV
+    const iv = CryptoJS.lib.WordArray.random(16);
+
+    const encrypted = CryptoJS.AES.encrypt(
+      CryptoJS.enc.Utf8.parse(token),
+      key,
+      {
+        iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      }
+    );
+
+    // IV + ciphertext → base64
+    const combined = iv.concat(encrypted.ciphertext);
+    const b64 = CryptoJS.enc.Base64.stringify(combined);
+
+    return 'v1.aes:' + b64;
+  } catch (e) {
+    console.error('Error encrypting token for header:', e);
+    return token;
+  }
+}
 
 // Store token in memory (could be moved to context or localStorage)
 let authToken = null;
@@ -71,13 +116,14 @@ const getValidToken = async () => {
  */
 export const fetchPetaJabatan = async () => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(
       `${API_BASE_URL}/api/peta-jabatan?with_pagination=false`,
       {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "X-API-TOKEN": API_TOKEN,
+          "X-API-TOKEN": encryptedToken,
         },
       }
     );
@@ -105,11 +151,12 @@ export const fetchPetaJabatanTree = async () => {
   try {
     const base = API_BASE_URL || "http://192.168.0.111:8000";
     const url = `${base}/api/peta-jabatan/tree-by-unit-kerja`;
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -135,13 +182,14 @@ export const fetchPetaJabatanTree = async () => {
  */
 export const fetchPetaJabatanKosong = async () => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(
       `${API_BASE_URL}/api/peta-jabatan?with_pagination=false&jabatan_kosong=true`,
       {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "X-API-TOKEN": API_TOKEN,
+          "X-API-TOKEN": encryptedToken,
         },
       }
     );
@@ -264,11 +312,12 @@ export const fetchPegawaiByNip = async (nip, with_penilaian = false) => {
       params.toString() ? "?" + params.toString() : ""
     }`;
 
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -293,11 +342,12 @@ export const fetchRekomendasiPegawai = async (petaJabatanId, isRotasi = false) =
     const params = isRotasi ? "?retensi=true" : "";
     const url = `${base}/api/pegawai/rekomendasi/${petaJabatanId}${params}`;
 
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -320,11 +370,12 @@ export const fetchRekomendasiPegawai = async (petaJabatanId, isRotasi = false) =
  */
 export const fetchIndikators = async () => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/indikators`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -350,11 +401,12 @@ export const fetchIndikators = async () => {
  */
 export const fetchStatistik = async () => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/statistik`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -403,11 +455,12 @@ export const fetchPegawaiList = async ({
       params.toString() ? "?" + params.toString() : ""
     }`;
 
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -436,11 +489,12 @@ export const fetchPegawaiList = async ({
  */
 export const createIndikator = async (data) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/indikators`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
       body: JSON.stringify(data),
     });
@@ -466,11 +520,12 @@ export const createIndikator = async (data) => {
  */
 export const updateIndikator = async (id, data) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/indikators/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
       body: JSON.stringify(data),
     });
@@ -492,11 +547,12 @@ export const updateIndikator = async (id, data) => {
  */
 export const deleteIndikator = async (id) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/indikators/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -517,11 +573,12 @@ export const deleteIndikator = async (id) => {
  */
 export const createSubIndikator = async (data) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/subindikators`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
       body: JSON.stringify(data),
     });
@@ -547,11 +604,12 @@ export const createSubIndikator = async (data) => {
  */
 export const updateSubIndikator = async (id, data) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/subindikators/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
       body: JSON.stringify(data),
     });
@@ -577,11 +635,12 @@ export const updateSubIndikator = async (id, data) => {
  */
 export const deleteSubIndikator = async (id) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/subindikators/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -607,13 +666,14 @@ export const deleteSubIndikator = async (id) => {
  */
 export const bulkUpdateSubBobot = async (subindikators) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(
       `${API_BASE_URL}/api/subindikators/bulk-bobot`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-API-TOKEN": API_TOKEN,
+          "X-API-TOKEN": encryptedToken,
         },
         body: JSON.stringify({ subindikators }),
       }
@@ -645,11 +705,12 @@ export const bulkUpdateSubBobot = async (subindikators) => {
  */
 export const fetchSubIndikators = async () => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/subindikators`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -687,11 +748,12 @@ export const bulkUploadPenilaian = async (payload) => {
       throw new Error("Invalid payload for bulkUploadPenilaian");
     }
 
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
       body: JSON.stringify(body),
     });
@@ -719,11 +781,12 @@ export const fetchStandarKompetensiMSK = async (jenisJabatanId = null) => {
     if (jenisJabatanId)
       url.searchParams.append("jenis_jabatan_id", jenisJabatanId);
 
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -751,11 +814,12 @@ export const fetchStandarKompetensiMSK = async (jenisJabatanId = null) => {
  */
 export const fetchInstrumens = async () => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/instrumens`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -780,11 +844,12 @@ export const fetchInstrumens = async () => {
  */
 export const createInstrumen = async (data) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/instrumens`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
       body: JSON.stringify(data),
     });
@@ -811,11 +876,12 @@ export const createInstrumen = async (data) => {
  */
 export const updateInstrumen = async (id, data) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/instrumens/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
       body: JSON.stringify(data),
     });
@@ -842,11 +908,12 @@ export const updateInstrumen = async (id, data) => {
  */
 export const deleteInstrumen = async (id) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/instrumens/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -874,12 +941,13 @@ export const syncPetaJabatan = async () => {
   try {
     const token = await getValidToken();
 
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/peta-jabatan/sync`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -901,11 +969,12 @@ export const syncPetaJabatan = async () => {
 export const syncPegawai = async () => {
   try {
     // This endpoint uses the same API base URL from the main service
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/pegawai/sync`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -926,11 +995,12 @@ export const syncPegawai = async () => {
  */
 export const syncPenilaian = async () => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/penilaians/sync`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -953,11 +1023,12 @@ export const syncPenilaian = async () => {
  */
 export const fetchPenilaianByNip = async (nip) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/penilaians/${nip}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
     });
 
@@ -982,11 +1053,12 @@ export const fetchPenilaianByNip = async (nip) => {
  */
 export const submitPenilaian = async (data) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/penilaians`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
       body: JSON.stringify(data),
     });
@@ -1013,11 +1085,12 @@ export const submitPenilaian = async (data) => {
  */
 export const updatePenilaian = async (nip, data) => {
   try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/penilaians/${nip}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "X-API-TOKEN": API_TOKEN,
+        "X-API-TOKEN": encryptedToken,
       },
       body: JSON.stringify(data),
     });
@@ -1035,6 +1108,97 @@ export const updatePenilaian = async (nip, data) => {
     return result;
   } catch (error) {
     console.error("Update penilaian error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch syarat suksesi by jabatan ID
+ */
+export const fetchSyaratSuksesi = async (jabatanId) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(
+      `${API_BASE_URL}/api/syarat-suksesi/${jabatanId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-TOKEN": encryptedToken,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Fetch syarat suksesi error:", error);
+    return null;
+  }
+};
+
+/**
+ * Create syarat suksesi
+ */
+export const createSyaratSuksesi = async (data) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(
+      `${API_BASE_URL}/api/syarat-suksesi`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-TOKEN": encryptedToken,
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(result?.message || "Gagal menyimpan syarat suksesi");
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Create syarat suksesi error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update syarat suksesi
+ */
+export const updateSyaratSuksesi = async (id, data) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(
+      `${API_BASE_URL}/api/syarat-suksesi/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-TOKEN": encryptedToken,
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(result?.message || "Gagal mengupdate syarat suksesi");
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Update syarat suksesi error:", error);
     throw error;
   }
 };

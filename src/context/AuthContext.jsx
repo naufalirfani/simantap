@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { encryptTokenForHeader } from '../services/apiService';
 
 const AuthContext = createContext();
 
@@ -59,14 +60,14 @@ export const AuthProvider = ({ children }) => {
   const verifyToken = async (token) => {
     try {
       console.log('Verifying token...');
+      const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
       const response = await fetch(`${API_BASE_URL}/sso/verify/${token}`, {
         headers: {
-          'X-API-Token': API_TOKEN,
+          'X-API-Token': encryptedToken,
         },
       });
 
       const data = await response.json();
-      console.log('Token verification result:', data);
       return data.status === true;
     } catch (error) {
       console.error('Token verification error:', error);

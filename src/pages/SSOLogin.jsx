@@ -39,10 +39,14 @@ const SSOLogin = () => {
 
         if (loginSuccess) {
           setStatus('success');
-          // Redirect to previous page or dashboard
-          const from = location.state?.from?.pathname || '/';
+          // Get redirect parameter from URL query params
+          const searchParams = new URLSearchParams(location.search);
+          const redirect = searchParams.get('redirect');
+          
+          // Redirect to specified URL or dashboard
+          const redirectUrl = redirect && redirect.trim() !== '' ? redirect : '/';
           setTimeout(() => {
-            navigate(from, { replace: true });
+            navigate(redirectUrl, { replace: true });
           }, 1500);
         } else {
           setStatus('failed');
@@ -96,7 +100,7 @@ const SSOLogin = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl max-w-md">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#3B82F6] mx-auto"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#3085d6] mx-auto"></div>
           <h2 className="mt-6 text-2xl font-bold text-gray-800 dark:text-white">
             Memverifikasi Token
           </h2>
@@ -141,7 +145,7 @@ const SSOLogin = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-pink-100 dark:from-gray-900 dark:to-gray-800">
       <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl max-w-md">
-        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900">
+        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-[#FDECEA] dark:bg-red-900">
           <svg
             className="h-10 w-10 text-[#d33] dark:text-[#d33]"
             fill="none"
@@ -164,7 +168,7 @@ const SSOLogin = () => {
         </p>
         <button
           onClick={handleBackToNUSA}
-          className="mt-6 w-full bg-[#3B82F6] hover:bg-[#296eb8] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 cursor-pointer"
+          className="mt-6 w-full bg-[#3085d6] hover:bg-[#2075c6] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 cursor-pointer"
         >
           Kembali ke NUSA
         </button>

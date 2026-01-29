@@ -12,7 +12,7 @@ const QuadrantRecommendation = ({ kotak }) => {
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
-            <i className="fas fa-arrow-right text-sm text-[#3B82F6]"></i>
+            <i className="fas fa-arrow-right text-sm text-[#3085d6]"></i>
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
               Range Potensial
             </span>

@@ -12,6 +12,7 @@ const Breadcrumb = ({ items }) => {
     <nav className="flex items-center space-x-2 mb-4 overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
       {breadcrumbItems.map((item, index) => {
         const isLast = index === breadcrumbItems.length - 1;
+        const isClickable = item.clickable !== false;
         
         return (
           <div key={index} className="flex items-center space-x-2 flex-shrink-0">
@@ -30,15 +31,15 @@ const Breadcrumb = ({ items }) => {
                 />
               </svg>
             )}
-            {isLast ? (
-              <span className="text-[#3B82F6] dark:text-blue-400 font-semibold flex items-center gap-2 whitespace-nowrap">
+            {isLast || !isClickable ? (
+              <span className={`${isLast ? 'text-[#3085d6] dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400'} flex items-center gap-2 whitespace-nowrap`}>
                 {item.icon && <i className={item.icon}></i>}
                 {item.label}
               </span>
             ) : (
               <Link
                 to={item.path}
-                className="text-gray-600 dark:text-gray-400 hover:text-[#3B82F6] dark:hover:text-blue-400 transition-colors duration-200 flex items-center gap-2 whitespace-nowrap group"
+                className="text-gray-600 dark:text-gray-400 hover:text-[#3085d6] dark:hover:text-blue-400 transition-colors duration-200 flex items-center gap-2 whitespace-nowrap group"
               >
                 {item.icon && (
                   <i className={`${item.icon} group-hover:scale-110 transition-transform duration-200`}></i>
@@ -102,12 +103,24 @@ const generateBreadcrumbItems = (pathname, t) => {
       "pengaturan": "fas fa-cog",
     };
 
-    // Skip numeric segments (like NIP in detail pages)
+    // Skip numeric segments as separate breadcrumb items (like NIP)
     if (!/^\d+$/.test(path)) {
+      // Check if next path segment is numeric (like NIP)
+      // If yes, include it in the path for this breadcrumb item
+      let itemPath = currentPath;
+      if (index < paths.length - 1 && /^\d+$/.test(paths[index + 1])) {
+        itemPath += `/${paths[index + 1]}`;
+      }
+      
+      // Paths that are parent/category only (not clickable destinations)
+      const nonClickablePaths = ['masterdata'];
+      const isClickable = !nonClickablePaths.includes(path);
+      
       items.push({
         label: labelMap[path] || path.charAt(0).toUpperCase() + path.slice(1),
-        path: currentPath,
+        path: itemPath,
         icon: iconMap[path],
+        clickable: isClickable,
       });
     }
   });

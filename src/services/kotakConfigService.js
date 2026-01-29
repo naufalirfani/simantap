@@ -3,18 +3,64 @@
  * Data disimpan di localStorage sebagai JSON
  */
 
+import CryptoJS from 'crypto-js';
+import { PRIMARY_COLORS } from '../config/colors';
+
+/**
+ * Encrypt token for secure header transmission
+ * @param {string} token - The token to encrypt
+ * @param {Object} opts - Options for encryption
+ * @returns {string} Encrypted token with v1.aes: prefix
+ */
+export async function encryptTokenForHeader(token, opts = {}) {
+  try {
+    if (!token) return '';
+
+    // Salt (static / env-based, JANGAN dari token itself)
+    const saltStr = opts.salt || 'nusa-dpd-salt';
+
+    // 🔑 FAST key derivation (SHA-256)
+    // 256-bit key, langsung cocok untuk AES-256
+    const key = CryptoJS.SHA256(
+      CryptoJS.enc.Utf8.parse(token + saltStr)
+    );
+
+    // Random 16-byte IV
+    const iv = CryptoJS.lib.WordArray.random(16);
+
+    const encrypted = CryptoJS.AES.encrypt(
+      CryptoJS.enc.Utf8.parse(token),
+      key,
+      {
+        iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      }
+    );
+
+    // IV + ciphertext → base64
+    const combined = iv.concat(encrypted.ciphertext);
+    const b64 = CryptoJS.enc.Base64.stringify(combined);
+
+    return 'v1.aes:' + b64;
+  } catch (e) {
+    console.error('Error encrypting token for header:', e);
+    return token;
+  }
+}
+
 // Default configuration untuk 9 kotak
 const DEFAULT_CONFIG = {
   intervals: {
     potensial: [
-      { min: 0, max: 40, label: '0-40' },
-      { min: 40, max: 80, label: '40-80' },
-      { min: 80, max: 100, label: '80-100' }
+      { min: 0, max: 60, label: '0-60' },
+      { min: 61, max: 80, label: '61-80' },
+      { min: 81, max: 100, label: '81-100' }
     ],
     kinerja: [
-      { min: 0, max: 40, label: '0-40' },
-      { min: 40, max: 80, label: '40-80' },
-      { min: 80, max: 100, label: '80-100' }
+      { min: 0, max: 60, label: '0-60' },
+      { min: 61, max: 80, label: '61-80' },
+      { min: 81, max: 100, label: '81-100' }
     ]
   },
   kotak: [
@@ -22,8 +68,8 @@ const DEFAULT_CONFIG = {
       id: 1,
       kategori: 'Kinerja di Bawah Ekspektasi dan Potensial Rendah',
       warna: '#EF4444',
-      potensialRange: { min: 0, max: 50 },
-      kinerjaRange: { min: 0, max: 50 },
+      potensialRange: { min: 0, max: 60 },
+      kinerjaRange: { min: 0, max: 60 },
       rekomendasi: [
         'Diproses sesuai ketentuan peraturan perundangan'
       ]
@@ -32,8 +78,8 @@ const DEFAULT_CONFIG = {
       id: 2,
       kategori: 'Kinerja Sesuai Ekspektasi dan Potensial Rendah',
       warna: '#F97316',
-      potensialRange: { min: 0, max: 50 },
-      kinerjaRange: { min: 50, max: 75 },
+      potensialRange: { min: 0, max: 60 },
+      kinerjaRange: { min: 61, max: 80 },
       rekomendasi: [
         'Bimbingan kinerja',
         'Pengembangan kompetensi',
@@ -44,8 +90,8 @@ const DEFAULT_CONFIG = {
       id: 3,
       kategori: 'Kinerja di Bawah Ekspektasi dan Potensial Menengah',
       warna: '#F59E0B',
-      potensialRange: { min: 50, max: 75 },
-      kinerjaRange: { min: 0, max: 50 },
+      potensialRange: { min: 61, max: 80 },
+      kinerjaRange: { min: 0, max: 60 },
       rekomendasi: [
         'Bimbingan kinerja',
         'Konseling kinerja',
@@ -57,8 +103,8 @@ const DEFAULT_CONFIG = {
       id: 4,
       kategori: 'Kinerja di Atas Ekspektasi dan Potensial Rendah',
       warna: '#F59E0B',
-      potensialRange: { min: 0, max: 50 },
-      kinerjaRange: { min: 75, max: 100 },
+      potensialRange: { min: 0, max: 60 },
+      kinerjaRange: { min: 81, max: 100 },
       rekomendasi: [
         'Rotasi',
         'Pengembangan kompetensi'
@@ -68,8 +114,8 @@ const DEFAULT_CONFIG = {
       id: 5,
       kategori: 'Kinerja Sesuai Ekspektasi dan Potensial Menengah',
       warna: '#EAB308',
-      potensialRange: { min: 50, max: 75 },
-      kinerjaRange: { min: 50, max: 75 },
+      potensialRange: { min: 61, max: 80 },
+      kinerjaRange: { min: 61, max: 80 },
       rekomendasi: [
         'Penempatan yang sesuai',
         'Bimbingan kinerja',
@@ -80,8 +126,8 @@ const DEFAULT_CONFIG = {
       id: 6,
       kategori: 'Kinerja di Bawah Ekspektasi dan Potensial Tinggi',
       warna: '#84CC16',
-      potensialRange: { min: 75, max: 100 },
-      kinerjaRange: { min: 0, max: 50 },
+      potensialRange: { min: 81, max: 100 },
+      kinerjaRange: { min: 0, max: 60 },
       rekomendasi: [
         'Penempatan yang sesuai',
         'Bimbingan kinerja',
@@ -92,8 +138,8 @@ const DEFAULT_CONFIG = {
       id: 7,
       kategori: 'Kinerja di Atas Ekspektasi dan Potensial Menengah',
       warna: '#84CC16',
-      potensialRange: { min: 50, max: 75 },
-      kinerjaRange: { min: 75, max: 100 },
+      potensialRange: { min: 61, max: 80 },
+      kinerjaRange: { min: 81, max: 100 },
       rekomendasi: [
         'Dipertahankan',
         'Masuk Kelompok Rencana Suksesi Instansi',
@@ -106,8 +152,8 @@ const DEFAULT_CONFIG = {
       id: 8,
       kategori: 'Kinerja Sesuai Ekspektasi dan Potensial Tinggi',
       warna: '#22C55E',
-      potensialRange: { min: 75, max: 100 },
-      kinerjaRange: { min: 50, max: 75 },
+      potensialRange: { min: 81, max: 100 },
+      kinerjaRange: { min: 61, max: 80 },
       rekomendasi: [
         'Dipertahankan',
         'Masuk Kelompok Rencana Suksesi Instansi',
@@ -119,8 +165,8 @@ const DEFAULT_CONFIG = {
       id: 9,
       kategori: 'Kinerja di Atas Ekspektasi dan Potensial Tinggi',
       warna: '#10B981',
-      potensialRange: { min: 75, max: 100 },
-      kinerjaRange: { min: 75, max: 100 },
+      potensialRange: { min: 81, max: 100 },
+      kinerjaRange: { min: 81, max: 100 },
       rekomendasi: [
         'Dipromosikan dan dipertahankan',
         'Masuk Kelompok Rencana Suksesi Instansi/Nasional',
@@ -150,7 +196,8 @@ let cachedConfig = DEFAULT_CONFIG;
 
 const fetchConfig = async () => {
   try {
-    const res = await fetch(API_URL, { method: 'GET', headers: { 'Accept': 'application/json', 'X-API-TOKEN': API_TOKEN } });
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const res = await fetch(API_URL, { method: 'GET', headers: { 'Accept': 'application/json', 'X-API-TOKEN': encryptedToken } });
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === 'object') {
@@ -190,9 +237,10 @@ export const saveKotakConfig = (config) => {
     // fire-and-forget async call to persist to backend
     (async () => {
       try {
+        const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
         const res = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-API-TOKEN': API_TOKEN },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-API-TOKEN': encryptedToken },
           body: JSON.stringify(config)
         });
         if (!res.ok) {
@@ -362,20 +410,13 @@ export const computeQuadrantDynamic = (potensial, kinerja) => {
   for (const kotak of config.kotak) {
     const potensialMatch = 
       potensial >= kotak.potensialRange.min && 
-      potensial < kotak.potensialRange.max;
+      potensial <= kotak.potensialRange.max;
     
     const kinerjaMatch = 
       kinerja >= kotak.kinerjaRange.min && 
-      kinerja < kotak.kinerjaRange.max;
+      kinerja <= kotak.kinerjaRange.max;
     
-    // Handle edge case untuk nilai maksimal (100)
-    const potensialMaxMatch = 
-      potensial === 100 && kotak.potensialRange.max === 100;
-    
-    const kinerjaMaxMatch = 
-      kinerja === 100 && kotak.kinerjaRange.max === 100;
-    
-    if ((potensialMatch || potensialMaxMatch) && (kinerjaMatch || kinerjaMaxMatch)) {
+    if (potensialMatch && kinerjaMatch) {
       return kotak.id;
     }
   }

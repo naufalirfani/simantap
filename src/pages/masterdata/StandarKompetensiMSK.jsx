@@ -68,7 +68,7 @@ const StandarKompetensiMSK = () => {
       showCancelButton: true,
       confirmButtonText: "Simpan",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3B82F6",
+      confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
       reverseButtons: true,
     });
@@ -88,7 +88,7 @@ const StandarKompetensiMSK = () => {
               entry.subindikator_name ||
               entry.id
             }" wajib diisi`,
-            confirmButtonColor: "#3B82F6",
+            confirmButtonColor: "#3085d6",
           });
           return;
         }
@@ -103,7 +103,7 @@ const StandarKompetensiMSK = () => {
               entry.subindikator_name ||
               entry.id
             }" harus bilangan bulat antara 0 dan 5`,
-            confirmButtonColor: "#3B82F6",
+            confirmButtonColor: "#3085d6",
           });
           return;
         }
@@ -116,7 +116,7 @@ const StandarKompetensiMSK = () => {
         icon: "warning",
         title: "Tidak ada data",
         text: "Tidak ada entri yang dapat disimpan.",
-        confirmButtonColor: "#3B82F6",
+        confirmButtonColor: "#3085d6",
       });
       return;
     }
@@ -188,7 +188,7 @@ const StandarKompetensiMSK = () => {
       </div> */}
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6 border border-gray-100 dark:border-gray-700">
-        <div className="bg-[#3B82F6] px-6 py-4">
+        <div className="bg-[#3085d6] px-6 py-4">
           <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
             <i className="fas fa-edit"></i>
             Ubah Standar Kompetensi MSK
@@ -200,7 +200,7 @@ const StandarKompetensiMSK = () => {
             <div className="flex flex-col items-center justify-center py-6">
               <div className="relative">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3B82F6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
               </div>
               <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                 Memuat data...
@@ -218,14 +218,14 @@ const StandarKompetensiMSK = () => {
                     onClick={() => setActiveTab(idx)}
                     className={`px-6 py-4 text-sm font-semibold transition-all border-b-2 cursor-pointer ${
                       activeTab === idx
-                        ? "border-[#3B82F6] text-[#3B82F6] bg-white dark:bg-gray-800"
+                        ? "border-[#3085d6] text-[#3085d6] bg-white dark:bg-gray-800"
                         : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300"
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <span
                         className={`w-2 h-2 rounded-full ${
-                          activeTab === idx ? "bg-[#3B82F6]" : "bg-gray-400"
+                          activeTab === idx ? "bg-[#3085d6]" : "bg-gray-400"
                         }`}
                       ></span>
                       {g.jenis_jabatan?.name ||
