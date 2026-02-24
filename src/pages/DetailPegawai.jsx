@@ -9,6 +9,7 @@ import {
   fetchPegawaiByNip,
   fetchIndikators,
   fetchStandarKompetensiMSK,
+  fetchInstrumens,
 } from "../services/apiService";
 import {
   loadKotakConfig,
@@ -53,6 +54,7 @@ const DetailPegawai = () => {
   const [pegawaiData, setPegawaiData] = useState(null);
   const [standarMSK, setStandarMSK] = useState(null);
   const [indikators, setIndikators] = useState([]);
+  const [instrumens, setInstrumens] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [showPersonalModal, setShowPersonalModal] = useState(false);
   const [showEmploymentModal, setShowEmploymentModal] = useState(false);
@@ -192,6 +194,16 @@ const DetailPegawai = () => {
           console.error("Could not load indikators:", err);
           setIndikators([]);
           setLoadingIndicators(false);
+        });
+
+      // Load instrumens data
+      fetchInstrumens()
+        .then((inst) => {
+          setInstrumens(inst || []);
+        })
+        .catch((err) => {
+          console.error("Could not load instrumens:", err);
+          setInstrumens([]);
         });
 
       // Fetch standar MSK based on jenis jabatan (use apiService helper)
@@ -437,6 +449,82 @@ const DetailPegawai = () => {
     return { nilai: Number(stored) || null, hasil: Number(stored) || null };
   };
 
+  // Get instrumens for a subindikator with their nilai
+  const getInstrumensForSub = (subId) => {
+    const subInstrumens = instrumens.filter(
+      (inst) => inst.subindikator_id === subId,
+    );
+    const val = getSubValue(subId);
+    const currentNilai = val.nilai;
+
+    // If there's a nilai, try to find matching instrumen by skor
+    if (currentNilai !== null && currentNilai !== undefined) {
+      const matchedInstrumen = subInstrumens.find(
+        (inst) => parseFloat(inst.skor) === parseFloat(currentNilai),
+      );
+      if (matchedInstrumen) {
+        return [{ ...matchedInstrumen, nilai: currentNilai }];
+      }
+    }
+
+    // Return all instrumens with their skor as nilai
+    return subInstrumens.map((inst) => ({ ...inst, nilai: inst.skor }));
+  };
+
+  // Helper function to clean instrument text by removing letter prefixes (a., b., c., etc.)
+  const cleanInstrumenText = (text) => {
+    if (!text) return text;
+    // Remove patterns like "a. ", "b. ", "c. ", etc. from the beginning
+    return text.replace(/^[a-z]\.\s*/i, "");
+  };
+
+  // Helper function to get standar for a specific subindikator
+  const getStandarForSubIndikator = (subIndikatorId) => {
+    if (!standarMSK) return 5;
+    
+    // If standarMSK is an array, find by subindikator_id
+    if (Array.isArray(standarMSK)) {
+      const standar = standarMSK.find(
+        (s) => s.subindikator_id === subIndikatorId || String(s.subindikator_id) === String(subIndikatorId)
+      );
+      return standar?.standar || 5;
+    }
+    
+    // If it's an object, try keyed access
+    if (typeof standarMSK === "object") {
+      return Number(standarMSK[subIndikatorId] ?? standarMSK[String(subIndikatorId)] ?? 5) || 5;
+    }
+    
+    return 5;
+  };
+
+  // Helper function to categorize kompetensi (MSK)
+  const getKompetensiCategory = (nilai, subIndikatorId) => {
+    if (nilai === null || nilai === undefined) return null;
+    const standar = getStandarForSubIndikator(subIndikatorId);
+    return parseFloat(nilai) >= standar ? "Memenuhi Standar" : "Di Bawah Standar";
+  };
+
+  // Helper function to categorize potensi (max value 5)
+  const getPotensiCategory = (nilai) => {
+    if (nilai === null || nilai === undefined) return null;
+    const nilaiFloat = parseFloat(nilai);
+    if (nilaiFloat >= 4) return "Tinggi";
+    if (nilaiFloat >= 2) return "Sedang";
+    return "Rendah";
+  };
+
+  // Helper function to categorize tambahan (max value 100)
+  const getTambahanCategory = (nilai) => {
+    if (nilai === null || nilai === undefined) return null;
+    const nilaiFloat = parseFloat(nilai);
+    if (nilaiFloat >= 80) return "Sangat Tinggi";
+    if (nilaiFloat >= 60) return "Tinggi";
+    if (nilaiFloat >= 40) return "Sedang";
+    if (nilaiFloat >= 20) return "Rendah";
+    return "Sangat Rendah";
+  };
+
   // Get quadrant data
   const getQuadrantData = () => {
     if (!pegawaiData) return null;
@@ -452,7 +540,7 @@ const DetailPegawai = () => {
         : null;
 
     const quadrantLabel = kotak ? `Kotak ${kotak.id}` : `Kotak ${kotakId}`;
-    const color = kotak?.warna || PRIMARY_COLORS.blue;
+    const color = kotak?.warna || PRIMARY_COLORS.teal;
     const kategori = kotak?.kategori || "";
 
     return {
@@ -554,12 +642,12 @@ const DetailPegawai = () => {
                   label: "Kompetensi Pegawai",
                   data: activeChartData.actualValues,
                   fill: true,
-                  backgroundColor: "rgba(255, 99, 132, 0.2)",
-                  borderColor: "rgb(255, 99, 132)",
-                  pointBackgroundColor: "rgb(255, 99, 132)",
+                  backgroundColor: "rgba(20, 184, 166, 0.2)",
+                  borderColor: "rgba(20, 184, 166, 1)",
+                  pointBackgroundColor: "rgba(20, 184, 166, 1)",
                   pointBorderColor: "#fff",
                   pointHoverBackgroundColor: "#fff",
-                  pointHoverBorderColor: "rgb(255, 99, 132)",
+                  pointHoverBorderColor: "rgba(20, 184, 166, 1)",
                 },
                 {
                   label: "Standar Kompetensi",
@@ -578,12 +666,12 @@ const DetailPegawai = () => {
                   label: "Nilai Potensi Pegawai",
                   data: activeChartData.actualValues,
                   fill: true,
-                  backgroundColor: "rgba(34, 197, 94, 0.2)",
-                  borderColor: "rgb(34, 197, 94)",
-                  pointBackgroundColor: "rgb(34, 197, 94)",
+                  backgroundColor: "rgba(20, 184, 166, 0.2)",
+                  borderColor: "rgb(20, 184, 166)",
+                  pointBackgroundColor: "rgb(20, 184, 166)",
                   pointBorderColor: "#fff",
                   pointHoverBackgroundColor: "#fff",
-                  pointHoverBorderColor: "rgb(34, 197, 94)",
+                  pointHoverBorderColor: "rgb(20, 184, 166)",
                 },
               ],
       }
@@ -652,7 +740,7 @@ const DetailPegawai = () => {
       {
         data: [kotakPercentage, 100 - kotakPercentage],
         backgroundColor: [
-          quadrantData?.color || PRIMARY_COLORS.blue,
+          quadrantData?.color || PRIMARY_COLORS.teal,
           "#E5E7EB",
         ],
         borderWidth: 0,
@@ -736,9 +824,17 @@ const DetailPegawai = () => {
       ctx.save();
 
       (cfg.kotak || []).forEach((kotak) => {
-        const x1 = x.getPixelForValue(kotak.potensialRange.min === 0 ? kotak.potensialRange.min : kotak.potensialRange.min-1);
+        const x1 = x.getPixelForValue(
+          kotak.potensialRange.min === 0
+            ? kotak.potensialRange.min
+            : kotak.potensialRange.min - 0.01,
+        );
         const x2 = x.getPixelForValue(kotak.potensialRange.max);
-        const y1 = y.getPixelForValue(kotak.kinerjaRange.min === 0 ? kotak.kinerjaRange.min : kotak.kinerjaRange.min-1);
+        const y1 = y.getPixelForValue(
+          kotak.kinerjaRange.min === 0
+            ? kotak.kinerjaRange.min
+            : kotak.kinerjaRange.min - 0.01,
+        );
         const y2 = y.getPixelForValue(kotak.kinerjaRange.max);
 
         ctx.fillStyle = kotak.warna;
@@ -883,7 +979,7 @@ const DetailPegawai = () => {
             {/* Header with gradient */}
             <div
               className="px-6 py-4"
-              style={{ backgroundColor: PRIMARY_COLORS.blue }}
+              style={{ backgroundColor: PRIMARY_COLORS.teal }}
             >
               <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
                 <i className="fas fa-user"></i>
@@ -893,7 +989,7 @@ const DetailPegawai = () => {
             {loadingProfile ? (
               <div className="flex items-center justify-center py-20">
                 <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
                   <p className="mt-3 text-gray-600 dark:text-gray-300">
                     Memuat profil...
                   </p>
@@ -929,11 +1025,11 @@ const DetailPegawai = () => {
                       {pegawaiData.nama}
                     </h2>
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-4">
-                      <span className="px-3 py-1 bg-[#E7F3FF] dark:bg-blue-900 text-[#1e40af] dark:text-blue-200 rounded-full text-sm font-medium">
+                      <span className="px-3 py-1 bg-teal-50 dark:bg-teal-900 text-teal-500 dark:text-teal-200 rounded-full text-sm font-medium">
                         <i className="fas fa-id-card mr-1"></i>
                         {pegawaiData.nip}
                       </span>
-                      <span className="px-3 py-1 bg-[#E9F7EF] dark:bg-green-900 text-[#166534] dark:text-green-200 rounded-full text-sm font-medium">
+                      <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900 text-[#3085d6] dark:text-blue-200 rounded-full text-sm font-medium">
                         <i className="fas fa-briefcase mr-1"></i>
                         {pegawaiData.golongan}
                       </span>
@@ -965,7 +1061,7 @@ const DetailPegawai = () => {
                         </IconButton>
                         <IconButton
                           onClick={() => setShowEmploymentModal(true)}
-                          variant="success"
+                          variant="blue"
                           size="lg"
                           title="Lihat Informasi Kepegawaian"
                         >
@@ -978,23 +1074,23 @@ const DetailPegawai = () => {
 
                   {/* Quick Stats */}
                   <div className="flex md:flex-col gap-4 mt-4 md:mt-6">
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-4 text-center min-w-[120px]">
-                      <div className="text-md text-blue-700 dark:text-blue-400 mt-1 font-medium">
+                    <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900 dark:to-teal-800 rounded-lg p-4 text-center min-w-[120px]">
+                      <div className="text-md text-teal-500 dark:text-teal-400 mt-1 font-medium">
                         Nilai Potensial
                       </div>
                       <div
-                        className="text-3xl font-bold dark:text-blue-300"
-                        style={{ color: PRIMARY_COLORS.blue }}
+                        className="text-3xl font-bold dark:text-teal-500"
+                        style={{ color: PRIMARY_COLORS.teal }}
                       >
-                        {quadrantData?.nilaiPotensial?.toFixed(1) || "0.0"}
+                        {quadrantData?.nilaiPotensial?.toFixed(2) || "0.0"}
                       </div>
                     </div>
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 rounded-lg p-4 text-center min-w-[120px]">
-                      <div className="text-md text-green-700 dark:text-green-400 mt-1 font-medium">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-4 text-center min-w-[120px]">
+                      <div className="text-md text-[#3085d6] dark:text-blue-400 mt-1 font-medium">
                         Nilai Kinerja
                       </div>
-                      <div className="text-3xl font-bold text-green-600 dark:text-green-300">
-                        {quadrantData?.nilaiKinerja?.toFixed(1) || "0.0"}
+                      <div className="text-3xl font-bold text-[#3085d6] dark:text-blue-300">
+                        {quadrantData?.nilaiKinerja?.toFixed(2) || "0.0"}
                       </div>
                     </div>
                   </div>
@@ -1010,14 +1106,14 @@ const DetailPegawai = () => {
             <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
               <i
                 className="fas fa-chart-pie"
-                style={{ color: PRIMARY_COLORS.blue }}
+                style={{ color: PRIMARY_COLORS.teal }}
               ></i>
               Posisi Kotak Talenta
             </h3>
             {loadingProfile ? (
               <div className="flex items-center justify-center py-20">
                 <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
                   <p className="mt-3 text-gray-600 dark:text-gray-300">
                     Memuat data kotak...
                   </p>
@@ -1037,7 +1133,7 @@ const DetailPegawai = () => {
                     <div
                       className="text-3xl font-bold"
                       style={{
-                        color: quadrantData?.color || PRIMARY_COLORS.blue,
+                        color: quadrantData?.color || PRIMARY_COLORS.teal,
                       }}
                     >
                       {quadrantData?.quadrant || "-"}
@@ -1045,8 +1141,8 @@ const DetailPegawai = () => {
                   </div>
                 </div>
                 <div className="w-full space-y-2">
-                  <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                    <span className="text-md font-medium text-gray-700 dark:text-gray-300">
+                  <div className="flex justify-between items-center p-3 bg-teal-50 dark:bg-teal-900/30 rounded-lg">
+                    <span className="text-md font-medium text-teal-500 dark:text-teal-300">
                       {quadrantData?.kategori || "-"}
                     </span>
                   </div>
@@ -1057,20 +1153,277 @@ const DetailPegawai = () => {
         </div>
       </div>
 
+      {/* Penilaian Kompetensi dan Potensi Section */}
+      <div className="mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          {loadingIndicators || loadingCompetency ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
+                <p className="mt-3 text-gray-600 dark:text-gray-300">
+                  Memuat data penilaian...
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Kompetensi Manajerial & Sosial Kultural */}
+              {(() => {
+                const mskIndikator = indikators.find((it) => {
+                  const name = (it.indikator || it.penilaian || "")
+                    .toString()
+                    .toLowerCase();
+                  return (
+                    name.includes("kompetensi manajerial") ||
+                    name.includes("sosial kultural") ||
+                    name.includes("msk")
+                  );
+                });
+
+                const mskSubs =
+                  mskIndikator && Array.isArray(mskIndikator.sub_indikators)
+                    ? mskIndikator.sub_indikators.filter((s) => s.isactive)
+                    : [];
+
+                if (mskSubs.length === 0) return null;
+
+                return (
+                  <div>
+                    <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                      <i className="fas fa-users-cog text-teal-500 dark:text-teal-400"></i>
+                      Kompetensi Manajerial & Sosial Kultural
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {mskSubs.map((sub) => {
+                        const subValue = getSubValue(sub.id);
+                        const nilai = subValue.nilai ?? subValue.hasil;
+                        
+                        // Show loading badge if standarMSK is not yet available
+                        if (!standarMSK) {
+                          return (
+                            <div
+                              key={sub.id}
+                              className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 animate-pulse"
+                            >
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                {sub.subindikator}: <span className="text-gray-400 dark:text-gray-500">Memuat...</span>
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        const category = getKompetensiCategory(nilai, sub.id);
+                        const standar = getStandarForSubIndikator(sub.id);
+
+                        if (category === null) {
+                          return (
+                            <div
+                              key={sub.id}
+                              className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+                            >
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                {sub.subindikator}: <span className="text-gray-400 dark:text-gray-500">Belum dinilai</span>
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        const isMeetStandard = category === "Memenuhi Standar";
+                        const bgColor = isMeetStandard
+                          ? "bg-teal-500 dark:bg-teal-600"
+                          : "bg-red-500 dark:bg-red-600";
+
+                        return (
+                          <div
+                            key={sub.id}
+                            className={`inline-flex items-center px-3 py-2 ${bgColor} rounded-lg shadow-sm`}
+                            title={`${category}: ${parseFloat(nilai).toFixed(2)} / ${standar}`}
+                          >
+                            <span className="text-sm font-medium text-white">
+                              {sub.subindikator}: {parseFloat(nilai).toFixed(2)}/{standar}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Potensi Talenta */}
+              {(() => {
+                const potensiIndikator = indikators.find((it) => {
+                  const name = (it.indikator || it.penilaian || "")
+                    .toString()
+                    .toLowerCase();
+                  return name.includes("potensi talenta");
+                });
+
+                const potensiSubs =
+                  potensiIndikator && Array.isArray(potensiIndikator.sub_indikators)
+                    ? potensiIndikator.sub_indikators.filter((s) => s.isactive)
+                    : [];
+
+                if (potensiSubs.length === 0) return null;
+
+                return (
+                  <div>
+                    <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                      <i className="fas fa-star text-teal-500 dark:text-teal-400"></i>
+                      Potensi Talenta
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {potensiSubs.map((sub) => {
+                        const subValue = getSubValue(sub.id);
+                        const nilai = subValue.nilai ?? subValue.hasil;
+                        const category = getPotensiCategory(nilai);
+
+                        if (category === null) {
+                          return (
+                            <div
+                              key={sub.id}
+                              className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+                            >
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                {sub.subindikator}: <span className="text-gray-400 dark:text-gray-500">Belum dinilai</span>
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        let bgColor;
+                        if (category === "Tinggi") {
+                          bgColor = "bg-teal-500 dark:bg-teal-600";
+                        } else if (category === "Sedang") {
+                          bgColor = "bg-[#3085d6] dark:bg-blue-600";
+                        } else {
+                          bgColor = "bg-red-500 dark:bg-red-600";
+                        }
+
+                        return (
+                          <div
+                            key={sub.id}
+                            className={`inline-flex items-center px-3 py-2 ${bgColor} rounded-lg shadow-sm`}
+                            title={`${category}: ${parseFloat(nilai).toFixed(2)} / 5`}
+                          >
+                            <span className="text-sm font-medium text-white">
+                              {sub.subindikator}: {parseFloat(nilai).toFixed(2)}/5
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Penilaian Tambahan */}
+              {(() => {
+                const tambahanIndikators = indikators.filter((it) => {
+                  const penilaian = (it.penilaian || "")
+                    .toString()
+                    .toLowerCase();
+                  return penilaian === "tambahan";
+                });
+
+                if (tambahanIndikators.length === 0) return null;
+
+                // Check if there's any subindikator with actual nilai
+                const hasAnyNilai = tambahanIndikators.some((indikator) => {
+                  const subs = indikator?.sub_indikators?.filter((s) => s.isactive) || [];
+                  return subs.some((sub) => {
+                    const subValue = getSubValue(sub.id);
+                    const nilai = subValue.nilai ?? subValue.hasil;
+                    return nilai !== null && nilai !== undefined;
+                  });
+                });
+
+                if (!hasAnyNilai) return null;
+
+                return (
+                  <div>
+                    <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                      <i className="fas fa-plus-circle text-teal-500 dark:text-teal-400"></i>
+                      Penilaian Tambahan
+                    </h4>
+                    <div className="space-y-3">
+                      {tambahanIndikators.map((indikator) => {
+                        const tambahanSubs =
+                          indikator && Array.isArray(indikator.sub_indikators)
+                            ? indikator.sub_indikators.filter((s) => s.isactive)
+                            : [];
+
+                        if (tambahanSubs.length === 0) return null;
+
+                        // Filter only subs with nilai
+                        const subsWithNilai = tambahanSubs.filter((sub) => {
+                          const subValue = getSubValue(sub.id);
+                          const nilai = subValue.nilai ?? subValue.hasil;
+                          return nilai !== null && nilai !== undefined;
+                        });
+
+                        if (subsWithNilai.length === 0) return null;
+
+                        return (
+                          <div key={indikator.id}>
+                            <div className="flex flex-wrap gap-2">
+                              {subsWithNilai.map((sub) => {
+                                const subValue = getSubValue(sub.id);
+                                const nilai = subValue.nilai ?? subValue.hasil;
+                                const category = getTambahanCategory(nilai);
+
+                                let bgColor;
+                                if (category === "Sangat Tinggi") {
+                                  bgColor = "bg-teal-500 dark:bg-teal-600";
+                                } else if (category === "Tinggi") {
+                                  bgColor = "bg-[#3085d6] dark:bg-blue-600";
+                                } else if (category === "Sedang") {
+                                  bgColor = "bg-yellow-500 dark:bg-yellow-600";
+                                } else if (category === "Rendah") {
+                                  bgColor = "bg-orange-500 dark:bg-orange-600";
+                                } else {
+                                  bgColor = "bg-red-500 dark:bg-red-600";
+                                }
+
+                                return (
+                                  <div
+                                    key={sub.id}
+                                    className={`inline-flex items-center px-3 py-2 ${bgColor} rounded-lg shadow-sm`}
+                                    title={`${category}: ${parseFloat(nilai).toFixed(2)} / 100`}
+                                  >
+                                    <span className="text-sm font-medium text-white">
+                                      {sub.subindikator}: {parseFloat(nilai).toFixed(2)}/100
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Competency Radar Chart with Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-full">
           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <i
               className="fas fa-chart-bar"
-              style={{ color: PRIMARY_COLORS.blue }}
+              style={{ color: PRIMARY_COLORS.teal }}
             ></i>
             Penilaian Kompetensi dan Potensi
           </h3>
           {loadingCompetency ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
                 <p className="mt-3 text-gray-600 dark:text-gray-300">
                   Memuat data kompetensi...
                 </p>
@@ -1091,12 +1444,12 @@ const DetailPegawai = () => {
                     onClick={() => setActiveRadarTab("msk")}
                     className={`cursor-pointer px-4 py-2 font-medium text-sm transition-colors relative ${
                       activeRadarTab === "msk"
-                        ? "dark:text-blue-400"
+                        ? "dark:text-teal-400"
                         : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                     }`}
                     style={
                       activeRadarTab === "msk"
-                        ? { color: PRIMARY_COLORS.blue }
+                        ? { color: PRIMARY_COLORS.teal }
                         : {}
                     }
                   >
@@ -1104,7 +1457,7 @@ const DetailPegawai = () => {
                     {activeRadarTab === "msk" && (
                       <div
                         className="absolute bottom-0 left-0 right-0 h-0.5"
-                        style={{ backgroundColor: PRIMARY_COLORS.blue }}
+                        style={{ backgroundColor: PRIMARY_COLORS.teal }}
                       ></div>
                     )}
                   </button>
@@ -1114,12 +1467,12 @@ const DetailPegawai = () => {
                     onClick={() => setActiveRadarTab("potensi")}
                     className={`cursor-pointer px-4 py-2 font-medium text-sm transition-colors relative ${
                       activeRadarTab === "potensi"
-                        ? "dark:text-blue-400"
+                        ? "dark:text-teal-400"
                         : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                     }`}
                     style={
                       activeRadarTab === "potensi"
-                        ? { color: PRIMARY_COLORS.blue }
+                        ? { color: PRIMARY_COLORS.teal }
                         : {}
                     }
                   >
@@ -1127,7 +1480,7 @@ const DetailPegawai = () => {
                     {activeRadarTab === "potensi" && (
                       <div
                         className="absolute bottom-0 left-0 right-0 h-0.5"
-                        style={{ backgroundColor: PRIMARY_COLORS.blue }}
+                        style={{ backgroundColor: PRIMARY_COLORS.teal }}
                       ></div>
                     )}
                   </button>
@@ -1181,13 +1534,13 @@ const DetailPegawai = () => {
         {/* Competency Radar Chart (right column) */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-full">
           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <i className="fas fa-th" style={{ color: PRIMARY_COLORS.blue }}></i>
+            <i className="fas fa-th" style={{ color: PRIMARY_COLORS.teal }}></i>
             Matriks 9 Kotak - Potensial vs Kinerja
           </h3>
           {loadingProfile ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
                 <p className="mt-3 text-gray-600 dark:text-gray-300">
                   Memuat matriks...
                 </p>
@@ -1241,7 +1594,7 @@ const DetailPegawai = () => {
                     : [1, 2, 3, 4, 5, 6, 7, 8, 9]
                   ).map((q) => {
                     const kotak = kotakConfig?.kotak.find((k) => k.id === q);
-                    const warna = kotak?.warna || PRIMARY_COLORS.blue;
+                    const warna = kotak?.warna || PRIMARY_COLORS.teal;
                     const kategori = kotak?.kategori;
                     return (
                       <div key={q} className="flex items-start gap-2">
@@ -1273,14 +1626,14 @@ const DetailPegawai = () => {
           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <i
               className="fas fa-star"
-              style={{ color: PRIMARY_COLORS.blue }}
+              style={{ color: PRIMARY_COLORS.teal }}
             ></i>
             Nilai Potensial per Indikator
           </h3>
           {loadingIndicators ? (
             <div className="flex items-center justify-center py-10">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
                 <p className="mt-3 text-gray-600 dark:text-gray-300">
                   Memuat indikator...
                 </p>
@@ -1305,19 +1658,19 @@ const DetailPegawai = () => {
                 return (
                   <div
                     key={idx}
-                    className="bg-blue-50 dark:bg-blue-900/10 rounded"
+                    className="bg-teal-50 dark:bg-teal-900/10 rounded"
                   >
                     <button
                       type="button"
                       onClick={() => togglePotensial(ind.name)}
-                      className="w-full text-left flex items-center justify-between p-2 px-3 hover:bg-[#E7F3FF] dark:hover:bg-blue-900/20 rounded cursor-pointer"
+                      className="w-full text-left flex items-center justify-between p-2 px-3 hover:bg-teal-100 dark:hover:bg-teal-900/20 rounded cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
                         <i
                           className={`fas fa-chevron-right transform transition-transform duration-200 ${
                             isOpen ? "rotate-90" : ""
                           }`}
-                          style={{ color: PRIMARY_COLORS.blue }}
+                          style={{ color: PRIMARY_COLORS.teal }}
                         ></i>
                         <span className="text-md text-gray-700 dark:text-gray-300">
                           {ind.name}
@@ -1327,7 +1680,7 @@ const DetailPegawai = () => {
                         <div className="text-right">
                           <div
                             className="text-md font-bold dark:text-blue-400"
-                            style={{ color: PRIMARY_COLORS.blue }}
+                            style={{ color: PRIMARY_COLORS.teal }}
                           >
                             {(Number(ind.hasil) || 0).toFixed(2)}
                           </div>
@@ -1340,11 +1693,14 @@ const DetailPegawai = () => {
                         isOpen ? "max-h-128 opacity-100" : "max-h-0 opacity-0"
                       }`}
                     >
-                      <div className="p-2 pl-8 space-y-1">
+                      <div className="p-2 pl-8 space-y-1 overflow-visible">
                         {subs.length > 0 ? (
-                          subs.map((s) => {
+                          subs.map((s, subIdx) => {
                             const val = getSubValue(s.id);
                             const display = val.hasil ?? val.nilai ?? 0;
+                            const subInstrumens = getInstrumensForSub(s.id);
+                            const hasInstrumens = subInstrumens.length > 0;
+                            const isFirstSub = subIdx === 0;
                             return (
                               <div
                                 key={s.id}
@@ -1359,15 +1715,34 @@ const DetailPegawai = () => {
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end gap-1">
                                     Nilai:{" "}
                                     {val.nilai !== null
                                       ? Number(val.nilai).toFixed(2)
                                       : "-"}
+                                    {hasInstrumens && (
+                                      <div className="group relative inline-block">
+                                        <i
+                                          className="fas fa-info-circle cursor-help"
+                                          style={{ color: PRIMARY_COLORS.teal }}
+                                        ></i>
+                                        <div
+                                          className={`invisible group-hover:visible absolute right-0 ${isFirstSub ? "top-full mt-2" : "bottom-full mb-2"} w-96 p-2 bg-white dark:bg-gray-100 text-gray-800 dark:text-gray-900 text-md text-left rounded shadow-lg border border-gray-200 z-50`}
+                                        >
+                                          {subInstrumens.map((inst) => (
+                                            <div key={inst.id}>
+                                              {cleanInstrumenText(
+                                                inst.instrumen,
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                   <div
                                     className="text-md font-medium dark:text-blue-400"
-                                    style={{ color: PRIMARY_COLORS.blue }}
+                                    style={{ color: PRIMARY_COLORS.teal }}
                                   >
                                     {val.hasil !== null
                                       ? Number(val.hasil).toFixed(2)
@@ -1394,13 +1769,13 @@ const DetailPegawai = () => {
         {/* Kinerja Indicators */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <i className="fas fa-chart-line text-green-600"></i>
+            <i className="fas fa-chart-line text-blue-600"></i>
             Nilai Kinerja per Indikator
           </h3>
           {loadingIndicators ? (
             <div className="flex items-center justify-center py-10">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
                 <p className="mt-3 text-gray-600 dark:text-gray-300">
                   Memuat indikator...
                 </p>
@@ -1425,16 +1800,16 @@ const DetailPegawai = () => {
                 return (
                   <div
                     key={idx}
-                    className="bg-green-50 dark:bg-green-900/10 rounded"
+                    className="bg-blue-50 dark:bg-blue-900/10 rounded"
                   >
                     <button
                       type="button"
                       onClick={() => toggleKinerja(ind.name)}
-                      className="w-full text-left flex items-center justify-between p-2 px-3 hover:bg-[#E9F7EF] dark:hover:bg-green-900/20 rounded cursor-pointer"
+                      className="w-full text-left flex items-center justify-between p-2 px-3 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
                         <i
-                          className={`fas fa-chevron-right text-green-600 transform transition-transform duration-200 ${
+                          className={`fas fa-chevron-right text-blue-600 transform transition-transform duration-200 ${
                             isOpen ? "rotate-90" : ""
                           }`}
                         ></i>
@@ -1444,7 +1819,7 @@ const DetailPegawai = () => {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <div className="text-md font-bold text-green-600 dark:text-green-400">
+                          <div className="text-md font-bold text-blue-600 dark:text-blue-400">
                             {(Number(ind.hasil) || 0).toFixed(2)}
                           </div>
                         </div>
@@ -1456,11 +1831,14 @@ const DetailPegawai = () => {
                         isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                       }`}
                     >
-                      <div className="p-2 pl-8 space-y-1">
+                      <div className="p-2 pl-8 space-y-1 overflow-visible">
                         {subs.length > 0 ? (
-                          subs.map((s) => {
+                          subs.map((s, subIdx) => {
                             const val = getSubValue(s.id);
                             const display = val.hasil ?? val.nilai ?? 0;
+                            const subInstrumens = getInstrumensForSub(s.id);
+                            const hasInstrumens = subInstrumens.length > 0;
+                            const isFirstSub = subIdx === 0;
                             return (
                               <div
                                 key={s.id}
@@ -1475,13 +1853,29 @@ const DetailPegawai = () => {
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end gap-1">
                                     Nilai:{" "}
                                     {val.nilai !== null
                                       ? Number(val.nilai).toFixed(2)
                                       : "-"}
+                                    {hasInstrumens && (
+                                      <div className="group relative inline-block">
+                                        <i className="fas fa-info-circle cursor-help text-blue-600"></i>
+                                        <div
+                                          className={`invisible text-md text-left group-hover:visible absolute right-0 ${isFirstSub ? "top-full mt-2" : "bottom-full mb-2"} w-96 p-2 bg-white dark:bg-gray-100 text-gray-800 dark:text-gray-900 rounded shadow-lg border border-gray-200 z-50`}
+                                        >
+                                          {subInstrumens.map((inst) => (
+                                            <div key={inst.id}>
+                                              {cleanInstrumenText(
+                                                inst.instrumen,
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="text-md font-medium text-green-600 dark:text-green-400">
+                                  <div className="text-md font-medium text-blue-600 dark:text-blue-400">
                                     {val.hasil !== null
                                       ? Number(val.hasil).toFixed(2)
                                       : "-"}
@@ -1666,7 +2060,7 @@ const PersonalInfoModal = ({
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <i
                   className="fas fa-user"
-                  style={{ color: PRIMARY_COLORS.blue }}
+                  style={{ color: PRIMARY_COLORS.teal }}
                 ></i>
                 Informasi Personal
               </h2>
@@ -1774,7 +2168,7 @@ const EmploymentInfoModal = ({
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <i
                   className="fas fa-briefcase"
-                  style={{ color: PRIMARY_COLORS.blue }}
+                  style={{ color: PRIMARY_COLORS.teal }}
                 ></i>
                 Informasi Kepegawaian
               </h2>
@@ -1865,7 +2259,7 @@ const InfoRow = ({ label, value }) => (
 const HistoryCard = ({ title, subtitle, icon, color }) => {
   const colorClasses = {
     purple:
-      "bg-[#F3E8FF] dark:bg-purple-900/30 text-[#6b21a8] dark:text-purple-400",
+      "bg-[#F3E8FF] dark:bg-purple-900/30 text-[#7a5cd6] dark:text-purple-400",
     yellow:
       "bg-[#FFF8E1] dark:bg-yellow-900/30 text-[#854d0e] dark:text-yellow-400",
     blue: "bg-[#E7F3FF] dark:bg-blue-900/30 dark:text-blue-400",

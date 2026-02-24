@@ -14,6 +14,7 @@ import {
 import Swal from "sweetalert2";
 import IconButton from "../../components/IconButton";
 import Breadcrumb from "../../components/Breadcrumb";
+import { PRIMARY_COLORS, BG_COLORS, TEXT_ON_BG_COLORS, SECONDARY_COLORS } from "../../config/colors";
 
 const Indikator = () => {
   const { t } = useSettings();
@@ -117,6 +118,7 @@ const Indikator = () => {
   // Totals per penilaian (page-level notifications)
   // Use the currently visible list (`pagedList`) to avoid counting items
   // that may be duplicated in `data` or outside the current filtered view.
+  // Exclude "Tambahan" from weight calculation
   const sumByPenilaian = (pen) =>
     pagedList.reduce(
       (sum, it) =>
@@ -183,8 +185,14 @@ const Indikator = () => {
     setSubmitting(true);
 
     try {
+      // Prepare data, set bobot to 0 for Tambahan
+      const submitData = {
+        ...formData,
+        bobot: formData.penilaian === "Tambahan" ? "0" : formData.bobot,
+      };
+
       if (modalMode === "add") {
-        await createIndikator(formData);
+        await createIndikator(submitData);
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
@@ -193,8 +201,8 @@ const Indikator = () => {
           showConfirmButton: false,
         });
       } else {
-        // Check if bobot is being changed
-        if (currentIndikator && currentIndikator.bobot !== formData.bobot) {
+        // Check if bobot is being changed (skip for Tambahan)
+        if (formData.penilaian !== "Tambahan" && currentIndikator && currentIndikator.bobot !== formData.bobot) {
           const result = await Swal.fire({
             icon: "warning",
             title: "Perhatian!",
@@ -203,8 +211,8 @@ const Indikator = () => {
             reverseButtons: true,
             confirmButtonText: "Lanjutkan",
             cancelButtonText: "Batal",
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
+            confirmButtonColor: PRIMARY_COLORS.blue,
+            cancelButtonColor: PRIMARY_COLORS.red,
           });
 
           if (!result.isConfirmed) {
@@ -212,7 +220,7 @@ const Indikator = () => {
           }
         }
 
-        await updateIndikator(currentIndikator.id, formData);
+        await updateIndikator(currentIndikator.id, submitData);
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
@@ -229,7 +237,7 @@ const Indikator = () => {
         icon: "error",
         title: "Gagal!",
         text: err.message || "Terjadi kesalahan saat menyimpan data",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setSubmitting(false);
@@ -237,6 +245,7 @@ const Indikator = () => {
   };
 
   // Live validation: total indikator bobot per penilaian (Kinerja/Potensial) should not exceed 100%
+  // Skip validation for Tambahan
   useEffect(() => {
     const pen = formData.penilaian;
     const pool = ["Kinerja", "Potensial"];
@@ -272,6 +281,13 @@ const Indikator = () => {
     }
   }, [formData.bobot, formData.penilaian, data, modalMode, currentIndikator]);
 
+  // Auto-set bobot to 0 when Tambahan is selected
+  useEffect(() => {
+    if (formData.penilaian === "Tambahan" && formData.bobot !== "0") {
+      setFormData(prev => ({ ...prev, bobot: "0" }));
+    }
+  }, [formData.penilaian]);
+
   const handleDelete = async (id, indikatorName) => {
     const result = await Swal.fire({
       icon: "warning",
@@ -281,8 +297,8 @@ const Indikator = () => {
       reverseButtons: true,
       confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
     });
 
     if (result.isConfirmed) {
@@ -301,7 +317,7 @@ const Indikator = () => {
           icon: "error",
           title: "Gagal!",
           text: err.message || "Terjadi kesalahan saat menghapus data",
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: PRIMARY_COLORS.blue,
         });
       }
     }
@@ -375,9 +391,15 @@ const Indikator = () => {
     setSubmittingSub(true);
 
     try {
+      // Prepare data, set bobot to 0 for Tambahan parent
+      const submitData = {
+        ...subFormData,
+        bobot: selectedIndikator && selectedIndikator.penilaian === "Tambahan" ? "0" : subFormData.bobot,
+      };
+
       if (subModalMode === "add") {
         await createSubIndikator({
-          ...subFormData,
+          ...submitData,
           indikator_id: selectedIndikator.id,
         });
         Swal.fire({
@@ -388,7 +410,7 @@ const Indikator = () => {
           showConfirmButton: false,
         });
       } else {
-        await updateSubIndikator(currentSubIndikator.id, subFormData);
+        await updateSubIndikator(currentSubIndikator.id, submitData);
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
@@ -414,7 +436,7 @@ const Indikator = () => {
         icon: "error",
         title: "Gagal!",
         text: err.message || "Terjadi kesalahan saat menyimpan data",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setSubmittingSub(false);
@@ -422,6 +444,7 @@ const Indikator = () => {
   };
 
   // Live validation: total subindikator tidak boleh melebihi bobot indikator (untuk Kinerja/Potensial)
+  // Skip validation for Tambahan
   useEffect(() => {
     if (!selectedIndikator) {
       setSubWarning(null);
@@ -471,6 +494,13 @@ const Indikator = () => {
     currentSubIndikator,
   ]);
 
+  // Auto-set bobot to 0 when parent indikator is Tambahan
+  useEffect(() => {
+    if (selectedIndikator && selectedIndikator.penilaian === "Tambahan" && subFormData.bobot !== "0") {
+      setSubFormData(prev => ({ ...prev, bobot: "0" }));
+    }
+  }, [selectedIndikator]);
+
   const handleDeleteSub = async (id, subIndikatorName) => {
     const result = await Swal.fire({
       icon: "warning",
@@ -480,8 +510,8 @@ const Indikator = () => {
       reverseButtons: true,
       confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
     });
 
     if (result.isConfirmed) {
@@ -510,7 +540,7 @@ const Indikator = () => {
           icon: "error",
           title: "Gagal!",
           text: err.message || "Terjadi kesalahan saat menghapus data",
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: PRIMARY_COLORS.blue,
         });
       }
     }
@@ -518,8 +548,9 @@ const Indikator = () => {
 
   // Bulk bobot handlers
   const handleOpenBulkModal = () => {
-    // default select first indikator if available
-    const first = data && data.length > 0 ? data[0].id : null;
+    // default select first indikator if available (exclude Tambahan)
+    const nonTambahanData = data.filter(d => d.penilaian !== "Tambahan");
+    const first = nonTambahanData && nonTambahanData.length > 0 ? nonTambahanData[0].id : null;
     setBulkSelectedIndikatorId(first);
     if (first) {
       const ind = data.find((d) => d.id === first);
@@ -615,7 +646,7 @@ const Indikator = () => {
         icon: "error",
         title: "Gagal!",
         text: err.message || "Gagal menyimpan bobot subindikator",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setBulkSubmitting(false);
@@ -685,7 +716,7 @@ const Indikator = () => {
             size="lg"
             className="gap-2"
           >
-            <i className="fas fa-sliders-h mr-2" />
+            <i className="fas fa-sliders-h text-lg mr-2" />
             Ubah Bobot Subindikator
           </IconButton>
         </div>
@@ -696,7 +727,7 @@ const Indikator = () => {
             size="lg"
             className="gap-2"
           >
-            <i className="fas fa-plus mr-2" />
+            <i className="fas fa-plus text-lg mr-2" />
             Tambah Indikator
           </IconButton>
         </div>
@@ -727,11 +758,12 @@ const Indikator = () => {
         ) : (
           <>
             <div
-              className={`${
-                totalKinerja === 100
-                  ? "bg-[#E9F7EF] border border-[#2fa84f] dark:bg-green-900/30 dark:border-green-800 text-[#166534] dark:text-green-200"
-                  : "bg-[#FDECEA] border border-[#d33] dark:bg-red-900/30 dark:border-red-800 text-[#991b1b] dark:text-red-200"
-              } border rounded-lg p-3 flex items-center gap-3`}
+              className={`border rounded-lg p-3 flex items-center gap-3`}
+              style={{
+                backgroundColor: totalKinerja === 100 ? BG_COLORS.green.light : BG_COLORS.red.light,
+                borderColor: totalKinerja === 100 ? PRIMARY_COLORS.green : PRIMARY_COLORS.red,
+                color: totalKinerja === 100 ? PRIMARY_COLORS.green : PRIMARY_COLORS.red
+              }}
             >
               <div className="flex-1">
                 <div className="text-sm font-semibold">Total Bobot Kinerja</div>
@@ -739,11 +771,11 @@ const Indikator = () => {
               </div>
               <div className="text-sm">
                 {totalKinerja === 100 ? (
-                  <span className="inline-block bg-[#2fa84f]/10 text-[#2fa84f] px-2 py-1 rounded-full">
+                  <span className="inline-block px-2 py-1 rounded-full" style={{ backgroundColor: `${PRIMARY_COLORS.green}20`, color: PRIMARY_COLORS.green }}>
                     OK
                   </span>
                 ) : (
-                  <span className="inline-block bg-[#d33]/10 text-[#d33] px-2 py-1 rounded-full">
+                  <span className="inline-block px-2 py-1 rounded-full" style={{ backgroundColor: `${PRIMARY_COLORS.red}20`, color: PRIMARY_COLORS.red }}>
                     Harus 100%
                   </span>
                 )}
@@ -751,11 +783,12 @@ const Indikator = () => {
             </div>
 
             <div
-              className={`${
-                totalPotensial === 100
-                  ? "bg-[#E9F7EF] border border-[#2fa84f] dark:bg-green-900/30 dark:border-green-800 text-[#166534] dark:text-green-200"
-                  : "bg-[#FDECEA] border border-[#d33] dark:bg-red-900/30 dark:border-red-800 text-[#991b1b] dark:text-red-200"
-              } border rounded-lg p-3 flex items-center gap-3`}
+              className={`border rounded-lg p-3 flex items-center gap-3`}
+              style={{
+                backgroundColor: totalPotensial === 100 ? BG_COLORS.green.light : BG_COLORS.red.light,
+                borderColor: totalPotensial === 100 ? PRIMARY_COLORS.green : PRIMARY_COLORS.red,
+                color: totalPotensial === 100 ? PRIMARY_COLORS.green : PRIMARY_COLORS.red
+              }}
             >
               <div className="flex-1">
                 <div className="text-sm font-semibold">Total Bobot Potensial</div>
@@ -763,11 +796,11 @@ const Indikator = () => {
               </div>
               <div className="text-sm">
                 {totalPotensial === 100 ? (
-                  <span className="inline-block bg-[#2fa84f]/10 text-[#2fa84f] px-2 py-1 rounded-full">
+                  <span className="inline-block px-2 py-1 rounded-full" style={{ backgroundColor: `${PRIMARY_COLORS.green}20`, color: PRIMARY_COLORS.green }}>
                     OK
                   </span>
                 ) : (
-                  <span className="inline-block bg-[#d33]/10 text-[#d33] px-2 py-1 rounded-full">
+                  <span className="inline-block px-2 py-1 rounded-full" style={{ backgroundColor: `${PRIMARY_COLORS.red}20`, color: PRIMARY_COLORS.red }}>
                     Harus 100%
                   </span>
                 )}
@@ -779,10 +812,11 @@ const Indikator = () => {
 
       {/* Error State */}
       {error && !loading && (
-        <div className="bg-[#FDECEA] dark:bg-red-900/20 border border-[#d33] dark:border-red-800 rounded-lg p-4 mb-6">
+        <div className="border rounded-lg p-4 mb-6" style={{ backgroundColor: BG_COLORS.red.light, borderColor: PRIMARY_COLORS.red }}>
           <div className="flex items-start">
             <svg
-              className="h-5 w-5 text-[#d33] mt-0.5 flex-shrink-0"
+              className="h-5 w-5 mt-0.5 flex-shrink-0"
+              style={{ color: PRIMARY_COLORS.red }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -798,12 +832,13 @@ const Indikator = () => {
               <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
                 Terjadi Kesalahan
               </h3>
-              <p className="mt-1 text-sm text-[#d33] dark:text-[#d33]">
+              <p className="mt-1 text-sm" style={{ color: PRIMARY_COLORS.red }}>
                 {error}
               </p>
               <button
                 onClick={loadData}
-                className="mt-2 text-sm font-medium text-[#d33] dark:text-[#d33] hover:text-[#d33] cursor-pointer"
+                className="mt-2 text-sm font-medium hover:opacity-80 cursor-pointer"
+                style={{ color: PRIMARY_COLORS.red }}
               >
                 Muat Ulang
               </button>
@@ -828,7 +863,8 @@ const Indikator = () => {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] dark:text-white transition-all shadow-sm"
+                  className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:border-blue-500 dark:text-white transition-all shadow-sm"
+                  style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
                 />
                 <svg
                   className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 dark:text-gray-500"
@@ -873,7 +909,7 @@ const Indikator = () => {
                       <div className="flex flex-col items-center justify-center">
                         <div className="relative">
                           <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0" style={{ borderTopColor: PRIMARY_COLORS.teal }}></div>
                         </div>
                         <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                           {t("loadingData")}
@@ -924,7 +960,7 @@ const Indikator = () => {
                                 rowSpan={items.length}
                                 className="px-3 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white text-center align-middle"
                               >
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-md font-medium bg-[#3085d6] text-white">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-md font-medium text-white" style={{ backgroundColor: PRIMARY_COLORS.teal }}>
                                   {penilaian}
                                 </span>
                               </td>
@@ -933,12 +969,18 @@ const Indikator = () => {
                               {indikator.indikator}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-center">
-                              {indikator.bobot}
-                              {isSubMismatch(indikator) && (
-                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-md font-medium bg-[#FFF8E1] text-[#854d0e] dark:bg-[#f4c430]/10 dark:text-[#f4c430]">
-                                  <i className="fas fa-exclamation-triangle mr-1" />{" "}
-                                  Bobot sub: {sumActiveSub(indikator)}
-                                </span>
+                              {indikator.penilaian === "Tambahan" ? (
+                                <span className="text-gray-500 dark:text-gray-400">-</span>
+                              ) : (
+                                <>
+                                  {indikator.bobot}
+                                  {isSubMismatch(indikator) && (
+                                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-md font-medium" style={{ backgroundColor: BG_COLORS.yellow.light, color: TEXT_ON_BG_COLORS.yellow }}>
+                                      <i className="fas fa-exclamation-triangle mr-1" />{" "}
+                                      Bobot sub: {sumActiveSub(indikator)}
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </td>
                             <td
@@ -951,7 +993,7 @@ const Indikator = () => {
                                   handleOpenDetailModal(indikator);
                               }}
                             >
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-md font-medium bg-[#F3E8FF] border border-[#7a5cd6] text-[#6b21a8] dark:bg-[#7a5cd6] dark:text-white cursor-pointer hover:bg-[#d8b4fe] dark:hover:bg-[#8a6ce6] transition-all duration-200">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-md font-medium bg-[#E7F3FF] border border-blue-500 dark:bg-blue-900/30 dark:border-blue-800 text-blue-800 dark:text-blue-200 cursor-pointer hover:bg-[#bfdbfe] dark:hover:bg-blue-900/50 transition-all duration-200">
                                 {indikator.sub_indikators?.length || 0}{" "}
                                 Subindikator
                               </span>
@@ -1057,40 +1099,44 @@ const Indikator = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, indikator: e.target.value })
                       }
-                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
                       placeholder="Masukkan nama indikator"
                     />
                   </div>
-                  <div>
-                    <label
-                      htmlFor="bobot"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Bobot (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        id="bobot"
-                        required
-                        step="0.01"
-                        value={formData.bobot}
-                        onChange={(e) =>
-                          setFormData({ ...formData, bobot: e.target.value })
-                        }
-                        className="block w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
-                        placeholder="0.00"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-600 dark:text-gray-300">
-                        %
-                      </span>
-                    </div>
-                    {indikatorWarning && (
-                      <div className="mt-2 text-sm text-[#854d0e] bg-[#FFF8E1] dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
-                        {indikatorWarning}
+                  {formData.penilaian !== "Tambahan" && (
+                    <div>
+                      <label
+                        htmlFor="bobot"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                      >
+                        Bobot (%)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          id="bobot"
+                          required
+                          step="0.01"
+                          value={formData.bobot}
+                          onChange={(e) =>
+                            setFormData({ ...formData, bobot: e.target.value })
+                          }
+                          className="block w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                          style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
+                          placeholder="0.00"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-600 dark:text-gray-300">
+                          %
+                        </span>
                       </div>
-                    )}
-                  </div>
+                      {indikatorWarning && (
+                        <div className="mt-2 text-sm rounded-lg p-2 border" style={{ color: TEXT_ON_BG_COLORS.yellow, backgroundColor: BG_COLORS.yellow.light, borderColor: `${PRIMARY_COLORS.yellow}30` }}>
+                          {indikatorWarning}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <label
                       htmlFor="penilaian"
@@ -1108,7 +1154,8 @@ const Indikator = () => {
                             penilaian: e.target.value,
                           })
                         }
-                        className="appearance-none block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] cursor-pointer transition-all shadow-sm"
+                        className="appearance-none block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 cursor-pointer transition-all shadow-sm"
+                        style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
                       >
                         <option value="">-- Pilih Penilaian --</option>
                         <option value="Kinerja">Kinerja</option>
@@ -1219,10 +1266,10 @@ const Indikator = () => {
                         onChange={(e) =>
                           handleSelectBulkIndikator(e.target.value)
                         }
-                        className="appearance-none block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] cursor-pointer transition-all shadow-sm"
+                        className="appearance-none block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 cursor-pointer transition-all shadow-sm"
                       >
                         <option value="">-- Pilih Indikator --</option>
-                        {data.map((ind) => (
+                        {data.filter(ind => ind.penilaian !== "Tambahan").map((ind) => (
                           <option key={ind.id} value={ind.id}>
                             {ind.indikator} ({ind.penilaian})
                           </option>
@@ -1313,7 +1360,7 @@ const Indikator = () => {
                                   }}
                                   className={`inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
                                     s.isactive
-                                      ? "bg-[#3085d6]"
+                                      ? "bg-teal-500"
                                       : "bg-gray-300 dark:bg-gray-600"
                                   }`}
                                 >
@@ -1332,12 +1379,12 @@ const Indikator = () => {
                       </table>
                     </div>
                     {bulkErrors && (
-                      <div className="mt-2 text-sm text-[#854d0e] bg-[#FFF8E1] dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
+                      <div className="mt-2 text-sm rounded-lg p-2 border" style={{ color: TEXT_ON_BG_COLORS.yellow, backgroundColor: BG_COLORS.yellow.light, borderColor: `${PRIMARY_COLORS.yellow}30` }}>
                         {bulkErrors}
                       </div>
                     )}
                     {bulkWarning && (
-                      <div className="mt-2 text-sm text-[#854d0e] bg-[#FFF8E1] dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
+                      <div className="mt-2 text-sm rounded-lg p-2 border" style={{ color: TEXT_ON_BG_COLORS.yellow, backgroundColor: BG_COLORS.yellow.light, borderColor: `${PRIMARY_COLORS.yellow}30` }}>
                         {bulkWarning}
                       </div>
                     )}
@@ -1427,15 +1474,17 @@ const Indikator = () => {
 
               {/* Content: simplified to a scrollable table only */}
               <div className="flex-1 p-6 flex flex-col min-h-0">
-                <div className="mb-6 p-4 rounded-lg bg-[#E7F3FF] border border-[#3085d6] dark:bg-blue-900/30 dark:border-blue-800">
+                <div className="mb-6 p-4 rounded-lg bg-teal-50 border border-teal-500 dark:bg-blue-900/30 dark:border-blue-800">
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     {selectedIndikator.indikator}
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    <div className="text-sm font-medium mt-1">
-                      Bobot: {selectedIndikator.bobot}
-                    </div>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#7a5cd6] text-white">
+                    {selectedIndikator.penilaian !== "Tambahan" && (
+                      <div className="text-sm font-medium mt-1">
+                        Bobot: {selectedIndikator.bobot}
+                      </div>
+                    )}
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-teal-500 text-white">
                       Penilaian: {selectedIndikator.penilaian}
                     </span>
                   </div>
@@ -1452,7 +1501,7 @@ const Indikator = () => {
                         placeholder="Cari subindikator..."
                         value={subSearchTerm}
                         onChange={(e) => setSubSearchTerm(e.target.value)}
-                        className="w-56 pl-10 pr-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3085d6]"
+                        className="w-56 pl-10 pr-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                       />
                       <svg
                         className="absolute left-3 top-3 h-4 w-4 text-gray-400"
@@ -1482,9 +1531,9 @@ const Indikator = () => {
 
                 {/* Warning if sub total mismatch */}
                 {isSubMismatch(selectedIndikator) && (
-                  <div className="mb-4 p-3 rounded-lg bg-[#FFF8E1] border border-[#f4c430] text-[#854d0e] dark:bg-[#f4c430]/10 dark:border-[#f39c12]/30">
+                  <div className="mb-4 p-3 rounded-lg border" style={{ backgroundColor: BG_COLORS.yellow.light, borderColor: PRIMARY_COLORS.yellow, color: TEXT_ON_BG_COLORS.yellow }}>
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-[#FFF8E1] text-[#854d0e] dark:bg-[#f4c430]/10 dark:text-[#f4c430] flex-shrink-0">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full flex-shrink-0" style={{ backgroundColor: BG_COLORS.yellow.light, color: TEXT_ON_BG_COLORS.yellow }}>
                         <i className="fas fa-exclamation-triangle" />
                       </div>
                       <div>
@@ -1602,7 +1651,11 @@ const Indikator = () => {
                                   {sub.subindikator}
                                 </td>
                                 <td className="px-3 py-2 whitespace-nowrap text-sm w-20 text-center">
-                                  {sub.bobot}
+                                  {selectedIndikator.penilaian === "Tambahan" ? (
+                                    <span className="text-gray-500 dark:text-gray-400">-</span>
+                                  ) : (
+                                    sub.bobot
+                                  )}
                                 </td>
                                 <td 
                                   className="px-3 py-2 text-sm w-40 text-center"
@@ -1621,7 +1674,7 @@ const Indikator = () => {
                                 >
                                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
                                     instrumens.filter(inst => inst.subindikator_id === sub.id).length > 0
-                                      ? "bg-[#E7F3FF] border border-[#3085d6] dark:bg-blue-900/30 dark:border-blue-800 text-blue-800 dark:text-blue-200 cursor-pointer hover:bg-[#bfdbfe] dark:hover:bg-blue-900/50 transition-all duration-200"
+                                      ? "bg-[#E7F3FF] border border-blue-500 dark:bg-blue-900/30 dark:border-blue-800 text-blue-800 dark:text-blue-200 cursor-pointer hover:bg-[#bfdbfe] dark:hover:bg-blue-900/50 transition-all duration-200"
                                       : "bg-gray-50 border border-gray-200 dark:bg-gray-900/30 dark:border-gray-800 text-gray-600 dark:text-gray-400"
                                   }`}>
                                     {(() => {
@@ -1634,8 +1687,8 @@ const Indikator = () => {
                                   <span
                                     className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
                                       sub.isactive
-                                        ? "bg-[#E9F7EF] border border-[#2fa84f] dark:bg-green-900/30 dark:border-green-800 text-[#166534] dark:text-green-200"
-                                        : "bg-[#FDECEA] border border-[#d33] dark:bg-red-900/30 dark:border-red-800 text-[#991b1b] dark:text-red-200"
+                                        ? "bg-teal-50 border border-teal-500 dark:bg-teal-900/30 dark:border-teal-800 text-teal-800 dark:text-teal-200"
+                                        : "bg-[#FDECEA] border border-[#d33333] dark:bg-red-900/30 dark:border-red-800 text-[#991b1b] dark:text-red-200"
                                     }`}
                                   >
                                     {sub.isactive ? "Aktif" : "Tidak Aktif"}
@@ -1763,43 +1816,45 @@ const Indikator = () => {
                           subindikator: e.target.value,
                         })
                       }
-                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
                       placeholder="Masukkan nama subindikator"
                     />
                   </div>
-                  <div>
-                    <label
-                      htmlFor="sub-bobot"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Bobot (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        id="sub-bobot"
-                        required
-                        step="0.01"
-                        value={subFormData.bobot}
-                        onChange={(e) =>
-                          setSubFormData({
-                            ...subFormData,
-                            bobot: e.target.value,
-                          })
-                        }
-                        className="block w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
-                        placeholder="0.00"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-600 dark:text-gray-300">
-                        %
-                      </span>
-                    </div>
-                    {subWarning && (
-                      <div className="mt-2 text-sm text-[#854d0e] bg-[#FFF8E1] dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
-                        {subWarning}
+                  {selectedIndikator && selectedIndikator.penilaian !== "Tambahan" && (
+                    <div>
+                      <label
+                        htmlFor="sub-bobot"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                      >
+                        Bobot (%)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          id="sub-bobot"
+                          required
+                          step="0.01"
+                          value={subFormData.bobot}
+                          onChange={(e) =>
+                            setSubFormData({
+                              ...subFormData,
+                              bobot: e.target.value,
+                            })
+                          }
+                          className="block w-full pr-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                          placeholder="0.00"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-600 dark:text-gray-300">
+                          %
+                        </span>
                       </div>
-                    )}
-                  </div>
+                      {subWarning && (
+                        <div className="mt-2 text-sm rounded-lg p-2 border" style={{ color: TEXT_ON_BG_COLORS.yellow, backgroundColor: BG_COLORS.yellow.light, borderColor: `${PRIMARY_COLORS.yellow}30` }}>
+                          {subWarning}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="flex items-center gap-4">
                     <button
                       type="button"
@@ -1812,7 +1867,7 @@ const Indikator = () => {
                       aria-pressed={subFormData.isactive}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none cursor-pointer ${
                         subFormData.isactive
-                          ? "bg-[#3085d6]"
+                          ? "bg-teal-500"
                           : "bg-gray-300 dark:bg-gray-600"
                       }`}
                       title={subFormData.isactive ? "Aktif" : "Tidak Aktif"}
@@ -1982,7 +2037,7 @@ const Indikator = () => {
                                   {inst.instrumen}
                                 </td>
                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white text-center">
-                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-[#E9F7EF] border border-[#2fa84f] dark:bg-green-900/30 dark:border-green-800 text-[#166534] dark:text-green-200">
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-teal-50 border border-teal-500 dark:bg-teal-900/30 dark:border-teal-800 text-teal-800 dark:text-teal-200">
                                     {inst.skor}
                                   </span>
                                 </td>
@@ -2003,7 +2058,7 @@ const Indikator = () => {
                   variant="default"
                   size="lg"
                 >
-                  <i className="fas fa-times-circle mr-2" />
+                  <i className="far fa-times-circle mr-2" />
                   Tutup
                 </IconButton>
               </div>

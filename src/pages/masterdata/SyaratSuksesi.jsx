@@ -11,6 +11,7 @@ import {
   updateSyaratSuksesi,
 } from "../../services/apiService";
 import Swal from "sweetalert2";
+import { PRIMARY_COLORS, DARK_COLORS } from "../../config/colors";
 
 const SyaratSuksesi = () => {
   const { jabatanId } = useParams();
@@ -137,7 +138,7 @@ const SyaratSuksesi = () => {
         icon: "error",
         title: "Error",
         text: error.message || "Gagal memuat data",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setLoading(false);
@@ -221,8 +222,8 @@ const SyaratSuksesi = () => {
       reverseButtons: true,
       confirmButtonText: "Simpan",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
     });
 
     if (!confirm.isConfirmed) return;
@@ -275,7 +276,7 @@ const SyaratSuksesi = () => {
         icon: "error",
         title: "Error",
         text: error.message || "Gagal menyimpan syarat suksesi",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setSubmitting(false);
@@ -317,7 +318,7 @@ const SyaratSuksesi = () => {
       {/* Jabatan Info Card */}
       {jabatan && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6 border border-gray-100 dark:border-gray-700">
-          <div className="bg-gradient-to-r from-[#3085d6] to-[#2070c0] px-6 py-4">
+          <div className="px-6 py-4" style={{ background: `linear-gradient(to right, ${PRIMARY_COLORS.teal}, ${DARK_COLORS.teal})` }}>
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                 <i className="fas fa-briefcase text-white text-xl"></i>
@@ -332,13 +333,13 @@ const SyaratSuksesi = () => {
 
           <div className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-[#eef8ff] to-[#eaf4ff] dark:from-[#07102a]/5 dark:to-[#15203a]/5 rounded-lg p-4 border border-[#dbeeff] dark:border-[#2b4a7a]">
+              <div className="bg-gradient-to-br rounded-lg p-4 border" style={{ backgroundImage: 'linear-gradient(to bottom right, #f0fdfa, #ccfbf1)', borderColor: '#b2f5ea' }}>
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-[#3085d6] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: PRIMARY_COLORS.teal }}>
                     <i className="fas fa-briefcase text-white text-sm"></i>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#3085d6] dark:text-[#9ecaf9] mb-1">
+                    <p className="text-sm font-medium mb-1" style={{ color: PRIMARY_COLORS.teal }}>
                       Nama Jabatan
                     </p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
@@ -348,13 +349,13 @@ const SyaratSuksesi = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-[#fbf8ff] to-[#f5f0ff] dark:from-[#0f0820]/5 dark:to-[#1b1530]/5 rounded-lg p-4 border border-[#efe7ff] dark:border-[#3b2b66]">
+              <div className="bg-gradient-to-br rounded-lg p-4 border" style={{ backgroundImage: 'linear-gradient(to bottom right, #eef8ff, #eaf4ff)', borderColor: '#dbeeff' }}>
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-[#7a5cd6] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: PRIMARY_COLORS.blue }}>
                     <i className="fas fa-building text-white text-sm"></i>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#7a5cd6] dark:text-[#bfaef5] mb-1">
+                    <p className="text-sm font-medium mb-1" style={{ color: PRIMARY_COLORS.blue }}>
                       Unit Kerja
                     </p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
@@ -364,13 +365,13 @@ const SyaratSuksesi = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-[#fffaf4] to-[#fff6ee] dark:from-[#2b1505]/5 dark:to-[#381f07]/5 rounded-lg p-4 border border-[#fff0d9] dark:border-[#5a3d12]">
+              <div className="bg-gradient-to-br rounded-lg p-4 border" style={{ backgroundImage: 'linear-gradient(to bottom right, #fbf8ff, #f5f0ff)', borderColor: '#efe7ff' }}>
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-[#f39c12] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: PRIMARY_COLORS.purple }}>
                     <i className="fas fa-layer-group text-white text-sm"></i>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#f39c12] dark:text-[#ffd9a8] mb-1">
+                    <p className="text-sm font-medium mb-1" style={{ color: PRIMARY_COLORS.purple }}>
                       Jenis Jabatan
                     </p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
@@ -386,7 +387,7 @@ const SyaratSuksesi = () => {
 
       {/* Form */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
-        <div className="bg-gradient-to-r from-[#3085d6] to-[#2070c0] px-6 py-4">
+        <div className="px-6 py-4" style={{ background: `linear-gradient(to right, ${PRIMARY_COLORS.teal}, ${DARK_COLORS.teal})` }}>
           <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
             <i className="fas fa-clipboard-list"></i>
             Form Syarat Suksesi
@@ -398,7 +399,7 @@ const SyaratSuksesi = () => {
             <div className="flex flex-col items-center justify-center py-6">
               <div className="relative">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0" style={{ borderTopColor: PRIMARY_COLORS.teal }}></div>
               </div>
               <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                 Memuat form...
@@ -424,7 +425,7 @@ const SyaratSuksesi = () => {
                           <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             <span
                               className="w-1.5 h-6 rounded-full"
-                              style={{ background: "#3085d6" }}
+                              style={{ background: PRIMARY_COLORS.teal }}
                             ></span>
                             {indikator.indikator}
                           </h2>
@@ -433,8 +434,8 @@ const SyaratSuksesi = () => {
                           <span
                             className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-sm font-semibold"
                             style={{
-                              background: "rgba(48,133,214,0.12)",
-                              color: "#3085d6",
+                              background: `${PRIMARY_COLORS.teal}12`,
+                              color: PRIMARY_COLORS.teal,
                             }}
                           >
                             {indikator.penilaian}
@@ -461,12 +462,14 @@ const SyaratSuksesi = () => {
                         return (
                           <div
                             key={subindikator.id}
-                            className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 rounded-lg p-5 border border-gray-200 dark:border-gray-600 hover:border-[#3085d6] dark:hover:border-[#7a5cd6] transition-colors"
+                            className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 rounded-lg p-5 border border-gray-200 dark:border-gray-600 transition-colors"
+                            onMouseEnter={(e) => e.currentTarget.style.borderColor = PRIMARY_COLORS.teal}
+                            onMouseLeave={(e) => e.currentTarget.style.borderColor = ''}
                           >
                             <div className="flex items-start gap-3 mb-4">
                               <div
                                 className="flex items-center justify-center w-8 h-8 rounded-lg text-white text-sm font-bold flex-shrink-0"
-                                style={{ background: "#3085d6" }}
+                                style={{ background: PRIMARY_COLORS.teal }}
                               >
                                 {sidx + 1}
                               </div>
@@ -514,7 +517,10 @@ const SyaratSuksesi = () => {
                                         e.target.value
                                       )
                                     }
-                                    className="block w-full px-3 py-1.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium transition-all"
+                                    className="block w-full px-3 py-1.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium transition-all"
+                                    style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
+                                    onFocus={(e) => e.target.style.borderColor = PRIMARY_COLORS.teal}
+                                    onBlur={(e) => e.target.style.borderColor = ''}
                                     placeholder="0"
                                   />
                                 )}
@@ -533,16 +539,16 @@ const SyaratSuksesi = () => {
                                       readOnly
                                       className="block w-full px-3 py-1.5 rounded-lg shadow-sm font-bold text-lg cursor-not-allowed"
                                       style={{
-                                        border: "2px solid rgba(48,133,214,0.18)",
-                                        background: "#eaf4ff",
-                                        color: "#3085d6",
+                                        border: `2px solid ${PRIMARY_COLORS.teal}30`,
+                                        background: `${PRIMARY_COLORS.teal}15`,
+                                        color: PRIMARY_COLORS.teal,
                                       }}
                                       placeholder="0.00"
                                     />
                                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                                       <i
                                         className="fas fa-lock text-sm"
-                                        style={{ color: "#3085d6" }}
+                                        style={{ color: PRIMARY_COLORS.teal }}
                                       ></i>
                                     </div>
                                   </div>

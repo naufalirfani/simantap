@@ -76,6 +76,8 @@ const translations = {
     resetFilter: 'Reset Filter',
     applyFilter: 'Terapkan Filter',
     selisih: 'Selisih',
+    exportData: 'Ekspor Data',
+    exporting: 'Mengekspor...',
   },
   en: {
     dashboard: 'Dashboard',
@@ -142,6 +144,8 @@ const translations = {
     resetFilter: 'Reset Filter',
     applyFilter: 'Apply Filter',
     selisih: 'Difference',
+    exportData: 'Export Data',
+    exporting: 'Exporting...',
   },
 };
 

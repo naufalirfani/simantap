@@ -6,7 +6,7 @@ import {
   resetKotakConfig,
   updateIntervals,
 } from "../../services/kotakConfigService";
-import { BG_COLORS, TEXT_ON_BG_COLORS } from "../../config/colors";
+import { BG_COLORS, TEXT_ON_BG_COLORS, PRIMARY_COLORS } from "../../config/colors";
 import Swal from "sweetalert2";
 import IconButton from "../../components/IconButton";
 import Breadcrumb from "../../components/Breadcrumb";
@@ -25,6 +25,7 @@ const KotakInterval = () => {
     warna: "",
     rekomendasi: [""],
   });
+  const STEP = 0.01;
 
   useEffect(() => {
     document.title = `Konfigurasi Kotak | SIMANTAP`;
@@ -65,18 +66,18 @@ const KotakInterval = () => {
         if (idx === 0) return prev;
         // ensure min < current max
         const maxVal = arr[idx].max;
-        const newMin = Math.min(parsed, maxVal - 1);
+        const newMin = Math.min(parsed, maxVal - STEP);
         arr[idx].min = newMin;
-        // sync previous interval's max to this min - 1 (no overlap)
-        arr[idx - 1].max = newMin - 1;
+        // sync previous interval's max to this min - STEP (no overlap)
+        arr[idx - 1].max = parseFloat((newMin - STEP).toFixed(2));
       } else if (field === "max") {
         // Interval 3 (last) upper bound is fixed
         if (idx === lastIdx) return prev;
         const minVal = arr[idx].min;
-        const newMax = Math.max(parsed, minVal + 1);
+        const newMax = Math.max(parsed, minVal + STEP);
         arr[idx].max = newMax;
-        // sync next interval's min to this max + 1 (no overlap)
-        arr[idx + 1].min = newMax + 1;
+        // sync next interval's min to this max + STEP (no overlap)
+        arr[idx + 1].min = parseFloat((newMax + STEP).toFixed(2));
       } else {
         arr[idx][field] = parsed;
       }
@@ -114,7 +115,7 @@ const KotakInterval = () => {
         icon: "error",
         title: "Validasi Gagal",
         text: "Pastikan setiap interval memiliki nilai min < max.",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
       return;
     }
@@ -134,7 +135,7 @@ const KotakInterval = () => {
         icon: "error",
         title: "Gagal",
         text: "Terjadi kesalahan saat menyimpan interval",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     }
   };
@@ -219,7 +220,7 @@ const KotakInterval = () => {
         icon: "error",
         title: "Gagal!",
         text: error.message || "Terjadi kesalahan saat menyimpan konfigurasi",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     }
   };
@@ -233,8 +234,8 @@ const KotakInterval = () => {
       reverseButtons: true,
       confirmButtonText: "Reset",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
     });
 
     if (result.isConfirmed) {
@@ -253,7 +254,7 @@ const KotakInterval = () => {
           icon: "error",
           title: "Gagal!",
           text: "Terjadi kesalahan saat mereset konfigurasi",
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: PRIMARY_COLORS.blue,
         });
       }
     }
@@ -263,7 +264,7 @@ const KotakInterval = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-[#3085d6] mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 mx-auto" style={{ borderTopColor: PRIMARY_COLORS.teal }}></div>
           <p className="mt-4 text-gray-600 dark:text-gray-300">
             Memuat konfigurasi...
           </p>
@@ -294,17 +295,17 @@ const KotakInterval = () => {
             size="lg"
             className="gap-2"
           >
-            <i className="fas fa-undo mr-2" />
+            <i className="fas fa-undo text-lg mr-2" />
             Reset ke Default
           </IconButton>
         </div>
       </div>
 
       {/* Interval Info Card (editable) */}
-      <div className="dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6" style={{ backgroundColor: BG_COLORS.blue.light }}>
+      <div className="dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 bg-teal-50">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-            <i className="fas fa-ruler-combined text-[#3085d6] dark:text-[#3085d6]"></i>
+            <i className="fas fa-ruler-combined text-lg" style={{ color: PRIMARY_COLORS.teal }}></i>
             Interval Sumbu
           </h2>
           <div className="flex items-center gap-3">
@@ -332,6 +333,7 @@ const KotakInterval = () => {
                 variant="primary"
                 size="lg"
               >
+                <i className="fas fa-edit text-lg mr-2"></i>
                 Edit Interval
               </IconButton>
             )}
@@ -341,7 +343,7 @@ const KotakInterval = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
             <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-              <i className="fas fa-arrow-right text-sm text-[#3085d6]"></i>
+              <i className="fas fa-arrow-right text-lg" style={{ color: PRIMARY_COLORS.teal }}></i>
               Sumbu X (Potensial)
             </h3>
             <div className="space-y-2">
@@ -358,6 +360,7 @@ const KotakInterval = () => {
                       <div className="flex items-center gap-2 w-full">
                         <input
                           type="number"
+                          step={STEP}
                           value={interval.min}
                           onChange={(e) =>
                             handleIntervalFieldChange(
@@ -375,6 +378,7 @@ const KotakInterval = () => {
                         <span className="text-gray-500">—</span>
                         <input
                           type="number"
+                          step={STEP}
                           value={interval.max}
                           onChange={(e) =>
                             handleIntervalFieldChange(
@@ -400,7 +404,7 @@ const KotakInterval = () => {
                         </span>
                       </div>
                     ) : (
-                      <span className="font-semibold text-gray-800 dark:text-white bg-[#E7F3FF] dark:bg-blue-900 px-3 py-1 rounded-full">
+                      <span className="font-semibold dark:bg-blue-900 px-3 py-1 rounded-full bg-teal-50 text-teal-500">
                         {interval.label}
                       </span>
                     )}
@@ -412,7 +416,7 @@ const KotakInterval = () => {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
             <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-              <i className="fas fa-arrow-up text-sm text-[#2fa84f]"></i>
+              <i className="fas fa-arrow-up text-lg text-[#3085d6]"></i>
               Sumbu Y (Kinerja)
             </h3>
             <div className="space-y-2">
@@ -429,6 +433,7 @@ const KotakInterval = () => {
                       <div className="flex items-center gap-2 w-full">
                         <input
                           type="number"
+                          step={STEP}
                           value={interval.min}
                           onChange={(e) =>
                             handleIntervalFieldChange(
@@ -446,6 +451,7 @@ const KotakInterval = () => {
                         <span className="text-gray-500">—</span>
                         <input
                           type="number"
+                          step={STEP}
                           value={interval.max}
                           onChange={(e) =>
                             handleIntervalFieldChange(
@@ -469,7 +475,7 @@ const KotakInterval = () => {
                         </span>
                       </div>
                     ) : (
-                      <span className="font-semibold text-gray-800 dark:text-white bg-[#2fa84f]/20 dark:bg-[#2fa84f] px-3 py-1 rounded-full">
+                      <span className="font-semibold px-3 py-1 rounded-full text-[#3085d6] bg-blue-50 dark:bg-blue-900">
                         {interval.label}
                       </span>
                     )}
@@ -484,7 +490,7 @@ const KotakInterval = () => {
       {/* Kotak Grid */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-          <i className="fas fa-th text-[#3085d6] dark:text-[#3085d6]"></i>
+          <i className="fas fa-th text-lg" style={{ color: PRIMARY_COLORS.teal }}></i>
           Konfigurasi 9 Kotak
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -503,7 +509,7 @@ const KotakInterval = () => {
                     {kotak.id}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-800 dark:text-white text-sm">
+                    <h3 className="font-bold text-gray-800 dark:text-white text-md">
                       Kotak {kotak.id}
                     </h3>
                     <span className="inline-block mt-1 text-sm">
@@ -536,7 +542,7 @@ const KotakInterval = () => {
               {/* Rekomendasi Preview (with animated expand/collapse) */}
               <div className="mb-3">
                 <div className="flex items-center gap-1 mb-2">
-                  <i className="fas fa-lightbulb text-sm text-[#f4c430]"></i>
+                  <i className="fas fa-lightbulb text-lg" style={{ color: PRIMARY_COLORS.yellow }}></i>
                   <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Rekomendasi ({kotak.rekomendasi.length})
                   </span>
@@ -570,7 +576,8 @@ const KotakInterval = () => {
                           expandedKotakId === kotak.id ? null : kotak.id
                         )
                       }
-                      className="mt-2 text-[#3085d6] dark:text-[#3085d6] font-medium hover:underline cursor-pointer flex items-center gap-2 select-none"
+                      className="mt-2 font-medium hover:underline cursor-pointer flex items-center gap-2 select-none"
+                      style={{ color: PRIMARY_COLORS.teal }}
                     >
                       <span
                         className={`transform transition-transform duration-300 ${
@@ -579,7 +586,7 @@ const KotakInterval = () => {
                             : "rotate-0"
                         }`}
                       >
-                        <i className="fas fa-chevron-down text-sm"></i>
+                        <i className="fas fa-chevron-down text-md"></i>
                       </span>
                       {expandedKotakId === kotak.id
                         ? "Sembunyikan"
@@ -596,7 +603,7 @@ const KotakInterval = () => {
                 size="lg"
                 className="w-full gap-2 mt-auto"
               >
-                <i className="fas fa-edit" />
+                <i className="fas fa-edit text-lg" />
                 Edit Konfigurasi
               </IconButton>
             </div>
@@ -656,7 +663,7 @@ const KotakInterval = () => {
                   {/* Kategori */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      <i className="fas fa-bookmark mr-2 text-[#2fa84f]"></i>
+                      <i className="fas fa-bookmark text-lg mr-2" style={{ color: PRIMARY_COLORS.green }}></i>
                       Kategori
                     </label>
                     <input
@@ -666,7 +673,10 @@ const KotakInterval = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, kategori: e.target.value })
                       }
-                      className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
+                      onFocus={(e) => e.target.style.borderColor = PRIMARY_COLORS.teal}
+                      onBlur={(e) => e.target.style.borderColor = ''}
                       placeholder="Contoh: Talenta Kunci"
                     />
                   </div>
@@ -674,7 +684,7 @@ const KotakInterval = () => {
                   {/* Warna */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      <i className="fas fa-palette mr-2 text-[#7a5cd6]"></i>
+                      <i className="fas fa-palette text-lg mr-2" style={{ color: PRIMARY_COLORS.purple }}></i>
                       Warna
                     </label>
                     <div className="flex items-center gap-3">
@@ -692,8 +702,11 @@ const KotakInterval = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, warna: e.target.value })
                         }
-                        className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
-                        placeholder="#2fa84f"
+                        className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                        style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
+                        onFocus={(e) => e.target.style.borderColor = PRIMARY_COLORS.teal}
+                        onBlur={(e) => e.target.style.borderColor = ''}
+                        placeholder={PRIMARY_COLORS.green}
                         pattern="^#[0-9A-Fa-f]{6}$"
                       />
                     </div>
@@ -703,7 +716,7 @@ const KotakInterval = () => {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        <i className="fas fa-lightbulb mr-2 text-[#f4c430]"></i>
+                        <i className="fas fa-lightbulb text-lg mr-2" style={{ color: PRIMARY_COLORS.yellow }}></i>
                         Rekomendasi
                       </label>
                       <IconButton
@@ -713,7 +726,7 @@ const KotakInterval = () => {
                         size="lg"
                         className="gap-1"
                       >
-                        <i className="fas fa-plus text-sm" />
+                        <i className="fas fa-plus text-lg text-sm" />
                         Tambah
                       </IconButton>
                     </div>
@@ -728,7 +741,10 @@ const KotakInterval = () => {
                             onChange={(e) =>
                               handleRekomendasiChange(index, e.target.value)
                             }
-                            className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all resize-none"
+                            className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all resize-none"
+                            style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
+                            onFocus={(e) => e.target.style.borderColor = PRIMARY_COLORS.teal}
+                            onBlur={(e) => e.target.style.borderColor = ''}
                             placeholder="Masukkan rekomendasi..."
                             rows="1"
                           />
@@ -741,7 +757,7 @@ const KotakInterval = () => {
                               title="Hapus"
                               className="flex-shrink-0"
                             >
-                              <i className="fas fa-trash text-sm" />
+                              <i className="fas fa-trash text-lg text-sm" />
                             </IconButton>
                           )}
                         </div>
@@ -752,7 +768,7 @@ const KotakInterval = () => {
                   {/* Range Info (Read-only) */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                      <i className="fas fa-info-circle mr-2 text-[#3085d6]"></i>
+                      <i className="fas fa-info-circle text-lg mr-2" style={{ color: PRIMARY_COLORS.teal }}></i>
                       Range (Otomatis berdasarkan posisi kotak)
                     </h4>
                     <div className="grid grid-cols-2 gap-4">
@@ -786,11 +802,11 @@ const KotakInterval = () => {
                     variant="secondary"
                     size="lg"
                   >
-                    <i className="far fa-times-circle mr-2" />
+                    <i className="far fa-times-circle text-lg mr-2" />
                     Batal
                   </IconButton>
                   <IconButton type="submit" variant="primary" size="lg">
-                    <i className="fas fa-save mr-2" />
+                    <i className="fas fa-save text-lg mr-2" />
                     Simpan Perubahan
                   </IconButton>
                 </div>

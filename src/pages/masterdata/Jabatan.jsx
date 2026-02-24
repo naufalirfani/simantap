@@ -10,6 +10,7 @@ import DataTable from "../../components/DataTable";
 import IconButton from "../../components/IconButton";
 import Breadcrumb from "../../components/Breadcrumb";
 import Swal from "sweetalert2";
+import { PRIMARY_COLORS } from "../../config/colors";
 
 const Jabatan = () => {
   const { t } = useSettings();
@@ -51,8 +52,8 @@ const Jabatan = () => {
       showCancelButton: true,
       confirmButtonText: "Ya",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
       reverseButtons: true,
     });
 
@@ -74,7 +75,7 @@ const Jabatan = () => {
         icon: "error",
         title: "Gagal",
         text: err.message || "Sinkronisasi gagal",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setIsSyncing(false);
@@ -134,8 +135,9 @@ const Jabatan = () => {
         return (
           <span
             className={
-              isNegative ? "font-bold text-[#d33] dark:text-[#d33]" : ""
+              isNegative ? "font-bold" : ""
             }
+            style={isNegative ? { color: PRIMARY_COLORS.red } : {}}
           >
             {selisih}
           </span>
@@ -159,7 +161,7 @@ const Jabatan = () => {
             size="lg"
             title="Syarat Suksesi"
           >
-            <i className="fas fa-clipboard-check mr-2"></i>
+            <i className="fas fa-clipboard-check text-lg mr-2"></i>
             Syarat Suksesi
           </IconButton>
         );
@@ -206,7 +208,8 @@ const Jabatan = () => {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
           <div className="flex items-start">
             <svg
-              className="h-5 w-5 text-[#d33] mt-0.5 flex-shrink-0"
+              className="h-5 w-5 mt-0.5 flex-shrink-0"
+              style={{ color: PRIMARY_COLORS.red }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -222,12 +225,13 @@ const Jabatan = () => {
               <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
                 {t("errorOccurred")}
               </h3>
-              <p className="mt-1 text-sm text-[#d33] dark:text-[#d33]">
+              <p className="mt-1 text-sm" style={{ color: PRIMARY_COLORS.red }}>
                 {error}
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="mt-2 text-sm font-medium text-[#d33] dark:text-[#d33] hover:text-[#d33] cursor-pointer"
+                className="mt-2 text-sm font-medium cursor-pointer"
+                style={{ color: PRIMARY_COLORS.red }}
               >
                 {t("reload")}
               </button>

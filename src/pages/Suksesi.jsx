@@ -210,11 +210,11 @@ const Suksesi = () => {
 
           {/* Selected Jabatan Details */}
           {selectedJabatanData && (
-            <div className="mt-6 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-750 rounded-lg border border-blue-100 dark:border-gray-600">
+            <div className="mt-6 p-5 bg-gradient-to-br from-teal-50 to-teal-50 dark:from-gray-700 dark:to-gray-750 rounded-lg border border-teal-100 dark:border-gray-600">
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center">
                 <i
                   className="fas fa-briefcase mr-2 text-lg"
-                  style={{ color: PRIMARY_COLORS.blue }}
+                  style={{ color: PRIMARY_COLORS.teal }}
                   aria-hidden="true"
                 ></i>
                 Detail Jabatan
@@ -319,12 +319,20 @@ const Suksesi = () => {
                         </div>
                       ))
                     ) : (
-                      <div className="flex items-center gap-2 mt-2 text-sm text-[#854d0e] bg-[#FFF8E1] dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
+                      <div
+                        className="flex items-center gap-2 mt-2 text-sm rounded-lg p-2"
+                        style={{
+                          color: TEXT_ON_BG_COLORS.yellow,
+                          backgroundColor: BG_COLORS.yellow.light,
+                          borderColor: `${PRIMARY_COLORS.yellow}30`,
+                          border: "1px solid",
+                        }}
+                      >
                         <i
                           className="fas fa-info-circle"
                           aria-hidden="true"
                         ></i>
-                        <p className="text-md">Belum ada pejabat saat ini</p>
+                        <p className="text-md text-yellow-600 dark:text-yellow-400">Belum ada pejabat saat ini</p>
                       </div>
                     )}
                   </div>
@@ -341,8 +349,9 @@ const Suksesi = () => {
           <div className="mb-4">
             <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center">
               <i
-                className="fas fa-users text-[#3085d6] mr-2 text-lg"
+                className="fas fa-users mr-2 text-lg"
                 aria-hidden="true"
+                style={{ color: PRIMARY_COLORS.teal }}
               ></i>
               Rekomendasi Pegawai
             </h2>
@@ -359,14 +368,14 @@ const Suksesi = () => {
                 onClick={() => handleTabChange("promosi")}
                 className={`cursor-pointer px-6 py-3 text-md font-semibold transition-all duration-200 border-b-2 ${
                   activeTab === "promosi"
-                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    ? "bg-teal-50 dark:bg-teal-900/20"
                     : "text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
                 }`}
                 style={
                   activeTab === "promosi"
                     ? {
-                        color: PRIMARY_COLORS.blue,
-                        borderColor: PRIMARY_COLORS.blue,
+                        color: PRIMARY_COLORS.teal,
+                        borderColor: PRIMARY_COLORS.teal,
                       }
                     : {}
                 }
@@ -378,14 +387,14 @@ const Suksesi = () => {
                 onClick={() => handleTabChange("rotasi")}
                 className={`cursor-pointer px-6 py-3 text-md font-semibold transition-all duration-200 border-b-2 ${
                   activeTab === "rotasi"
-                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    ? "bg-teal-50 dark:bg-teal-900/20"
                     : "text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
                 }`}
                 style={
                   activeTab === "rotasi"
                     ? {
-                        color: PRIMARY_COLORS.blue,
-                        borderColor: PRIMARY_COLORS.blue,
+                        color: PRIMARY_COLORS.teal,
+                        borderColor: PRIMARY_COLORS.teal,
                       }
                     : {}
                 }
@@ -398,7 +407,7 @@ const Suksesi = () => {
 
           {loadingRekomendasi ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3085d6] dark:border-blue-400"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -412,7 +421,10 @@ const Suksesi = () => {
                       className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden group hover:-translate-y-1 flex flex-col h-full"
                     >
                       {/* Ranking Badge */}
-                      <div className="bg-[#3085d6] text-white px-6 py-3 flex items-center justify-between">
+                      <div
+                        className="text-white px-6 py-3 flex items-center justify-between"
+                        style={{ backgroundColor: PRIMARY_COLORS.teal }}
+                      >
                         <span className="text-md font-semibold">
                           Rekomendasi #{index + 1}
                         </span>
@@ -437,10 +449,18 @@ const Suksesi = () => {
                                 <img
                                   src={pegawai.avatar}
                                   alt={pegawai.nama}
-                                  className="w-20 h-20 rounded-full border-4 border-[#3085d6]/20 dark:border-blue-900 object-cover"
+                                  className="w-20 h-20 rounded-full border-4 object-cover"
+                                  style={{
+                                    borderColor: `${PRIMARY_COLORS.teal}20`,
+                                  }}
                                 />
                               ) : (
-                                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center border-4 border-[#3085d6]/20 dark:border-blue-900">
+                                <div
+                                  className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center border-4"
+                                  style={{
+                                    borderColor: `${PRIMARY_COLORS.teal}20`,
+                                  }}
+                                >
                                   <span className="text-2xl font-bold text-white">
                                     {pegawai.nama.charAt(0)}
                                   </span>
@@ -448,17 +468,25 @@ const Suksesi = () => {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1 line-clamp-2 group-hover:text-[#3085d6] dark:group-hover:text-blue-400 transition-colors">
+                              <h3
+                                className="text-lg font-bold text-gray-800 dark:text-white mb-1 line-clamp-2 transition-colors"
+                                onMouseEnter={(e) =>
+                                  (e.target.style.color = PRIMARY_COLORS.teal)
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.target.style.color = "")
+                                }
+                              >
                                 {pegawai.nama}
                               </h3>
                               <p className="text-md text-gray-500 dark:text-gray-400">
                                 NIP. {pegawai.nip}
                               </p>
                               <span
-                                className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-blue-900 dark:text-blue-200 mt-1 whitespace-nowrap"
+                                className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-teal-900 dark:text-teal-200 mt-1 whitespace-nowrap"
                                 style={{
-                                  backgroundColor: BG_COLORS.blue.light,
-                                  color: TEXT_ON_BG_COLORS.blue,
+                                  backgroundColor: BG_COLORS.teal.light,
+                                  color: TEXT_ON_BG_COLORS.teal,
                                 }}
                               >
                                 {pegawai.jenis_jabatan
@@ -474,7 +502,7 @@ const Suksesi = () => {
                           <div className="space-y-3 mb-4">
                             <div className="flex items-start">
                               <i
-                                className="fas fa-briefcase w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 mr-2 flex-shrink-0"
+                                className="fas fa-briefcase w-4 h-4 text-teal-500 dark:text-gray-500 mt-0.5 mr-2 flex-shrink-0"
                                 aria-hidden="true"
                               ></i>
                               <div className="flex-1 min-w-0">
@@ -488,7 +516,7 @@ const Suksesi = () => {
                             </div>
                             <div className="flex items-start">
                               <i
-                                className="fas fa-building w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 mr-2 flex-shrink-0"
+                                className="fas fa-building w-4 h-4 text-teal-500 dark:text-gray-500 mt-0.5 mr-2 flex-shrink-0"
                                 aria-hidden="true"
                               ></i>
                               <div className="flex-1 min-w-0">
@@ -502,7 +530,7 @@ const Suksesi = () => {
                             </div>
                             <div className="flex items-center">
                               <i
-                                className="fas fa-id-badge w-4 h-4 text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0"
+                                className="fas fa-id-badge w-4 h-4 text-teal-500 dark:text-gray-500 mr-2 flex-shrink-0"
                                 aria-hidden="true"
                               ></i>
                               <div className="flex-1">
@@ -519,20 +547,23 @@ const Suksesi = () => {
                         {/* Performance Metrics (2 kolom) + Nilai Talenta di bawahnya */}
                         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                           <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 rounded-lg p-2 text-center">
-                              <div className="text-md text-green-700 dark:text-green-400 mt-1 font-medium">
-                                Nilai Kinerja
+                            <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900 dark:to-teal-800 rounded-lg p-2 text-center">
+                              <div className="text-md text-teal-500 dark:text-teal-400 mt-1 font-medium">
+                                Nilai Potensial
                               </div>
-                              <div className="text-2xl font-bold text-green-600 dark:text-green-300">
-                                {pegawai.nilai_kinerja?.toFixed(1) || "0.0"}
+                              <div
+                                className="text-2xl font-bold dark:text-teal-500"
+                                style={{ color: PRIMARY_COLORS.teal }}
+                              >
+                                {pegawai.nilai_potensial?.toFixed(2) || "0.0"}
                               </div>
                             </div>
                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-2 text-center">
-                              <div className="text-md text-blue-700 dark:text-blue-400 mt-1 font-medium">
-                                Nilai Potensial
+                              <div className="text-md text-[#3085d6] dark:text-blue-400 mt-1 font-medium">
+                                Nilai Kinerja
                               </div>
                               <div className="text-2xl font-bold text-[#3085d6] dark:text-blue-300">
-                                {pegawai.nilai_potensial?.toFixed(1) || "0.0"}
+                                {pegawai.nilai_kinerja?.toFixed(2) || "0.0"}
                               </div>
                             </div>
                           </div>
@@ -540,7 +571,7 @@ const Suksesi = () => {
                           {/* Nilai Talenta - tampil sebagai kotak metrik yang seragam di bawah dua metrik */}
                           <div className="mt-3 flex justify-center">
                             <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 rounded-lg p-2 text-center w-full md:w-1/2">
-                              <div className="text-md text-purple-700 dark:text-purple-400 mt-1 font-medium">
+                              <div className="text-md text-purple-600 dark:text-purple-400 mt-1 font-medium">
                                 Nilai Talenta
                               </div>
                               <div className="text-2xl font-bold text-purple-600 dark:text-purple-300">
@@ -566,7 +597,7 @@ const Suksesi = () => {
                                     (Number(p) || 0) * 0.5;
                                   return isNaN(talent)
                                     ? "-"
-                                    : talent.toFixed(1);
+                                    : talent.toFixed(2);
                                 })()}
                               </div>
                             </div>
@@ -632,8 +663,9 @@ const Suksesi = () => {
           <div className="mb-4">
             <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center">
               <i
-                className="fas fa-users text-[#3085d6] mr-2 text-lg"
+                className="fas fa-users mr-2 text-lg"
                 aria-hidden="true"
+                style={{ color: PRIMARY_COLORS.teal }}
               ></i>
               Rekomendasi Pegawai
             </h2>
@@ -707,7 +739,7 @@ const Suksesi = () => {
               className="inline-flex items-center px-6 py-3 dark:bg-blue-900/20 border rounded-full"
               style={{
                 backgroundColor: BG_COLORS.blue.light,
-                borderColor: PRIMARY_COLORS.blue,
+                borderColor: PRIMARY_COLORS.teal,
               }}
             >
               <i

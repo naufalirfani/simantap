@@ -4,7 +4,7 @@
  */
 
 import CryptoJS from 'crypto-js';
-import { PRIMARY_COLORS } from '../config/colors';
+import { PRIMARY_COLORS, SECONDARY_COLORS } from '../config/colors';
 
 /**
  * Encrypt token for secure header transmission
@@ -49,27 +49,27 @@ export async function encryptTokenForHeader(token, opts = {}) {
   }
 }
 
-// Default configuration untuk 9 kotak
+// Default configuration untuk 9 kotak (decimal-friendly, uses 0.01 granularity)
 const DEFAULT_CONFIG = {
   intervals: {
     potensial: [
-      { min: 0, max: 60, label: '0-60' },
-      { min: 61, max: 80, label: '61-80' },
-      { min: 81, max: 100, label: '81-100' }
+      { min: 0, max: 60.0, label: '0.00-60.00' },
+      { min: 60.01, max: 80.0, label: '60.01-80.00' },
+      { min: 80.01, max: 100.0, label: '80.01-100.00' }
     ],
     kinerja: [
-      { min: 0, max: 60, label: '0-60' },
-      { min: 61, max: 80, label: '61-80' },
-      { min: 81, max: 100, label: '81-100' }
+      { min: 0, max: 60.0, label: '0.00-60.00' },
+      { min: 60.01, max: 80.0, label: '60.01-80.00' },
+      { min: 80.01, max: 100.0, label: '80.01-100.00' }
     ]
   },
   kotak: [
     {
       id: 1,
       kategori: 'Kinerja di Bawah Ekspektasi dan Potensial Rendah',
-      warna: '#EF4444',
-      potensialRange: { min: 0, max: 60 },
-      kinerjaRange: { min: 0, max: 60 },
+      warna: PRIMARY_COLORS.red,
+      potensialRange: { min: 0, max: 60.0 },
+      kinerjaRange: { min: 0, max: 60.0 },
       rekomendasi: [
         'Diproses sesuai ketentuan peraturan perundangan'
       ]
@@ -77,9 +77,9 @@ const DEFAULT_CONFIG = {
     {
       id: 2,
       kategori: 'Kinerja Sesuai Ekspektasi dan Potensial Rendah',
-      warna: '#F97316',
-      potensialRange: { min: 0, max: 60 },
-      kinerjaRange: { min: 61, max: 80 },
+      warna: PRIMARY_COLORS.orange,
+      potensialRange: { min: 0, max: 60.0 },
+      kinerjaRange: { min: 60.01, max: 80.0 },
       rekomendasi: [
         'Bimbingan kinerja',
         'Pengembangan kompetensi',
@@ -89,9 +89,9 @@ const DEFAULT_CONFIG = {
     {
       id: 3,
       kategori: 'Kinerja di Bawah Ekspektasi dan Potensial Menengah',
-      warna: '#F59E0B',
-      potensialRange: { min: 61, max: 80 },
-      kinerjaRange: { min: 0, max: 60 },
+      warna: PRIMARY_COLORS.orange,
+      potensialRange: { min: 60.01, max: 80.0 },
+      kinerjaRange: { min: 0, max: 60.0 },
       rekomendasi: [
         'Bimbingan kinerja',
         'Konseling kinerja',
@@ -102,9 +102,9 @@ const DEFAULT_CONFIG = {
     {
       id: 4,
       kategori: 'Kinerja di Atas Ekspektasi dan Potensial Rendah',
-      warna: '#F59E0B',
-      potensialRange: { min: 0, max: 60 },
-      kinerjaRange: { min: 81, max: 100 },
+      warna: PRIMARY_COLORS.orange,
+      potensialRange: { min: 0, max: 60.0 },
+      kinerjaRange: { min: 80.01, max: 100.0 },
       rekomendasi: [
         'Rotasi',
         'Pengembangan kompetensi'
@@ -113,9 +113,9 @@ const DEFAULT_CONFIG = {
     {
       id: 5,
       kategori: 'Kinerja Sesuai Ekspektasi dan Potensial Menengah',
-      warna: '#EAB308',
-      potensialRange: { min: 61, max: 80 },
-      kinerjaRange: { min: 61, max: 80 },
+      warna: PRIMARY_COLORS.yellow,
+      potensialRange: { min: 60.01, max: 80.0 },
+      kinerjaRange: { min: 60.01, max: 80.0 },
       rekomendasi: [
         'Penempatan yang sesuai',
         'Bimbingan kinerja',
@@ -125,9 +125,9 @@ const DEFAULT_CONFIG = {
     {
       id: 6,
       kategori: 'Kinerja di Bawah Ekspektasi dan Potensial Tinggi',
-      warna: '#84CC16',
-      potensialRange: { min: 81, max: 100 },
-      kinerjaRange: { min: 0, max: 60 },
+      warna: SECONDARY_COLORS.green,
+      potensialRange: { min: 80.01, max: 100.0 },
+      kinerjaRange: { min: 0, max: 60.0 },
       rekomendasi: [
         'Penempatan yang sesuai',
         'Bimbingan kinerja',
@@ -137,9 +137,9 @@ const DEFAULT_CONFIG = {
     {
       id: 7,
       kategori: 'Kinerja di Atas Ekspektasi dan Potensial Menengah',
-      warna: '#84CC16',
-      potensialRange: { min: 61, max: 80 },
-      kinerjaRange: { min: 81, max: 100 },
+      warna: SECONDARY_COLORS.green,
+      potensialRange: { min: 60.01, max: 80.0 },
+      kinerjaRange: { min: 80.01, max: 100.0 },
       rekomendasi: [
         'Dipertahankan',
         'Masuk Kelompok Rencana Suksesi Instansi',
@@ -151,9 +151,9 @@ const DEFAULT_CONFIG = {
     {
       id: 8,
       kategori: 'Kinerja Sesuai Ekspektasi dan Potensial Tinggi',
-      warna: '#22C55E',
-      potensialRange: { min: 81, max: 100 },
-      kinerjaRange: { min: 61, max: 80 },
+      warna: PRIMARY_COLORS.green,
+      potensialRange: { min: 80.01, max: 100.0 },
+      kinerjaRange: { min: 60.01, max: 80.0 },
       rekomendasi: [
         'Dipertahankan',
         'Masuk Kelompok Rencana Suksesi Instansi',
@@ -164,9 +164,9 @@ const DEFAULT_CONFIG = {
     {
       id: 9,
       kategori: 'Kinerja di Atas Ekspektasi dan Potensial Tinggi',
-      warna: '#10B981',
-      potensialRange: { min: 81, max: 100 },
-      kinerjaRange: { min: 81, max: 100 },
+      warna: PRIMARY_COLORS.green,
+      potensialRange: { min: 80.01, max: 100.0 },
+      kinerjaRange: { min: 80.01, max: 100.0 },
       rekomendasi: [
         'Dipromosikan dan dipertahankan',
         'Masuk Kelompok Rencana Suksesi Instansi/Nasional',

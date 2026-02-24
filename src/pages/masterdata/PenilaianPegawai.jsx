@@ -9,12 +9,15 @@ import {
   fetchSubIndikators,
   bulkUploadPenilaian,
   fetchStatistik,
+  fetchPenilaianByNip,
 } from "../../services/apiService";
 import Swal from "sweetalert2";
 import ServerDataTable from "../../components/ServerDataTable";
 import IconButton from "../../components/IconButton";
 import Breadcrumb from "../../components/Breadcrumb";
 import BulkUploadModal from "../../components/BulkUploadModal";
+import PenilaianDetailModal from "../../components/PenilaianDetailModal";
+import { PRIMARY_COLORS, BG_COLORS, DARK_COLORS } from "../../config/colors";
 
 const PenilaianPegawai = () => {
   const { t } = useSettings();
@@ -31,6 +34,10 @@ const PenilaianPegawai = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedPegawai, setSelectedPegawai] = useState(null);
+  const [penilaianDetail, setPenilaianDetail] = useState(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   useEffect(() => {
     document.title = `Penilaian Pegawai | SIMANTAP`;
@@ -120,8 +127,8 @@ const PenilaianPegawai = () => {
       showCancelButton: true,
       confirmButtonText: "Ya",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
       reverseButtons: true,
     });
 
@@ -144,7 +151,7 @@ const PenilaianPegawai = () => {
         icon: "error",
         title: "Gagal",
         text: err.message || "Sinkronisasi gagal",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setIsSyncing(false);
@@ -159,8 +166,8 @@ const PenilaianPegawai = () => {
       showCancelButton: true,
       confirmButtonText: "Ya",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
       reverseButtons: true,
     });
 
@@ -182,7 +189,7 @@ const PenilaianPegawai = () => {
         icon: "error",
         title: "Gagal",
         text: err.message || "Sinkronisasi penilaian gagal",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setIsSyncingPenilaian(false);
@@ -208,6 +215,31 @@ const PenilaianPegawai = () => {
       throw error;
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleViewDetail = async (pegawai) => {
+    setSelectedPegawai(pegawai);
+    setShowDetailModal(true);
+    setIsLoadingDetail(true);
+    setPenilaianDetail(null);
+
+    try {
+      const data = await fetchPenilaianByNip(pegawai.nip);
+      // Extract penilaian data from response
+      // Assuming the API returns { data: { penilaian: {...} } } or similar structure
+      const penilaianData = data?.data?.penilaian || data?.penilaian || data?.data || null;
+      setPenilaianDetail(penilaianData);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: error.message || "Gagal mengambil detail penilaian",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+      setPenilaianDetail(null);
+    } finally {
+      setIsLoadingDetail(false);
     }
   };
 
@@ -282,7 +314,7 @@ const PenilaianPegawai = () => {
           </div>
           <div className="flex gap-2 mt-1">
             {item.jenis_jabatan && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium bg-[#E7F3FF] text-[#1e40af] dark:bg-blue-900 dark:text-blue-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-teal-900 dark:text-teal-200 text-teal-600 bg-teal-100">
                 {item.jenis_jabatan}
               </span>
             )}
@@ -325,9 +357,10 @@ const PenilaianPegawai = () => {
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded text-sm font-medium ${
               hasPenilaian
-                ? "bg-[#E9F7EF] text-[#166534] dark:bg-green-900 dark:text-green-200"
-                : "bg-[#FDECEA] text-[#991b1b] dark:bg-red-900 dark:text-red-200"
+                ? "dark:bg-teal-900 dark:text-teal-200"
+                : "dark:bg-red-900 dark:text-red-200"
             }`}
+            style={hasPenilaian ? { backgroundColor: BG_COLORS.teal.light, color: DARK_COLORS.teal } : { backgroundColor: BG_COLORS.red.light, color: DARK_COLORS.red }}
           >
             {hasPenilaian ? "Sudah" : "Belum"}
           </span>
@@ -337,19 +370,41 @@ const PenilaianPegawai = () => {
     {
       key: "aksi",
       label: "",
-      render: (item) => (
-        <div className="flex items-center justify-center">
-          <IconButton
-            onClick={() => handlePenilaian(item.nip)}
-            variant="primary"
-            size="lg"
-            title="Penilaian"
-          >
-            <i className="fas fa-edit mr-2" />
-            Penilaian
-          </IconButton>
-        </div>
-      ),
+      render: (item) => {
+        const hasPenilaian =
+          Boolean(item.penilaian) ||
+          Boolean(item.has_penilaian) ||
+          (Array.isArray(item.penilaian_list) &&
+            item.penilaian_list.length > 0) ||
+          (Array.isArray(item.penilaian_entries) &&
+            item.penilaian_entries.length > 0) ||
+          (item.penilaian_count && item.penilaian_count > 0);
+        
+        return (
+          <div className="flex items-center justify-center gap-2">
+            {hasPenilaian && (
+              <IconButton
+                onClick={() => handleViewDetail(item)}
+                variant="info"
+                size="lg"
+                title="Lihat Detail Penilaian"
+              >
+                <i className="fas fa-eye mr-2" />
+                Lihat
+              </IconButton>
+            )}
+            <IconButton
+              onClick={() => handlePenilaian(item.nip)}
+              variant="primary"
+              size="lg"
+              title="Input/Ubah Penilaian"
+            >
+              <i className="fas fa-edit mr-2" />
+              {hasPenilaian ? "Ubah" : "Input"}
+            </IconButton>
+          </div>
+        );
+      },
     },
   ];
 
@@ -372,7 +427,7 @@ const PenilaianPegawai = () => {
       <div className="mb-4 flex flex-col sm:flex-row gap-3 justify-end">
         <IconButton
           onClick={() => setShowBulkUploadModal(true)}
-          variant="success"
+          variant="blue"
           size="lg"
           disabled={isUploading}
           title="Impor Data Penilaian"
@@ -420,6 +475,17 @@ const PenilaianPegawai = () => {
         onClose={() => setShowBulkUploadModal(false)}
         subIndikators={subIndikators}
         onUploadSuccess={handleBulkUpload}
+      />
+
+      {/* Detail Penilaian Modal */}
+      <PenilaianDetailModal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        pegawai={selectedPegawai}
+        penilaianData={penilaianDetail}
+        subIndikators={subIndikators}
+        loading={isLoadingDetail}
+        onEditPenilaian={handlePenilaian}
       />
 
       {/* Data Table */}

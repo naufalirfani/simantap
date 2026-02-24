@@ -108,7 +108,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "Gagal",
         text: "Tidak dapat membuat template. Coba lagi.",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: "#14B8A6",
       });
     }
   };
@@ -132,7 +132,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "File Tidak Valid",
         text: "Hanya file Excel (.xlsx, .xls) atau CSV (.csv) yang diperbolehkan.",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: "#14B8A6",
       });
       return;
     }
@@ -150,7 +150,7 @@ const BulkUploadModal = ({
           icon: "error",
           title: "File Kosong",
           text: "File tidak mengandung data yang valid.",
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#14B8A6",
         });
         setFile(null);
         setIsProcessing(false);
@@ -175,7 +175,7 @@ const BulkUploadModal = ({
           icon: "warning",
           title: "Tidak Ada Data",
           text: "File tidak mengandung data untuk diimpor.",
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#14B8A6",
         });
         setFile(null);
         setIsProcessing(false);
@@ -217,7 +217,7 @@ const BulkUploadModal = ({
             icon: "error",
             title: "Parsing Error",
             text: "Gagal membaca CSV.",
-            confirmButtonColor: "#3085d6",
+            confirmButtonColor: "#14B8A6",
           });
           setFile(null);
           setIsProcessing(false);
@@ -251,7 +251,7 @@ const BulkUploadModal = ({
           icon: "error",
           title: "Parsing Error",
           text: "Gagal membaca file. Pastikan format file benar.",
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#14B8A6",
         });
         setFile(null);
         setIsProcessing(false);
@@ -263,7 +263,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "Error",
         text: "Gagal membaca file.",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: "#14B8A6",
       });
       setFile(null);
       setIsProcessing(false);
@@ -278,7 +278,7 @@ const BulkUploadModal = ({
         icon: "warning",
         title: "Tidak Ada Data",
         text: "Tidak ada data untuk diunggah.",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: "#14B8A6",
       });
       return;
     }
@@ -289,7 +289,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "Kolom NIP Tidak Ditemukan",
         text: 'File harus memiliki kolom "nip".',
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: "#14B8A6",
       });
       return;
     }
@@ -306,8 +306,8 @@ const BulkUploadModal = ({
       showCancelButton: true,
       confirmButtonText: "Upload",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: "#14B8A6",
+      cancelButtonColor: "#d33333",
       reverseButtons: true,
     });
 
@@ -375,7 +375,7 @@ const BulkUploadModal = ({
           title: "Upload Selesai (Sebagian)",
           html: failedHtml,
           width: "640px",
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#14B8A6",
         });
       } else {
         Swal.fire({
@@ -399,7 +399,7 @@ const BulkUploadModal = ({
         icon: "error",
         title: "Upload Gagal",
         text: error.message || "Terjadi kesalahan saat mengupload data.",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: "#14B8A6",
       });
     } finally {
       setIsProcessing(false);
@@ -458,7 +458,7 @@ const BulkUploadModal = ({
                     currentStep === 1 ? "text-white" : "text-white"
                   }`}
                   style={{
-                    backgroundColor: currentStep === 1 ? "#3085d6" : "#2fa84f",
+                    backgroundColor: currentStep === 1 ? "#3085d6" : "#14B8A6",
                   }}
                 >
                   {currentStep === 1 ? "1" : <i className="fas fa-check" />}
@@ -479,7 +479,7 @@ const BulkUploadModal = ({
                   className={`h-full rounded-full transition-all duration-500`}
                   style={{
                     backgroundColor:
-                      currentStep === 2 ? "#3085d6" : "transparent",
+                      currentStep === 2 ? "#14B8A6" : "transparent",
                     width: currentStep === 2 ? "100%" : "0",
                   }}
                 />
@@ -523,7 +523,7 @@ const BulkUploadModal = ({
                   <div className="flex items-start space-x-4">
                     <div
                       className="rounded-lg p-3"
-                      style={{ backgroundColor: "#3085d6" }}
+                      style={{ backgroundColor: "#14B8A6" }}
                     >
                       <i className="fas fa-download text-white text-2xl" />
                     </div>
@@ -553,7 +553,7 @@ const BulkUploadModal = ({
                   <div className="flex items-start space-x-4">
                     <div
                       className="rounded-lg p-3"
-                      style={{ backgroundColor: "#3085d6" }}
+                      style={{ backgroundColor: "#14B8A6" }}
                     >
                       <i className="fas fa-upload text-white text-2xl" />
                     </div>
@@ -588,7 +588,7 @@ const BulkUploadModal = ({
                             <div className="text-center">
                               <i
                                 className="fas fa-spinner fa-spin text-4xl mb-3"
-                                style={{ color: "#3085d6" }}
+                                style={{ color: "#14B8A6" }}
                               />
                               <p className="text-gray-600 dark:text-gray-300 font-medium">
                                 Memproses file...
@@ -608,7 +608,7 @@ const BulkUploadModal = ({
                               </p>
                               <p
                                 className="text-xs mt-2"
-                                style={{ color: "#3085d6" }}
+                                style={{ color: "#14B8A6" }}
                               >
                                 Klik untuk mengganti file
                               </p>
@@ -617,7 +617,7 @@ const BulkUploadModal = ({
                             <div className="text-center">
                               <i
                                 className="fas fa-cloud-upload-alt text-5xl mb-3"
-                                style={{ color: "#3085d6" }}
+                                style={{ color: "#14B8A6" }}
                               />
                               <p className="text-gray-900 dark:text-white font-semibold mb-1">
                                 Klik untuk unggah berkas

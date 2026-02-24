@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import ServerDataTable from "../components/ServerDataTable";
 import IconButton from "../components/IconButton";
 import Breadcrumb from "../components/Breadcrumb";
+import ExcelJS from "exceljs";
 
 const DaftarTalenta = () => {
   const { t } = useSettings();
@@ -171,7 +172,7 @@ const DaftarTalenta = () => {
           </div>
           <div className="flex gap-2 mt-1">
             {item.jenis_jabatan && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-blue-900 dark:text-blue-200 whitespace-nowrap" style={{ backgroundColor: BG_COLORS.blue.light, color: TEXT_ON_BG_COLORS.blue }}>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-blue-900 dark:text-teal-200 whitespace-nowrap" style={{ backgroundColor: BG_COLORS.teal.light, color: TEXT_ON_BG_COLORS.teal }}>
                 {item.jenis_jabatan}
               </span>
             )}
@@ -252,7 +253,7 @@ const DaftarTalenta = () => {
         return (
           <span className="font-semibold text-gray-700 dark:text-gray-200">
             {val !== null && val !== undefined && val !== ""
-              ? String(val)
+              ? String(val.toFixed(2))
               : "-"}
           </span>
         );
@@ -260,7 +261,7 @@ const DaftarTalenta = () => {
     },
     {
       key: "kuadran",
-      label: "Kotak Talenta",
+      label: "Kotak",
       align: "center",
       render: (item) => {
         const p = parseFloat(
@@ -301,13 +302,117 @@ const DaftarTalenta = () => {
             size="lg"
             title="Detail"
           >
-            <i className="fas fa-info-circle mr-2" />
+            <i className="fas fa-info-circle text-lg mr-2" />
             Detail
           </IconButton>
         </div>
       ),
     },
   ];
+
+  const handleExport = async (rows, params) => {
+    try {
+      Swal.fire({ title: "Mempersiapkan unduh data...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Data");
+
+      // Define columns with widths
+      sheet.columns = [
+        { header: "NIP", key: "nip", width: 20 },
+        { header: "Nama", key: "nama", width: 32 },
+        { header: "Jabatan", key: "jabatan", width: 36 },
+        { header: "Unit Kerja", key: "unit_kerja", width: 36 },
+        { header: "Jenis Jabatan", key: "jenis_jabatan", width: 32 },
+        { header: "Golongan", key: "golongan", width: 14 },
+        { header: "Nilai Potensial (Sumbu X)", key: "potensial", width: 20 },
+        { header: "Nilai Kinerja (Sumbu Y)", key: "kinerja", width: 20 },
+        { header: "Nilai Talenta", key: "nilai_talenta", width: 18 },
+        { header: "Kotak", key: "kotak", width: 14 },
+      ];
+
+      // Make header bold
+      sheet.getRow(1).font = { bold: true };
+
+      const getPotensial = (item) => {
+        return (
+          item.potensial_score ??
+          item.nilai_potensial ??
+          item.potensial ??
+          item.potensi ??
+          item.nilaiPotensial ??
+          (item.penilaian_summary && item.penilaian_summary.potensial) ??
+          null
+        );
+      };
+
+      const getKinerja = (item) => {
+        return (
+          item.kinerja_score ??
+          item.nilai_kinerja ??
+          item.kinerja ??
+          item.nilaiKinerja ??
+          (item.penilaian_summary && item.penilaian_summary.kinerja) ??
+          null
+        );
+      };
+
+      rows.forEach((item) => {
+        const p = parseFloat(getPotensial(item)) || 0;
+        const k = parseFloat(getKinerja(item)) || 0;
+        const nilaiTalenta = (k || 0) * 0.5 + (p || 0) * 0.5;
+        let kotak = "-";
+        try {
+          if (Number.isFinite(p) && Number.isFinite(k)) {
+            kotak = computeQuadrantDynamic(p, k) || "-";
+          }
+        } catch (e) {
+          kotak = "-";
+        }
+
+        sheet.addRow({
+          nip: item.nip || "",
+          nama: item.nama || "",
+          jabatan: item.jabatan || "",
+          unit_kerja: item.unit_kerja || "",
+          jenis_jabatan: item.jenis_jabatan || "",
+          golongan: item.golongan || "",
+          potensial: isFinite(p) ? p : "",
+          kinerja: isFinite(k) ? k : "",
+          nilai_talenta: Number.isFinite(nilaiTalenta)
+            ? nilaiTalenta.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : "",
+          kotak,
+        });
+      });
+
+      // Add params sheet
+      const paramsSheet = workbook.addWorksheet("Params");
+      paramsSheet.addRow(["Param", "Value"]);
+      Object.entries(params || {}).forEach(([k, v]) => {
+        paramsSheet.addRow([k, String(v)]);
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      a.download = `daftar-talenta-${ts}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      Swal.close();
+      Swal.fire("Selesai", "Data berhasil diunduh.", "success");
+    } catch (error) {
+      console.error("Export error:", error);
+      Swal.close();
+      Swal.fire("Gagal", "Data gagal diunduh.", "error");
+    }
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -330,6 +435,7 @@ const DaftarTalenta = () => {
           key={refreshKey}
           columns={columns}
           fetchData={fetchData}
+          onExport={handleExport}
           itemsPerPageOptions={[10, 25, 50, 100]}
           defaultFilters={{
             unit_organisasi: "",

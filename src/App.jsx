@@ -1,6 +1,6 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SettingsProvider } from './context/SettingsContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -20,26 +20,35 @@ import StandarKompetensiMSK from './pages/masterdata/StandarKompetensiMSK';
 import SyaratSuksesi from './pages/masterdata/SyaratSuksesi';
 import Settings from './pages/Settings';
 import SSOLogin from './pages/SSOLogin';
+import AdminLogin from './pages/AdminLogin';
 
-function App() {
-  return (
-    <AuthProvider>
-      <SettingsProvider>
-        <Router>
+// Component to handle role-based routing
+const RoleBasedRoutes = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Super Admin' || user?.role === 'Admin';
+  
+  // If user is not admin, redirect to their detail page
+  if (!isAdmin && user?.nip) {
+    return (
+      <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+        <Sidebar />
+        <main className="flex-1 overflow-auto w-full lg:w-auto">
           <Routes>
-            {/* Public route for SSO login */}
-            <Route path="/sso/:token" element={<SSOLogin />} />
-            
-            {/* Protected routes */}
-            <Route
-              path="*"
-              element={
-                <ProtectedRoute>
-                  <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
-                    <Sidebar />
-                    <main className="flex-1 overflow-auto w-full lg:w-auto">
-                      <Routes>
-                        <Route path="/" element={<Dashboard />} />
+            <Route path="/detail-pegawai/:nip" element={<DetailPegawai />} />
+            <Route path="*" element={<Navigate to={`/detail-pegawai/${user.nip}`} replace />} />
+          </Routes>
+        </main>
+      </div>
+    );
+  }
+  
+  // Admin users can access all routes
+  return (
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+      <Sidebar />
+      <main className="flex-1 overflow-auto w-full lg:w-auto">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
                         <Route path="/daftar-talenta" element={<DaftarTalenta />} />
                         <Route path="/daftar-talenta/detail/:nip" element={<DetailPegawai />} />
                         <Route path="/suksesi" element={<Suksesi />} />
@@ -57,9 +66,31 @@ function App() {
                         <Route path="/masterdata/jabatan/:jabatanId/syarat-suksesi" element={<SyaratSuksesi />} />
                         <Route path="/pengaturan" element={<Settings />} />
                         <Route path="/masterdata/standar-kompetensi-msk" element={<StandarKompetensiMSK />} />
+                        <Route path="/detail-pegawai/:nip" element={<DetailPegawai />} />
                       </Routes>
                     </main>
                   </div>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <SettingsProvider>
+        <Router>
+          <Routes>
+            {/* Public route for admin login */}
+            <Route path="/admin" element={<AdminLogin />} />
+            
+            {/* Public route for SSO login */}
+            <Route path="/sso/:token" element={<SSOLogin />} />
+            
+            {/* Protected routes */}
+            <Route
+              path="*"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRoutes />
                 </ProtectedRoute>
               }
             />

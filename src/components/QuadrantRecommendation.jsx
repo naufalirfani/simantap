@@ -12,7 +12,7 @@ const QuadrantRecommendation = ({ kotak }) => {
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
-            <i className="fas fa-arrow-right text-sm text-[#3085d6]"></i>
+            <i className="fas fa-arrow-right text-md text-teal-500"></i>
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
               Range Potensial
             </span>
@@ -23,7 +23,7 @@ const QuadrantRecommendation = ({ kotak }) => {
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
-            <i className="fas fa-arrow-up text-sm text-[#2fa84f]"></i>
+            <i className="fas fa-arrow-up text-md text-[#3085d6]"></i>
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
               Range Kinerja
             </span>
@@ -45,7 +45,7 @@ const QuadrantRecommendation = ({ kotak }) => {
               className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
               style={{ backgroundColor: `${kotak.warna}20` }}
             >
-              <i className="fas fa-lightbulb text-sm" style={{ color: kotak.warna }}></i>
+              <i className="fas fa-lightbulb text-md" style={{ color: kotak.warna }}></i>
             </div>
             <h4 className="text-base font-bold text-gray-800 dark:text-white">
               Rekomendasi Tindak Lanjut

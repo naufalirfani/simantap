@@ -9,6 +9,7 @@ import ServerDataTable from "../../components/ServerDataTable";
 import IconButton from "../../components/IconButton";
 import Breadcrumb from "../../components/Breadcrumb";
 import Swal from "sweetalert2";
+import { PRIMARY_COLORS, BG_COLORS, DARK_COLORS } from "../../config/colors";
 
 const Pegawai = () => {
   const { t } = useSettings();
@@ -82,8 +83,8 @@ const Pegawai = () => {
       showCancelButton: true,
       confirmButtonText: "Ya",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
       reverseButtons: true,
     });
 
@@ -106,7 +107,7 @@ const Pegawai = () => {
         icon: "error",
         title: "Gagal",
         text: err.message || "Sinkronisasi gagal",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setIsSyncing(false);
@@ -189,7 +190,7 @@ const Pegawai = () => {
           </div>
           <div className="flex gap-2 mt-1">
             {item.jenis_jabatan && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium bg-[#E7F3FF] text-[#1e40af] dark:bg-blue-900 dark:text-blue-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-blue-900 dark:text-blue-200" style={{ backgroundColor: BG_COLORS.blue.light, color: DARK_COLORS.blue }}>
                 {item.jenis_jabatan}
               </span>
             )}

@@ -10,7 +10,8 @@ export const PRIMARY_COLORS = {
   yellow: '#f4c430',     // Kuning - untuk warnings, highlights
   orange: '#f39c12',     // Orange - untuk alerts, important info
   blue: '#3085d6',       // Biru - untuk primary actions, links
-  red: '#d33',           // Merah - untuk danger, errors
+  teal: '#14B8A6',       // Teal - untuk info, secondary actions
+  red: '#d33333',           // Merah - untuk danger, errors
 };
 
 // Secondary Colors - Versi lebih terang untuk backgrounds, hovers
@@ -20,7 +21,8 @@ export const SECONDARY_COLORS = {
   yellow: '#f5cf50',     // Lighter yellow
   orange: '#f5ad32',     // Lighter orange
   blue: '#4095e6',       // Lighter blue
-  red: '#e44',           // Lighter red
+  teal: '#28d0b8',       // Lighter teal
+  red: '#e44444',           // Lighter red
 };
 
 // Darker variants untuk hover states
@@ -30,7 +32,8 @@ export const DARK_COLORS = {
   yellow: '#d4a420',     // Darker yellow
   orange: '#d38c02',     // Darker orange
   blue: '#2075c6',       // Darker blue
-  red: '#c22',           // Darker red
+  teal: '#0D9488',       // Darker teal
+  red: '#c22222',           // Darker red
 };
 
 // Neutral colors - untuk teks, background, borders (dipertahankan dari sistem)
@@ -76,11 +79,11 @@ export const CHART_COLORS = {
     PRIMARY_COLORS.purple,
     PRIMARY_COLORS.yellow,
     PRIMARY_COLORS.orange,
-    PRIMARY_COLORS.blue,
+    PRIMARY_COLORS.teal,
     PRIMARY_COLORS.red,
   ],
-  gender: [PRIMARY_COLORS.blue, '#EC4899'], // Biru & Pink untuk gender chart
-  point: PRIMARY_COLORS.blue,
+  gender: [PRIMARY_COLORS.teal, '#EC4899'], // Biru & Pink untuk gender chart
+  point: PRIMARY_COLORS.teal,
 };
 
 // Status colors untuk badge, alerts, notifications
@@ -88,7 +91,7 @@ export const STATUS_COLORS = {
   success: PRIMARY_COLORS.green,
   warning: PRIMARY_COLORS.yellow,
   error: PRIMARY_COLORS.red,
-  info: PRIMARY_COLORS.blue,
+  info: PRIMARY_COLORS.teal,
   pending: PRIMARY_COLORS.orange,
   special: PRIMARY_COLORS.purple,
 };
@@ -119,6 +122,10 @@ export const BG_COLORS = {
     light: '#FDECEA',        // bg-red-100 equivalent
     DEFAULT: '#fecaca',      // bg-red-200 equivalent
   },
+  teal: {
+    light: '#CCFBF1',        // bg-teal-100 equivalent
+    DEFAULT: '#99F6E4',      // bg-teal-200 equivalent
+  },
 };
 
 // Text colors untuk digunakan dengan BG_COLORS
@@ -128,7 +135,8 @@ export const TEXT_ON_BG_COLORS = {
   yellow: '#f4c430',     // Kuning - untuk warnings, highlights
   orange: '#f39c12',     // Orange - untuk alerts, important info
   blue: '#3085d6',       // Biru - untuk primary actions, links
-  red: '#d33',  
+  teal: '#0D9488',       // Teal - untuk secondary actions, special features
+  red: '#d33333',  
 };
 
 // Export default color configuration

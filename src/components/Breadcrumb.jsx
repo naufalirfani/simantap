@@ -17,29 +17,17 @@ const Breadcrumb = ({ items }) => {
         return (
           <div key={index} className="flex items-center space-x-2 flex-shrink-0">
             {index > 0 && (
-              <svg
-                className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              <i className="fas fa-chevron-right w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" aria-hidden="true" />
             )}
             {isLast || !isClickable ? (
-              <span className={`${isLast ? 'text-[#3085d6] dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400'} flex items-center gap-2 whitespace-nowrap`}>
+              <span className={`${isLast ? 'text-teal-500 dark:text-blue-400 font-semibold' : 'text-gray-600 dark:text-gray-400'} flex items-center gap-2 whitespace-nowrap`}>
                 {item.icon && <i className={item.icon}></i>}
                 {item.label}
               </span>
             ) : (
               <Link
                 to={item.path}
-                className="text-gray-600 dark:text-gray-400 hover:text-[#3085d6] dark:hover:text-blue-400 transition-colors duration-200 flex items-center gap-2 whitespace-nowrap group"
+                className="text-gray-600 dark:text-gray-400 hover:text-teal-500 dark:hover:text-blue-400 transition-colors duration-200 flex items-center gap-2 whitespace-nowrap group"
               >
                 {item.icon && (
                   <i className={`${item.icon} group-hover:scale-110 transition-transform duration-200`}></i>

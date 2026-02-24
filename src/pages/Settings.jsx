@@ -34,7 +34,7 @@ const Settings = () => {
               onClick={() => setTheme("light")}
               className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all cursor-pointer ${
                 theme === "light"
-                  ? "border-[#3085d6] bg-blue-50 dark:bg-blue-900"
+                  ? "border-teal-500 bg-teal-50 dark:bg-teal-900"
                   : "border-gray-300 dark:border-gray-600"
               }`}
             >
@@ -46,7 +46,7 @@ const Settings = () => {
               onClick={() => setTheme("dark")}
               className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all cursor-pointer ${
                 theme === "dark"
-                  ? "border-[#3085d6] bg-blue-50 dark:bg-blue-900"
+                  ? "border-teal-500 bg-teal-900 dark:bg-teal-950"
                   : "border-gray-300 dark:border-gray-600"
               }`}
             >
@@ -67,7 +67,7 @@ const Settings = () => {
               onClick={() => setFontSize("small")}
               className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all cursor-pointer ${
                 fontSize === "small"
-                  ? "border-[#3085d6] bg-blue-50 dark:bg-blue-900"
+                  ? "border-teal-500 bg-teal-50 dark:bg-teal-900"
                   : "border-gray-300 dark:border-gray-600"
               }`}
             >
@@ -79,7 +79,7 @@ const Settings = () => {
               onClick={() => setFontSize("medium")}
               className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all cursor-pointer ${
                 fontSize === "medium"
-                  ? "border-[#3085d6] bg-blue-50 dark:bg-blue-900"
+                  ? "border-teal-500 bg-teal-50 dark:bg-teal-900"
                   : "border-gray-300 dark:border-gray-600"
               }`}
             >
@@ -91,7 +91,7 @@ const Settings = () => {
               onClick={() => setFontSize("large")}
               className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all cursor-pointer ${
                 fontSize === "large"
-                  ? "border-[#3085d6] bg-blue-50 dark:bg-blue-900"
+                  ? "border-teal-500 bg-teal-50 dark:bg-teal-900"
                   : "border-gray-300 dark:border-gray-600"
               }`}
             >
@@ -112,7 +112,7 @@ const Settings = () => {
               onClick={() => setLanguage("id")}
               className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all cursor-pointer ${
                 language === "id"
-                  ? "border-[#3085d6] bg-blue-50 dark:bg-blue-900"
+                  ? "border-teal-500 bg-teal-50 dark:bg-teal-900"
                   : "border-gray-300 dark:border-gray-600"
               }`}
             >
@@ -124,7 +124,7 @@ const Settings = () => {
               onClick={() => setLanguage("en")}
               className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all cursor-pointer ${
                 language === "en"
-                  ? "border-[#3085d6] bg-blue-50 dark:bg-blue-900"
+                  ? "border-teal-500 bg-teal-50 dark:bg-teal-900"
                   : "border-gray-300 dark:border-gray-600"
               }`}
             >
@@ -138,6 +138,7 @@ const Settings = () => {
         {/* Info */}
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <p className="text-sm text-[#3085d6] dark:text-blue-200">
+            <i className="fas fa-info-circle mr-2"></i>
             <strong>Info:</strong> Semua pengaturan disimpan secara otomatis dan
             akan tetap tersimpan saat Anda membuka aplikasi kembali.
           </p>

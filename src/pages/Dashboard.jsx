@@ -248,72 +248,84 @@ const Dashboard = () => {
           count: stats.total_jabatan_pimpinan_tinggi_madya || 0,
           filterKey: "jabatan_pimpinan_tinggi_madya",
           key: "JPT Madya",
+          level: 1,
         },
         {
           name: "Jabatan Pimpinan Tinggi Pratama",
           count: stats.total_jabatan_pimpinan_tinggi_pratama || 0,
           filterKey: "jabatan_pimpinan_tinggi_pratama",
           key: "JPT Pratama",
+          level: 2,
         },
         {
           name: "Jabatan Administrator",
           count: stats.total_jabatan_administrator || 0,
           filterKey: "jabatan_administrator",
           key: "Jabatan Administrator",
+          level: 3,
         },
         {
           name: "Jabatan Pengawas",
           count: stats.total_jabatan_pengawas || 0,
           filterKey: "jabatan_pengawas",
           key: "Jabatan Pengawas",
+          level: 4,
         },
         {
           name: "Jabatan Fungsional Utama",
           count: stats.total_fungsional_utama || 0,
           filterKey: "fungsional_utama",
-          key: "JF Utama",
+          key: "JF Ahli Utama",
+          level: 2,
         },
         {
           name: "Jabatan Fungsional Madya",
           count: stats.total_fungsional_madya || 0,
           filterKey: "fungsional_madya",
-          key: "JF Madya",
+          key: "JF Ahli Madya",
+          level: 3,
         },
         {
           name: "Jabatan Fungsional Muda",
           count: stats.total_fungsional_muda || 0,
           filterKey: "fungsional_muda",
-          key: "JF Muda",
+          key: "JF Ahli Muda",
+          level: 4,
         },
         {
           name: "Jabatan Fungsional Pertama",
           count: stats.total_fungsional_pertama || 0,
           filterKey: "fungsional_pertama",
-          key: "JF Pertama",
+          key: "JF Ahli Pertama",
+          level: 5,
         },
         {
           name: "Jabatan Fungsional Penyelia",
           count: stats.total_fungsional_penyelia || 0,
           filterKey: "fungsional_penyelia",
           key: "JF Penyelia",
+          level: 4,
         },
         {
           name: "Jabatan Fungsional Mahir",
           count: stats.total_fungsional_mahir || 0,
           filterKey: "fungsional_mahir",
           key: "JF Mahir",
+          level: 5,
         },
         {
           name: "Jabatan Fungsional Terampil",
           count: stats.total_fungsional_terampil || 0,
           filterKey: "fungsional_terampil",
           key: "JF Terampil",
+          level: 6,
         },
         {
           name: "Jabatan Pelaksana",
           count: stats.total_pelaksana || 0,
           filterKey: "pelaksana",
           key: "Jabatan Pelaksana",
+          level: 5,
         },
       ]
     : [
@@ -717,7 +729,7 @@ const Dashboard = () => {
       employees: [],
       title: `Kotak ${quadrantNumber}`,
       description: kotak?.kategori || "",
-      color: kotak?.warna || PRIMARY_COLORS.blue,
+      color: kotak?.warna || PRIMARY_COLORS.teal,
       kotakConfig: kotak,
     });
     setEmpEmployees([]);
@@ -745,7 +757,7 @@ const Dashboard = () => {
 
   const GENDER_COLORS = [PRIMARY_COLORS.blue, "#EC4899"];
   // Warna titik yang kontras dengan warna area; menyesuaikan dark mode
-  const POINT_COLOR = isDark ? "#F3F4F6" : PRIMARY_COLORS.blue;
+  const POINT_COLOR = isDark ? "#F3F4F6" : PRIMARY_COLORS.teal;
 
   const chartRef = useRef(null);
 
@@ -774,9 +786,9 @@ const Dashboard = () => {
 
       // Draw background areas
       (cfg.kotak || []).forEach((kotak) => {
-        const x1 = x.getPixelForValue(kotak.potensialRange.min === 0 ? kotak.potensialRange.min : kotak.potensialRange.min-1);
+        const x1 = x.getPixelForValue(kotak.potensialRange.min === 0 ? kotak.potensialRange.min : kotak.potensialRange.min-0.01);
         const x2 = x.getPixelForValue(kotak.potensialRange.max);
-        const y1 = y.getPixelForValue(kotak.kinerjaRange.min === 0 ? kotak.kinerjaRange.min : kotak.kinerjaRange.min-1);
+        const y1 = y.getPixelForValue(kotak.kinerjaRange.min === 0 ? kotak.kinerjaRange.min : kotak.kinerjaRange.min-0.01);
         const y2 = y.getPixelForValue(kotak.kinerjaRange.max);
 
         ctx.fillStyle = kotak.warna;
@@ -908,7 +920,7 @@ const Dashboard = () => {
               return [
                 `Nilai Potensial: ${data.x}`,
                 `Nilai Kinerja: ${data.y}`,
-                `Nilai Talenta: ${(data.x * 50) / 100 + (data.y * 50) / 100}`,
+                `Nilai Talenta: ${((data.x * 50) / 100 + (data.y * 50) / 100).toFixed(2)}`,
                 `Kotak: ${data.quadrant}`,
                 "",
               ];
@@ -1200,7 +1212,7 @@ const Dashboard = () => {
           <h3 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
             <i
               className="fas fa-filter mr-2"
-              style={{ color: PRIMARY_COLORS.blue }}
+              style={{ color: PRIMARY_COLORS.teal }}
               aria-hidden="true"
             ></i>
             Filter Data
@@ -1234,7 +1246,7 @@ const Dashboard = () => {
                 options={[
                   ...jobTypeData.map((j) => {
                     const match = jenisJabatanList.find((jj) => j.key === jj);
-                    return { value: match, label: j.name };
+                    return { value: match, label: j.name + ` (Level ${j.level})` };
                   }),
                 ]}
                 placeholder="Pilih Jenis Jabatan..."
@@ -1257,7 +1269,7 @@ const Dashboard = () => {
                 size="lg"
                 className="inline-flex items-center"
               >
-                <i className="fas fa-times-circle mr-2" aria-hidden="true"></i>
+                <i className="fas fa-sync-alt mr-2" aria-hidden="true"></i>
                 Reset Filter
               </IconButton>
             </div>
@@ -1285,7 +1297,7 @@ const Dashboard = () => {
               // Actual data
               [1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
                 const kotak = kotakConfig?.kotak.find((k) => k.id === q);
-                const warna = kotak?.warna || PRIMARY_COLORS.blue;
+                const warna = kotak?.warna || PRIMARY_COLORS.teal;
                 const nama = `Kotak ${q}`;
                 return (
                   <div
@@ -1391,7 +1403,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 gap-2 text-md">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
                     const kotak = kotakConfig?.kotak.find((k) => k.id === q);
-                    const warna = kotak?.warna || PRIMARY_COLORS.blue;
+                    const warna = kotak?.warna || PRIMARY_COLORS.teal;
                     const kategori = kotak?.kategori;
                     return (
                       <div key={q} className="flex items-start gap-2">

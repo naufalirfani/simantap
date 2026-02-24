@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { PRIMARY_COLORS, DARK_COLORS, BG_COLORS } from '../config/colors';
 
 const SSOLogin = () => {
   const { token } = useParams();
@@ -83,8 +84,6 @@ const SSOLogin = () => {
                   decodedPayload.sub || 
                   decodedPayload.id || 
                   decodedPayload.employee_id;
-      
-      console.log('Extracted NIP from token:', nip);
       return nip;
     } catch (error) {
       console.error('Failed to extract NIP from token:', error);
@@ -100,7 +99,7 @@ const SSOLogin = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl max-w-md">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#3085d6] mx-auto"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 mx-auto" style={{ borderColor: PRIMARY_COLORS.teal }}></div>
           <h2 className="mt-6 text-2xl font-bold text-gray-800 dark:text-white">
             Memverifikasi Token
           </h2>
@@ -116,9 +115,9 @@ const SSOLogin = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl max-w-md">
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-[#2fa84f]/10 dark:bg-[#2fa84f]">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full" style={{ backgroundColor: `${PRIMARY_COLORS.green}10` }}>
             <svg
-              className="h-10 w-10 text-[#2fa84f] dark:text-[#2fa84f]"
+              className="h-10 w-10" style={{ color: PRIMARY_COLORS.green }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -145,9 +144,9 @@ const SSOLogin = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-pink-100 dark:from-gray-900 dark:to-gray-800">
       <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl max-w-md">
-        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-[#FDECEA] dark:bg-red-900">
+        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full" style={{ backgroundColor: BG_COLORS.red.light }}>
           <svg
-            className="h-10 w-10 text-[#d33] dark:text-[#d33]"
+            className="h-10 w-10" style={{ color: PRIMARY_COLORS.red }}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -168,7 +167,10 @@ const SSOLogin = () => {
         </p>
         <button
           onClick={handleBackToNUSA}
-          className="mt-6 w-full bg-[#3085d6] hover:bg-[#2075c6] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 cursor-pointer"
+          className="mt-6 w-full text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 cursor-pointer"
+          style={{ backgroundColor: PRIMARY_COLORS.teal }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = DARK_COLORS.blue}
+          onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY_COLORS.teal}
         >
           Kembali ke NUSA
         </button>

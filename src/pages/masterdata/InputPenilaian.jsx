@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { BG_COLORS, TEXT_ON_BG_COLORS } from "../../config/colors";
+import {
+  BG_COLORS,
+  TEXT_ON_BG_COLORS,
+  PRIMARY_COLORS,
+} from "../../config/colors";
 import IconButton from "../../components/IconButton";
 import SearchableSelect from "../../components/SearchableSelect";
 import Breadcrumb from "../../components/Breadcrumb";
@@ -163,7 +167,7 @@ const InputPenilaian = () => {
         icon: "error",
         title: "Error",
         text: error.message || "Gagal memuat data",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setLoading(false);
@@ -320,6 +324,51 @@ const InputPenilaian = () => {
     return { valid: true };
   };
 
+  // Calculate total nilai potensial and kinerja from current form data
+  const calculateTotalNilai = () => {
+    let totalPotensial = 0;
+    let totalKinerja = 0;
+
+    for (const indikator of indikators) {
+      if (!indikator.sub_indikators) continue;
+
+      const isPotensial =
+        (indikator.penilaian || "").toLowerCase() === "potensial";
+      const isKinerja = (indikator.penilaian || "").toLowerCase() === "kinerja";
+
+      for (const sub of indikator.sub_indikators) {
+        if (!sub.isactive) continue;
+        const entry = getPenilaianEntry(sub.id);
+        if (
+          entry &&
+          entry.nilai !== null &&
+          entry.nilai !== undefined &&
+          entry.nilai !== ""
+        ) {
+          const nilaiNum = parseFloat(entry.nilai);
+          const hasilStr = calculateResult(sub, nilaiNum, indikator.indikator);
+          const hasilNum = parseFloat(hasilStr);
+
+          if (!Number.isNaN(hasilNum)) {
+            if (isPotensial) {
+              totalPotensial += hasilNum;
+            } else if (isKinerja) {
+              totalKinerja += hasilNum;
+            }
+          }
+        }
+      }
+    }
+
+    const nilaiTalenta = (totalPotensial + totalKinerja) / 2;
+
+    return {
+      nilaiPotensial: totalPotensial,
+      nilaiKinerja: totalKinerja,
+      nilaiTalenta: nilaiTalenta,
+    };
+  };
+
   // Handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -331,7 +380,7 @@ const InputPenilaian = () => {
         icon: "warning",
         title: "Data Tidak Lengkap",
         text: validation.message,
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
       return;
     }
@@ -345,8 +394,8 @@ const InputPenilaian = () => {
       reverseButtons: true,
       confirmButtonText: "Simpan",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
     });
 
     if (!confirm.isConfirmed) return;
@@ -411,7 +460,7 @@ const InputPenilaian = () => {
         icon: "error",
         title: "Error",
         text: error.message || "Gagal menyimpan penilaian",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setSubmitting(false);
@@ -463,9 +512,12 @@ const InputPenilaian = () => {
       </div> */}
 
       {/* Profile Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-6 border border-gray-100 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mb-6 border border-gray-100 dark:border-gray-700">
         {/* Header with gradient */}
-        <div className="bg-[#3085d6] px-6 py-4">
+        <div
+          className="px-6 py-4"
+          style={{ backgroundColor: PRIMARY_COLORS.teal }}
+        >
           <div className="flex items-center justify-between">
             <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
               <i className="fas fa-user"></i>
@@ -512,7 +564,7 @@ const InputPenilaian = () => {
                 </h2>
                 <div className="flex flex-wrap gap-2 mb-3">
                   <span
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium dark:bg-[#3085d6] dark:text-white"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                     style={{
                       backgroundColor: BG_COLORS.blue.light,
                       color: TEXT_ON_BG_COLORS.blue,
@@ -522,7 +574,7 @@ const InputPenilaian = () => {
                     {nip}
                   </span>
                   <span
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium dark:bg-[#7a5cd6] dark:text-white"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                     style={{
                       backgroundColor: BG_COLORS.purple.light,
                       color: TEXT_ON_BG_COLORS.purple,
@@ -533,17 +585,60 @@ const InputPenilaian = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Quick Stats */}
+              <div className="flex gap-4 mt-4 md:mt-6">
+                <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-4 text-center min-w-[120px]">
+                  <div className="text-md text-teal-500 dark:text-teal-400 mt-1 font-medium">
+                    Nilai Potensial
+                  </div>
+                  <div
+                    className="text-3xl font-bold dark:text-teal-300"
+                    style={{ color: PRIMARY_COLORS.teal }}
+                  >
+                    {calculateTotalNilai().nilaiPotensial.toFixed(2)}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-4 text-center min-w-[120px]">
+                  <div className="text-md text-[#3085d6] dark:text-blue-400 mt-1 font-medium">
+                    Nilai Kinerja
+                  </div>
+                  <div className="text-3xl font-bold text-[#3085d6] dark:text-blue-300">
+                    {calculateTotalNilai().nilaiKinerja.toFixed(2)}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 rounded-lg p-4 text-center min-w-[120px]">
+                  <div className="text-md text-purple-700 dark:text-purple-400 mt-1 font-medium">
+                    Nilai Talenta
+                  </div>
+                  <div className="text-3xl font-bold text-purple-600 dark:text-purple-300">
+                    {calculateTotalNilai().nilaiTalenta.toFixed(2)}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Info Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-[#fbf8ff] to-[#f5f0ff] dark:from-[#0f0820]/5 dark:to-[#1b1530]/5 rounded-lg p-4 border border-[#efe7ff] dark:border-[#3b2b66]">
+              <div
+                className="bg-gradient-to-br rounded-lg p-4 border"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom right, ${BG_COLORS.teal.light}, ${BG_COLORS.teal.DEFAULT})`,
+                  borderColor: BG_COLORS.teal.light,
+                }}
+              >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-[#7a5cd6] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: PRIMARY_COLORS.teal }}
+                  >
                     <i className="fas fa-briefcase text-white text-sm"></i>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#7a5cd6] dark:text-[#bfaef5] mb-1">
+                    <p
+                      className="text-sm font-medium mb-1"
+                      style={{ color: PRIMARY_COLORS.teal }}
+                    >
                       Jabatan
                     </p>
                     <p
@@ -563,13 +658,25 @@ const InputPenilaian = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-[#eef8ff] to-[#eaf4ff] dark:from-[#07102a]/5 dark:to-[#15203a]/5 rounded-lg p-4 border border-[#dbeeff] dark:border-[#2b4a7a]">
+              <div
+                className="bg-gradient-to-br rounded-lg p-4 border"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom right, ${BG_COLORS.blue.light}, ${BG_COLORS.blue.DEFAULT})`,
+                  borderColor: BG_COLORS.blue.light,
+                }}
+              >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-[#3085d6] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: PRIMARY_COLORS.blue }}
+                  >
                     <i className="fas fa-building text-white text-sm"></i>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#3085d6] dark:text-[#9ecaf9] mb-1">
+                    <p
+                      className="text-sm font-medium mb-1"
+                      style={{ color: PRIMARY_COLORS.blue }}
+                    >
                       Unit Kerja
                     </p>
                     <p
@@ -589,13 +696,25 @@ const InputPenilaian = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-[#fffaf4] to-[#fff6ee] dark:from-[#2b1505]/5 dark:to-[#381f07]/5 rounded-lg p-4 border border-[#fff0d9] dark:border-[#5a3d12]">
+              <div
+                className="bg-gradient-to-br rounded-lg p-4 border"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom right, ${BG_COLORS.purple.light}, ${BG_COLORS.purple.DEFAULT})`,
+                  borderColor: BG_COLORS.purple.light,
+                }}
+              >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-[#f39c12] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: PRIMARY_COLORS.purple }}
+                  >
                     <i className="fas fa-user-tie text-white text-sm"></i>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#f39c12] dark:text-[#ffd9a8] mb-1">
+                    <p
+                      className="text-sm font-medium mb-1"
+                      style={{ color: PRIMARY_COLORS.purple }}
+                    >
                       Jenis Jabatan
                     </p>
                     <p
@@ -609,13 +728,25 @@ const InputPenilaian = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-[#f7fff6] to-[#f1fff0] dark:from-[#07140a]/5 dark:to-[#0f2814]/5 rounded-lg p-4 border border-[#e7ffea] dark:border-[#11421d]">
+              <div
+                className="bg-gradient-to-br rounded-lg p-4 border"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom right, ${BG_COLORS.orange.light}, ${BG_COLORS.orange.DEFAULT})`,
+                  borderColor: BG_COLORS.orange.light,
+                }}
+              >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-[#2fa84f] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: PRIMARY_COLORS.orange }}
+                  >
                     <i className="fas fa-award text-white text-sm"></i>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#2fa84f] dark:text-[#9ef0b6] mb-1">
+                    <p
+                      className="text-sm font-medium mb-1"
+                      style={{ color: PRIMARY_COLORS.orange }}
+                    >
                       Golongan
                     </p>
                     <p
@@ -634,7 +765,10 @@ const InputPenilaian = () => {
             <div className="flex items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
               <div className="relative">
                 <div className="animate-spin rounded-full h-6 w-6 border-3 border-gray-200 dark:border-gray-700"></div>
-                <div className="animate-spin rounded-full h-6 w-6 border-3 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                <div
+                  className="animate-spin rounded-full h-6 w-6 border-3 border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"
+                  style={{ borderTopColor: PRIMARY_COLORS.teal }}
+                ></div>
               </div>
               <span className="text-sm">Memuat profil pegawai...</span>
             </div>
@@ -645,7 +779,10 @@ const InputPenilaian = () => {
       {/* Form */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
         {/* Header with gradient */}
-        <div className="bg-[#3085d6] px-6 py-4">
+        <div
+          className="px-6 py-4"
+          style={{ backgroundColor: PRIMARY_COLORS.teal }}
+        >
           <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
             <i className="fas fa-clipboard-check"></i>
             Form Penilaian
@@ -657,7 +794,10 @@ const InputPenilaian = () => {
             <div className="flex flex-col items-center justify-center py-6">
               <div className="relative">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                <div
+                  className="animate-spin rounded-full h-12 w-12 border-4 border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"
+                  style={{ borderTopColor: PRIMARY_COLORS.teal }}
+                ></div>
               </div>
               <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                 Memuat form...
@@ -680,15 +820,28 @@ const InputPenilaian = () => {
                     onClick={() => setActiveTab(idx)}
                     className={`px-6 py-4 text-sm font-semibold transition-all border-b-2 cursor-pointer ${
                       activeTab === idx
-                        ? "border-[#3085d6] text-[#3085d6] bg-white dark:bg-gray-800"
+                        ? "bg-white dark:bg-gray-800"
                         : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300"
                     }`}
+                    style={
+                      activeTab === idx
+                        ? {
+                            borderColor: PRIMARY_COLORS.teal,
+                            color: PRIMARY_COLORS.teal,
+                          }
+                        : {}
+                    }
                   >
                     <div className="flex items-center gap-2">
                       <span
                         className={`w-2 h-2 rounded-full ${
-                          activeTab === idx ? "bg-[#3085d6]" : "bg-gray-400"
+                          activeTab === idx ? "" : "bg-gray-400"
                         }`}
+                        style={
+                          activeTab === idx
+                            ? { backgroundColor: PRIMARY_COLORS.teal }
+                            : {}
+                        }
                       ></span>
                       {indikator.indikator} ({indikator.penilaian})
                     </div>
@@ -716,7 +869,7 @@ const InputPenilaian = () => {
                         <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                           <span
                             className="w-1.5 h-6 rounded-full"
-                            style={{ background: "#3085d6" }}
+                            style={{ background: PRIMARY_COLORS.teal }}
                           ></span>
                           {indikator.indikator}
                         </h2>
@@ -724,15 +877,17 @@ const InputPenilaian = () => {
                           <span
                             className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-sm font-semibold"
                             style={{
-                              background: "rgba(48,133,214,0.12)",
-                              color: "#3085d6",
+                              background: `${PRIMARY_COLORS.teal}1F`,
+                              color: PRIMARY_COLORS.teal,
                             }}
                           >
                             {indikator.penilaian}
                           </span>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            Bobot: {indikator.bobot}%
-                          </span>
+                          {indikator.penilaian !== "Tambahan" && (
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              Bobot: {indikator.bobot}%
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -758,15 +913,50 @@ const InputPenilaian = () => {
                         indikator.indikator,
                       );
 
+                      // Check if this is Penilaian Tambahan
+                      const isPenilaianTambahan =
+                        indikator.penilaian?.toLowerCase() === "tambahan";
+
+                      // Determine grid columns based on conditions
+                      const isMSK =
+                        indikator.indikator?.toLowerCase() ===
+                        "penilaian kompetensi manajerial dan sosial kultural";
+                      const isPotensiTalenta =
+                        indikator.indikator?.toLowerCase() ===
+                        "penilaian potensi talenta";
+                      const hasStandar = isMSK || isPotensiTalenta;
+
+                      let gridCols = "grid-cols-1 md:grid-cols-1";
+                      if (isPenilaianTambahan) {
+                        // For Penilaian Tambahan: Input + Skor (if has instrumens)
+                        gridCols = "grid-cols-1 md:grid-cols-2";
+                      } else {
+                        // For other penilaian types
+                        if (hasInstrumens && hasStandar) {
+                          gridCols = "grid-cols-1 md:grid-cols-4"; // Input + Skor + Standar + Result
+                        } else if (hasInstrumens || hasStandar) {
+                          gridCols = "grid-cols-1 md:grid-cols-3"; // Input + (Skor or Standar) + Result
+                        } else {
+                          gridCols = "grid-cols-1 md:grid-cols-2"; // Input + Result
+                        }
+                      }
+
                       return (
                         <div
                           key={subindikator.id}
-                          className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 rounded-lg p-5 border border-gray-200 dark:border-gray-600 hover:border-[#3085d6] dark:hover:border-[#7a5cd6] transition-colors"
+                          className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 rounded-lg p-5 border border-gray-200 dark:border-gray-600 transition-colors"
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.borderColor =
+                              PRIMARY_COLORS.teal)
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.borderColor = "")
+                          }
                         >
                           <div className="flex items-start gap-3 mb-4">
                             <div
                               className="flex items-center justify-center w-8 h-8 rounded-lg text-white text-sm font-bold flex-shrink-0"
-                              style={{ background: "#3085d6" }}
+                              style={{ background: PRIMARY_COLORS.teal }}
                             >
                               {sidx + 1}
                             </div>
@@ -774,20 +964,26 @@ const InputPenilaian = () => {
                               <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
                                 {subindikator.subindikator}
                               </h3>
-                              <span className="text-sm text-gray-600 dark:text-gray-400">
-                                Bobot: {subindikator.bobot}%
-                              </span>
+                              {!isPenilaianTambahan && (
+                                <div className="mt-1">
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    Bobot: {subindikator.bobot}%
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className={`grid ${gridCols} gap-4`}>
                             {/* Input Column */}
                             <div>
                               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                 {hasInstrumens
                                   ? "Pilih Penilaian"
                                   : "Input Skor"}{" "}
-                                <span className="text-red-500">*</span>
+                                {!isPenilaianTambahan && (
+                                  <span className="text-red-500">*</span>
+                                )}
                               </label>
                               <div className="flex items-start gap-3">
                                 <div className="flex-1">
@@ -827,9 +1023,19 @@ const InputPenilaian = () => {
                                           e.target.value,
                                         )
                                       }
-                                      className="block w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium transition-all"
+                                      className="block w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium transition-all"
+                                      style={{
+                                        "--tw-ring-color": PRIMARY_COLORS.teal,
+                                      }}
+                                      onFocus={(e) =>
+                                        (e.target.style.borderColor =
+                                          PRIMARY_COLORS.teal)
+                                      }
+                                      onBlur={(e) =>
+                                        (e.target.style.borderColor = "")
+                                      }
                                       placeholder="0.00"
-                                      required
+                                      required={!isPenilaianTambahan}
                                     />
                                   )}
                                 </div>
@@ -887,37 +1093,39 @@ const InputPenilaian = () => {
                               </div>
                             )}
 
-                            {/* Result Column */}
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                {indikator.indikator?.toLowerCase() ===
-                                  "penilaian kompetensi manajerial dan sosial kultural" ||
-                                indikator.indikator?.toLowerCase() ===
-                                  "penilaian potensi talenta"
-                                  ? "Hasil (Skor ÷ Standar × 100 × Bobot)"
-                                  : "Hasil (Skor × Bobot)"}
-                              </label>
-                              <div className="relative">
-                                <input
-                                  type="text"
-                                  value={currentResult}
-                                  readOnly
-                                  className="block w-full px-3 py-1.5 rounded-lg shadow-sm font-bold cursor-not-allowed text-lg"
-                                  style={{
-                                    border: "2px solid rgba(48,133,214,0.18)",
-                                    background: "#eaf4ff",
-                                    color: "#3085d6",
-                                  }}
-                                  placeholder="0.00"
-                                />
-                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                  <i
-                                    className="fas fa-calculator text-sm"
-                                    style={{ color: "#3085d6" }}
-                                  ></i>
+                            {/* Result Column - Hidden for Penilaian Tambahan */}
+                            {!isPenilaianTambahan && (
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                  {indikator.indikator?.toLowerCase() ===
+                                    "penilaian kompetensi manajerial dan sosial kultural" ||
+                                  indikator.indikator?.toLowerCase() ===
+                                    "penilaian potensi talenta"
+                                    ? "Hasil (Skor ÷ Standar × 100 × Bobot)"
+                                    : "Hasil (Skor × Bobot)"}
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    value={currentResult}
+                                    readOnly
+                                    className="block w-full px-3 py-1.5 rounded-lg shadow-sm font-bold cursor-not-allowed text-lg"
+                                    style={{
+                                      border: `2px solid ${PRIMARY_COLORS.teal}30`,
+                                      background: `${PRIMARY_COLORS.teal}15`,
+                                      color: PRIMARY_COLORS.teal,
+                                    }}
+                                    placeholder="0.00"
+                                  />
+                                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <i
+                                      className="fas fa-calculator text-sm"
+                                      style={{ color: PRIMARY_COLORS.teal }}
+                                    ></i>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                       );

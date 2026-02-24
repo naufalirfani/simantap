@@ -177,46 +177,23 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label, multip
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full px-3 pr-20 py-2.5 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-[#3085d6] dark:text-white cursor-pointer"
+          className="w-full px-3 pr-20 py-2.5 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 dark:text-white cursor-pointer"
           readOnly={!isOpen}
         />
         <div className="absolute right-2 top-2 flex items-center gap-1">
           {hasValue && (
             <button
               onClick={handleClear}
-              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-500 rounded transition-colors cursor-pointer  "
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-500 rounded transition-colors cursor-pointer"
               type="button"
             >
-              <svg
-                className="w-4 h-4 text-gray-500 dark:text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <i className="fas fa-times w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
             </button>
           )}
-          <svg
-            className={`w-5 h-5 text-gray-400 transition-transform ${
-              isOpen ? 'transform rotate-180' : ''
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          <i
+            className={`fas fa-chevron-down w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''}`}
+            aria-hidden="true"
+          />
         </div>
       </div>
 
@@ -242,11 +219,11 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label, multip
                 onClick={() => handleSelect(option.value)}
                 className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 ${
                   index === highlightedIndex
-                    ? 'bg-[#E7F3FF] dark:bg-blue-900'
+                    ? 'bg-[#E7F3FF] dark:bg-teal-900'
                     : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                 } ${
                   isSelected(option.value)
-                    ? 'bg-blue-50 dark:bg-blue-950 font-medium'
+                    ? 'bg-teal-50 dark:bg-teal-950 font-medium'
                     : ''
                 } text-gray-900 dark:text-gray-100`}
               >
@@ -255,7 +232,7 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label, multip
                     type="checkbox"
                     checked={isSelected(option.value)}
                     onChange={() => {}}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
                   />
                 )}
                 <span className="flex-1">{option.label}</span>

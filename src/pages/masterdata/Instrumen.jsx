@@ -7,6 +7,7 @@ import {
   deleteInstrumen,
   fetchIndikators,
 } from "../../services/apiService";
+import { PRIMARY_COLORS } from "../../config/colors";
 import Swal from "sweetalert2";
 import IconButton from "../../components/IconButton";
 import SearchableSelect from "../../components/SearchableSelect";
@@ -172,7 +173,7 @@ const Instrumen = () => {
         icon: "error",
         title: "Gagal!",
         text: err.message || "Terjadi kesalahan saat menyimpan instrumen",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: PRIMARY_COLORS.blue,
       });
     } finally {
       setSubmitting(false);
@@ -188,8 +189,8 @@ const Instrumen = () => {
       reverseButtons: true,
       confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
     });
 
     if (result.isConfirmed) {
@@ -208,7 +209,7 @@ const Instrumen = () => {
           icon: "error",
           title: "Gagal!",
           text: err.message || "Gagal menghapus instrumen",
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: PRIMARY_COLORS.blue,
         });
       }
     }
@@ -266,7 +267,8 @@ const Instrumen = () => {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
           <div className="flex items-start">
             <svg
-              className="h-5 w-5 text-[#d33] mt-0.5 flex-shrink-0"
+              className="h-5 w-5 mt-0.5 flex-shrink-0"
+              style={{ color: PRIMARY_COLORS.red }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -282,12 +284,13 @@ const Instrumen = () => {
               <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
                 Terjadi Kesalahan
               </h3>
-              <p className="mt-1 text-sm text-[#d33] dark:text-[#d33]">
+              <p className="mt-1 text-sm" style={{ color: PRIMARY_COLORS.red }}>
                 {error}
               </p>
               <button
                 onClick={loadData}
-                className="mt-2 text-sm font-medium text-[#d33] dark:text-[#d33] hover:text-[#d33] cursor-pointer"
+                className="mt-2 text-sm font-medium cursor-pointer"
+                style={{ color: PRIMARY_COLORS.red }}
               >
                 Muat Ulang
               </button>
@@ -307,7 +310,10 @@ const Instrumen = () => {
                   placeholder="Cari instrumen, subindikator, skor..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] dark:text-white transition-all shadow-sm"
+                  className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 dark:text-white transition-all shadow-sm"
+                  style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
+                  onFocus={(e) => e.target.style.borderColor = PRIMARY_COLORS.teal}
+                  onBlur={(e) => e.target.style.borderColor = ''}
                 />
                 <svg
                   className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 dark:text-gray-500"
@@ -352,7 +358,7 @@ const Instrumen = () => {
                       <div className="flex flex-col items-center justify-center">
                         <div className="relative">
                           <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700"></div>
-                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-[#3085d6] border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0"></div>
+                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-r-transparent border-b-transparent border-l-transparent absolute top-0 left-0" style={{ borderTopColor: PRIMARY_COLORS.teal }}></div>
                         </div>
                         <p className="mt-4 text-sm font-medium text-gray-600 dark:text-gray-300">
                           Memuat data...
@@ -539,7 +545,10 @@ const Instrumen = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, instrumen: e.target.value })
                       }
-                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
+                      onFocus={(e) => e.target.style.borderColor = PRIMARY_COLORS.teal}
+                      onBlur={(e) => e.target.style.borderColor = ''}
                       placeholder="Masukkan instrumen"
                     />
                   </div>
@@ -561,11 +570,14 @@ const Instrumen = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, skor: e.target.value })
                       }
-                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3085d6] focus:border-[#3085d6] bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all"
+                      style={{ '--tw-ring-color': PRIMARY_COLORS.teal }}
+                      onFocus={(e) => e.target.style.borderColor = PRIMARY_COLORS.teal}
+                      onBlur={(e) => e.target.style.borderColor = ''}
                       placeholder="0.00"
                     />
                     {skorWarning && (
-                      <div className="mt-2 text-sm text-[#f39c12] bg-[#f4c430]/10 dark:bg-[#f4c430]/10 border border-[#f4c430]/30 dark:border-[#f39c12]/30 rounded-lg p-2">
+                      <div className="mt-2 text-sm rounded-lg p-2" style={{ color: PRIMARY_COLORS.orange, backgroundColor: `${PRIMARY_COLORS.yellow}1A`, border: `1px solid ${PRIMARY_COLORS.yellow}4D` }}>
                         {skorWarning}
                       </div>
                     )}
