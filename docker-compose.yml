@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     image: simantap-app:latest
     ports:
-      - "5174:80"
+      - "5176:80"
     restart: unless-stopped
     # Load environment variables from the .env file in the project root at runtime
     env_file:
