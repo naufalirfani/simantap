@@ -1035,13 +1035,10 @@ export const deleteInstrumen = async (id) => {
  */
 export const syncPetaJabatan = async () => {
   try {
-    const token = await getValidToken();
-
     const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(`${API_BASE_URL}/api/peta-jabatan/sync`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
         "X-API-TOKEN": encryptedToken,
       },
