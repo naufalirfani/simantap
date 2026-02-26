@@ -266,8 +266,8 @@ const Pegawai = () => {
         filterConfigs={[
           {
             key: "unit_organisasi",
-            label: "Organisasi",
-            placeholder: "Semua Organisasi",
+            label: "Unit Kerja",
+            placeholder: "Semua Unit Kerja",
             options: filterOptions.organisasi,
           },
           {

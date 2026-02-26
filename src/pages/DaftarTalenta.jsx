@@ -446,8 +446,8 @@ const DaftarTalenta = () => {
           filterConfigs={[
             {
               key: "unit_organisasi_name",
-              label: "Organisasi",
-              placeholder: "Semua Organisasi",
+              label: "Unit Kerja",
+              placeholder: "Semua Unit Kerja",
               options: filterOptions.organisasi,
             },
             {

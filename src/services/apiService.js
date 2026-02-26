@@ -428,6 +428,102 @@ export const fetchStatistik = async () => {
 };
 
 /**
+ * Fetch statistik pengembangan (kompetensi & potensi breakdown per subindikator, golongan, unit kerja)
+ * Endpoint: GET /api/pengembangan/statistik
+ * Query params:
+ *   - unit_organisasi_name  (optional)
+ *   - jabatan_name          (optional)  
+ *   - jenis_jabatan         (optional)
+ */
+export const 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fetchPengembanganStatistik = async (params = {}) => {
+  try {
+    const base = API_BASE_URL || "http://192.168.0.111:8000";
+    const urlParams = new URLSearchParams();
+    if (params.unit_organisasi_name) urlParams.append("unit_organisasi_name", params.unit_organisasi_name);
+    if (params.jabatan_name) urlParams.append("jabatan_name", params.jabatan_name);
+    if (params.jenis_jabatan) urlParams.append("jenis_jabatan", params.jenis_jabatan);
+
+    const url = `${base}/api/pengembangan/statistik${urlParams.toString() ? "?" + urlParams.toString() : ""}`;
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(result?.message || "Failed to fetch pengembangan statistik");
+    if (!result || result.success === false) throw new Error(result?.message || "Invalid response");
+
+    return result.data || {};
+  } catch (error) {
+    console.error("fetchPengembanganStatistik error:", error);
+    throw error;
+  }
+};
+
+/**
  * Fetch pegawai list with filter key, pagination and optional search query
  * Returns { data: [...], meta: { current_page, per_page, last_page, total } }
  */

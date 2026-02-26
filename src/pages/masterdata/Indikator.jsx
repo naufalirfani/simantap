@@ -1738,7 +1738,7 @@ const Indikator = () => {
                   variant="default"
                   size="lg"
                 >
-                  <i className="fas fa-times-circle mr-2" />
+                  <i className="far fa-times-circle mr-2" />
                   Tutup
                 </IconButton>
               </div>

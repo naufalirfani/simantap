@@ -15,6 +15,7 @@ function EmployeeListModal({
   onSearch = null,
   skipInitialSearch = false,
   kotakConfig = null,
+  extraColumns = [],
 }) {
   // Close on Escape key
   useEffect(() => {
@@ -86,6 +87,7 @@ function EmployeeListModal({
               onSearch={onSearch}
               meta={meta}
               skipInitialSearch={skipInitialSearch}
+              extraColumns={extraColumns}
             />
           </div>
         </div>
@@ -150,7 +152,7 @@ EmployeeListModal.propTypes = {
       unitKerja: PropTypes.string,
       potensial: PropTypes.number,
       kinerja: PropTypes.number,
-    })
+    }),
   ).isRequired,
   title: PropTypes.string.isRequired,
   color: PropTypes.string.isRequired,
@@ -175,6 +177,7 @@ function EmployeeTableView({
   onSearch = null,
   meta = null,
   skipInitialSearch = false,
+  extraColumns = [],
 }) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -278,8 +281,8 @@ function EmployeeTableView({
     const cls = isCurrent
       ? `${base} bg-gradient-to-r from-teal-500 to-teal-500 text-white shadow-md scale-105 cursor-pointer`
       : page === "..."
-      ? `${base} cursor-default text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none`
-      : `${base} text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 cursor-pointer`;
+        ? `${base} cursor-default text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none`
+        : `${base} text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 cursor-pointer`;
 
     return (
       <button
@@ -304,7 +307,10 @@ function EmployeeTableView({
             onChange={(e) => setQuery(e.target.value)}
             className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 dark:text-white transition-all shadow-sm"
           />
-          <i className="fas fa-search absolute left-3.5 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+          <i
+            className="fas fa-search absolute left-3.5 top-3 h-5 w-5 text-gray-400 dark:text-gray-500"
+            aria-hidden="true"
+          />
         </div>
         <div className="sm:ml-auto flex items-center gap-3">
           {serverSearch && (
@@ -328,7 +334,10 @@ function EmployeeTableView({
                     </option>
                   ))}
                 </select>
-                <i className="fas fa-chevron-down absolute right-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" aria-hidden="true" />
+                <i
+                  className="fas fa-chevron-down absolute right-3 top-3 h-5 w-5 text-gray-400 pointer-events-none"
+                  aria-hidden="true"
+                />
               </div>
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 data
@@ -469,7 +478,10 @@ function EmployeeTableView({
                       )}
                       {meta?.tabel === "kuadran" && (
                         <td className="py-2 px-3 text-gray-800 dark:text-white font-semibold text-md text-center">
-                          {((e.potensial ? e.potensial*50/100 : 0) + (e.kinerja ? e.kinerja*50/100 : 0)).toFixed(2)}
+                          {(
+                            (e.potensial ? (e.potensial * 50) / 100 : 0) +
+                            (e.kinerja ? (e.kinerja * 50) / 100 : 0)
+                          ).toFixed(2)}
                         </td>
                       )}
                     </tr>
@@ -490,6 +502,10 @@ function EmployeeTableView({
             <table className="w-full text-md table-auto border-collapse min-w-0">
               <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
                 <tr className="text-center">
+                  <th
+                    className="pb-2 px-3 text-gray-500 dark:text-gray-300 w-12 whitespace-nowrap top-0 z-10"
+                    aria-label="Foto"
+                  ></th>
                   <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[240px] whitespace-nowrap top-0 z-10">
                     Nama
                   </th>
@@ -502,12 +518,25 @@ function EmployeeTableView({
                   <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-[160px] whitespace-nowrap top-0 z-10">
                     Unit Kerja
                   </th>
-                  <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap top-0 z-10">
-                    Potensial
-                  </th>
-                  <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap top-0 z-10">
-                    Kinerja
-                  </th>
+                  {extraColumns.length > 0 ? (
+                    extraColumns.map((col, ci) => (
+                      <th
+                        key={ci}
+                        className="py-2 px-3 text-center text-gray-500 dark:text-gray-300 font-semibold whitespace-nowrap top-0 z-10"
+                      >
+                        {col.label}
+                      </th>
+                    ))
+                  ) : (
+                    <>
+                      <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap top-0 z-10">
+                        Potensial
+                      </th>
+                      <th className="py-2 px-3 text-right text-gray-500 dark:text-gray-300 font-semibold w-20 whitespace-nowrap top-0 z-10">
+                        Kinerja
+                      </th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -518,26 +547,45 @@ function EmployeeTableView({
                       idx % 2 === 0 ? "bg-gray-50 dark:bg-gray-700/50" : ""
                     } align-top border-t border-gray-100 dark:border-gray-700 dark:hover:bg-gray-800`}
                   >
-                    <td className="py-2 px-3 align-top">
-                      <div className="flex items-center gap-3">
+                    <td className="py-2 px-3 align-top w-12">
+                      <div
+                        className="flex items-center justify-start"
+                        style={{ minWidth: 48 }}
+                      >
+                        <img
+                          src={e.avatar}
+                          alt={e.name}
+                          className="w-10 h-10 flex-none rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                          onError={(ev) => {
+                            ev.target.style.display = "none";
+                            if (ev.target.nextSibling)
+                              ev.target.nextSibling.style.display = "flex";
+                          }}
+                          style={{ display: e.avatar ? "block" : "none" }}
+                        />
                         <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold"
-                          style={{ backgroundColor: color }}
+                          className="w-10 h-10 flex-none rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                          style={{
+                            display: e.avatar ? "none" : "flex",
+                            backgroundColor: color,
+                          }}
                         >
-                          {e.name
+                          {String(e.name || "?")
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n) => n?.[0] || "")
                             .join("")
                             .slice(0, 2)
                             .toUpperCase()}
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-medium text-gray-800 dark:text-white whitespace-normal break-words truncate">
-                            {e.name}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            {e.email || "-"}
-                          </div>
+                      </div>
+                    </td>
+                    <td className="py-2 px-3 align-top">
+                      <div className="min-w-0">
+                        <div className="font-medium text-gray-800 dark:text-white truncate">
+                          {e.name}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {e.email || "-"}
                         </div>
                       </div>
                     </td>
@@ -550,12 +598,25 @@ function EmployeeTableView({
                     <td className="py-2 px-3 text-gray-700 dark:text-gray-300 truncate text-md">
                       {e.unitKerja || "-"}
                     </td>
-                    <td className="py-2 px-3 text-right text-gray-800 dark:text-white font-semibold text-md text-center">
-                      {e.potensial ?? "-"}
-                    </td>
-                    <td className="py-2 px-3 text-right text-gray-800 dark:text-white font-semibold text-md text-center">
-                      {e.kinerja ?? "-"}
-                    </td>
+                    {extraColumns.length > 0 ? (
+                      extraColumns.map((col, ci) => (
+                        <td
+                          key={ci}
+                          className="py-2 px-3 text-center align-top"
+                        >
+                          {col.render(e)}
+                        </td>
+                      ))
+                    ) : (
+                      <>
+                        <td className="py-2 px-3 text-right text-gray-800 dark:text-white font-semibold text-md text-center">
+                          {e.potensial ?? "-"}
+                        </td>
+                        <td className="py-2 px-3 text-right text-gray-800 dark:text-white font-semibold text-md text-center">
+                          {e.kinerja ?? "-"}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -611,7 +672,7 @@ function EmployeeTableView({
 
               <div className="hidden sm:flex items-center gap-1">
                 {getPageNumbers().map((page, index) =>
-                  renderPageButton(page, index)
+                  renderPageButton(page, index),
                 )}
               </div>
 
@@ -665,7 +726,7 @@ function EmployeeTableView({
               <span className="font-bold text-gray-900 dark:text-gray-100">
                 {Math.min(
                   startIndex + (meta?.per_page || itemsPerPage),
-                  meta?.total || 0
+                  meta?.total || 0,
                 )}
               </span>{" "}
               dari{" "}
