@@ -398,6 +398,7 @@ const DetailPegawai = () => {
           name: indikator.indikator || indikator.penilaian || "-",
           nilai: nilaiSum,
           hasil: hasilSum,
+          bobot: indikator.bobot,
         };
       });
 
@@ -419,6 +420,7 @@ const DetailPegawai = () => {
           name: indikator.indikator || indikator.penilaian || "-",
           nilai: nilaiSum,
           hasil: hasilSum,
+          bobot: indikator.bobot,
         };
       });
 
@@ -1655,6 +1657,9 @@ const DetailPegawai = () => {
                     (ind.name || "").toLowerCase(),
                 );
                 const subs = indikatorObj?.sub_indikators || [];
+                const indName = (indikatorObj?.indikator || ind.name || "").toLowerCase();
+                const isMSKInd = indName.includes("kompetensi manajerial") || indName.includes("msk") || indName.includes("sosial kultural");
+                const isPotensiTalentaInd = indName.includes("potensi talenta");
                 return (
                   <div
                     key={idx}
@@ -1677,9 +1682,14 @@ const DetailPegawai = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
+                        {ind.bobot !== undefined && ind.bobot !== null && (
+                          <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            Bobot: {ind.bobot}%
+                          </div>
+                        )}
                         <div className="text-right">
                           <div
-                            className="text-md font-bold dark:text-blue-400"
+                            className="text-md font-bold dark:text-teal-400"
                             style={{ color: PRIMARY_COLORS.teal }}
                           >
                             {(Number(ind.hasil) || 0).toFixed(2)}
@@ -1718,7 +1728,11 @@ const DetailPegawai = () => {
                                   <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end gap-1">
                                     Nilai:{" "}
                                     {val.nilai !== null
-                                      ? Number(val.nilai).toFixed(2)
+                                      ? isMSKInd
+                                        ? `${Number(val.nilai).toFixed(2)}/${getStandarForSubIndikator(s.id)}`
+                                        : isPotensiTalentaInd
+                                          ? `${Number(val.nilai).toFixed(2)}/5`
+                                          : Number(val.nilai).toFixed(2)
                                       : "-"}
                                     {hasInstrumens && (
                                       <div className="group relative inline-block">
@@ -1797,6 +1811,9 @@ const DetailPegawai = () => {
                     (ind.name || "").toLowerCase(),
                 );
                 const subs = indikatorObj?.sub_indikators || [];
+                const indName = (indikatorObj?.indikator || ind.name || "").toLowerCase();
+                const isMSKInd = indName.includes("kompetensi manajerial") || indName.includes("msk") || indName.includes("sosial kultural");
+                const isPotensiTalentaInd = indName.includes("potensi talenta");
                 return (
                   <div
                     key={idx}
@@ -1818,6 +1835,11 @@ const DetailPegawai = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
+                        {ind.bobot !== undefined && ind.bobot !== null && (
+                          <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            Bobot: {ind.bobot}%
+                          </div>
+                        )}
                         <div className="text-right">
                           <div className="text-md font-bold text-blue-600 dark:text-blue-400">
                             {(Number(ind.hasil) || 0).toFixed(2)}
@@ -1856,7 +1878,11 @@ const DetailPegawai = () => {
                                   <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end gap-1">
                                     Nilai:{" "}
                                     {val.nilai !== null
-                                      ? Number(val.nilai).toFixed(2)
+                                      ? isMSKInd
+                                        ? `${Number(val.nilai).toFixed(2)}/${getStandarForSubIndikator(s.id)}`
+                                        : isPotensiTalentaInd
+                                          ? `${Number(val.nilai).toFixed(2)}/5`
+                                          : Number(val.nilai).toFixed(2)
                                       : "-"}
                                     {hasInstrumens && (
                                       <div className="group relative inline-block">

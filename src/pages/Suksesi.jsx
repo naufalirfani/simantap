@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { useSettings } from "../context/SettingsContext";
 import { PRIMARY_COLORS, BG_COLORS, TEXT_ON_BG_COLORS } from "../config/colors";
 import Breadcrumb from "../components/Breadcrumb";
-import SearchableSelect from "../components/SearchableSelect";
 import IconButton from "../components/IconButton";
 import {
   fetchPetaJabatanKosong,
   fetchRekomendasiPegawai,
 } from "../services/apiService";
+import ExcelJS from "exceljs";
 
 const Suksesi = () => {
   const { t } = useSettings();
@@ -19,6 +19,9 @@ const Suksesi = () => {
   const [loadingRekomendasi, setLoadingRekomendasi] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("promosi"); // "promosi" or "rotasi"
+  const [tableSearch, setTableSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 5;
 
   // Simple date formatter (accepts YYYY-MM-DD or DD-MM-YYYY)
   const formatDateIndo = (dateStr) => {
@@ -130,10 +133,121 @@ const Suksesi = () => {
     }
   };
 
-  const jabatanOptions = jabatanKosong.map((jabatan) => ({
-    value: jabatan.id,
-    label: `${jabatan.nama_jabatan} - ${jabatan.unit_kerja}`,
-  }));
+  const filteredJabatan = jabatanKosong.filter((j) => {
+    const q = tableSearch.toLowerCase();
+    return (
+      (j.nama_jabatan || "").toLowerCase().includes(q) ||
+      (j.unit_kerja || "").toLowerCase().includes(q) ||
+      (j.jenis_jabatan || "").toLowerCase().includes(q)
+    );
+  });
+  const totalPages = Math.max(1, Math.ceil(filteredJabatan.length / PAGE_SIZE));
+  const pagedJabatan = filteredJabatan.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
+  const handleExportExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Jabatan Akan Kosong");
+
+    sheet.columns = [
+      { header: "No", key: "no", width: 6 },
+      { header: "Nama Jabatan", key: "nama_jabatan", width: 35 },
+      { header: "Unit Kerja", key: "unit_kerja", width: 35 },
+      { header: "Jenis Jabatan", key: "jenis_jabatan", width: 25 },
+      { header: "Kelas Jabatan", key: "kelas_jabatan", width: 16 },
+      { header: "Kebutuhan Pegawai", key: "kebutuhan_pegawai", width: 20 },
+      { header: "Bezetting", key: "bezetting", width: 14 },
+      { header: "Pejabat Saat Ini", key: "pejabat", width: 30 },
+      { header: "Tanggal Pensiun", key: "tanggal_pensiun", width: 20 },
+      { header: "Sisa Masa Kerja", key: "sisa_masa_kerja", width: 22 },
+    ];
+
+    // Style header row
+    const headerRow = sheet.getRow(1);
+    headerRow.eachCell((cell) => {
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D9488" } };
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      cell.border = {
+        top: { style: "thin" }, left: { style: "thin" },
+        bottom: { style: "thin" }, right: { style: "thin" },
+      };
+    });
+    headerRow.height = 24;
+
+    jabatanKosong.forEach((j, idx) => {
+      const pejabatNames = (j.pejabat || [])
+        .map((p) => `${p.name} (${p.nip})`)
+        .join(", ");
+      const tanggalPensiun = (j.pejabat || [])
+        .map((p) => formatDateIndo(p.tanggal_pensiun || p.tglPensiun))
+        .join(", ");
+      const sisaMasaKerja = (j.pejabat || [])
+        .map((p) => p.sisa_masa_kerja || computeRemaining(p))
+        .join(", ");
+
+      const row = sheet.addRow({
+        no: idx + 1,
+        nama_jabatan: j.nama_jabatan || "-",
+        unit_kerja: j.unit_kerja || "-",
+        jenis_jabatan: j.jenis_jabatan || "-",
+        kelas_jabatan: j.kelas_jabatan || "-",
+        kebutuhan_pegawai: j.kebutuhan_pegawai ?? "-",
+        bezetting: j.bezetting ?? "-",
+        pejabat: pejabatNames || "-",
+        tanggal_pensiun: tanggalPensiun || "-",
+        sisa_masa_kerja: sisaMasaKerja || "-",
+      });
+      row.eachCell((cell) => {
+        cell.alignment = { vertical: "middle", wrapText: true };
+        cell.border = {
+          top: { style: "thin" }, left: { style: "thin" },
+          bottom: { style: "thin" }, right: { style: "thin" },
+        };
+        if (idx % 2 === 1) {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0FDFA" } };
+        }
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Jabatan_Akan_Kosong.xlsx";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -197,16 +311,220 @@ const Suksesi = () => {
       {/* Selection Section */}
       <div className="mb-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <label className="block text-md font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            Pilih Jabatan yang Akan Kosong
-          </label>
-          <SearchableSelect
-            value={selectedJabatan}
-            onChange={handleJabatanChange}
-            options={jabatanOptions}
-            placeholder={loading ? "Memuat data..." : "Pilih jabatan..."}
-            label="Pilih Jabatan"
-          />
+          {/* Header row: title + export button */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-md font-semibold text-gray-700 dark:text-gray-300">
+                Pilih Jabatan yang Akan Kosong
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Klik baris jabatan untuk melihat rekomendasi pegawai
+              </p>
+            </div>
+            <IconButton
+              onClick={handleExportExcel}
+              disabled={jabatanKosong.length === 0}
+              variant="primary"
+              size="lg"
+              title="Ekspor Excel"
+            >
+              <i className="fas fa-file-excel text-lg" aria-hidden="true" />
+              <span>Ekspor Excel</span>
+            </IconButton>
+          </div>
+
+          {/* Search input */}
+          <div className="relative mb-4">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <i className="fas fa-search text-gray-400" aria-hidden="true"></i>
+            </div>
+            <input
+              type="text"
+              value={tableSearch}
+              onChange={(e) => { setTableSearch(e.target.value); setCurrentPage(1); }}
+              placeholder="Cari nama jabatan, unit kerja, atau jenis jabatan..."
+              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-600"
+            />
+            {tableSearch && (
+              <button
+                onClick={() => { setTableSearch(""); setCurrentPage(1); }}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <i className="fas fa-times" aria-hidden="true"></i>
+              </button>
+            )}
+          </div>
+
+          {/* Table */}
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500"></div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: PRIMARY_COLORS.teal }}>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider w-8">No</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Nama Jabatan</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Unit Kerja</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Jenis Jabatan</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Kelas</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Kebutuhan</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Bezetting</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Pejabat Saat Ini</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+                  {filteredJabatan.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+                        {tableSearch ? "Tidak ada jabatan yang cocok dengan pencarian." : "Tidak ada data jabatan."}
+                      </td>
+                    </tr>
+                  ) : (
+                    pagedJabatan.map((jabatan, idx) => {
+                      const isSelected = selectedJabatan === jabatan.id;
+                      const rowNum = (currentPage - 1) * PAGE_SIZE + idx + 1;
+                      return (
+                        <tr
+                          key={jabatan.id}
+                          onClick={() => handleJabatanChange(jabatan.id)}
+                          className={`cursor-pointer transition-colors duration-150 ${
+                            isSelected
+                              ? "bg-teal-50 dark:bg-teal-900/30 border-l-4"
+                              : idx % 2 === 0
+                              ? "bg-white dark:bg-gray-800 hover:bg-teal-50/50 dark:hover:bg-teal-900/10"
+                              : "bg-gray-50 dark:bg-gray-750 hover:bg-teal-50/50 dark:hover:bg-teal-900/10"
+                          }`}
+                          style={isSelected ? { borderLeftColor: PRIMARY_COLORS.teal } : {}}
+                        >
+                          <td className="px-4 py-3 text-gray-500 dark:text-gray-400 font-medium">{rowNum}</td>
+                          <td className="px-4 py-3">
+                            <span className={`font-semibold ${
+                              isSelected
+                                ? "dark:text-teal-300"
+                                : "text-gray-800 dark:text-white"
+                            }`} style={isSelected ? { color: PRIMARY_COLORS.teal } : {}}>
+                              {jabatan.nama_jabatan}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{jabatan.unit_kerja || "-"}</td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                              style={{ backgroundColor: BG_COLORS.teal.light, color: TEXT_ON_BG_COLORS.teal }}>
+                              {jabatan.jenis_jabatan?.replace("Jabatan Pimpinan Tinggi", "JPT").replace("Jabatan Fungsional", "JF") || "-"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{jabatan.kelas_jabatan || "-"}</td>
+                          <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{jabatan.kebutuhan_pegawai ?? "-"}</td>
+                          <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{jabatan.bezetting ?? "-"}</td>
+                          <td className="px-4 py-3 text-center">
+                            {jabatan.pejabat && jabatan.pejabat.length > 0 ? (
+                              <div className="text-sm text-gray-700 dark:text-gray-300">
+                                {jabatan.pejabat.map((p, pi) => (
+                                  <div key={pi} className="font-medium">{p.name}</div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+                                style={{ backgroundColor: BG_COLORS.yellow.light, color: TEXT_ON_BG_COLORS.yellow }}>
+                                <i className="fas fa-exclamation-circle" aria-hidden="true"></i>
+                                Kosong
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && filteredJabatan.length > 0 && (
+            <div className="px-3 py-4 bg-gradient-to-r from-white to-white dark:from-gray-800 dark:to-gray-800 border-t border-gray-200 dark:border-gray-700 mt-2 -mx-6 -mb-6 rounded-b-xl">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Pagination buttons */}
+                <div className="flex items-center gap-2">
+                  {/* First page */}
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                  >
+                    <i className="fas fa-angle-double-left w-4 h-4" aria-hidden="true" />
+                  </button>
+
+                  {/* Previous page */}
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                  >
+                    <i className="fas fa-angle-left w-4 h-4" aria-hidden="true" />
+                  </button>
+
+                  {/* Page numbers */}
+                  <div className="hidden sm:flex items-center gap-1">
+                    {getPageNumbers().map((page, index) => (
+                      <button
+                        key={index}
+                        onClick={() => typeof page === "number" && setCurrentPage(page)}
+                        disabled={page === "..."}
+                        className={`min-w-[2.5rem] px-3 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm ${
+                          page === currentPage
+                            ? "bg-gradient-to-r from-teal-500 to-teal-500 text-white shadow-md scale-105 cursor-pointer"
+                            : page === "..."
+                            ? "cursor-default text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none"
+                            : "text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 cursor-pointer"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Next page */}
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                  >
+                    <i className="fas fa-angle-right w-4 h-4" aria-hidden="true" />
+                  </button>
+
+                  {/* Last page */}
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
+                  >
+                    <i className="fas fa-angle-double-right w-4 h-4" aria-hidden="true" />
+                  </button>
+                </div>
+
+                {/* Results info */}
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Menampilkan{" "}
+                  <span className="font-bold text-gray-900 dark:text-gray-100">
+                    {(currentPage - 1) * PAGE_SIZE + 1}
+                  </span>{" "}
+                  sampai{" "}
+                  <span className="font-bold text-gray-900 dark:text-gray-100">
+                    {Math.min(currentPage * PAGE_SIZE, filteredJabatan.length)}
+                  </span>{" "}
+                  dari{" "}
+                  <span className="font-bold text-gray-900 dark:text-gray-100">
+                    {filteredJabatan.length}
+                  </span>{" "}
+                  jabatan
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Selected Jabatan Details */}
           {selectedJabatanData && (
