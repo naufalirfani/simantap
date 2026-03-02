@@ -357,6 +357,7 @@ const Dashboard = () => {
   // Filter states untuk Unit Kerja dan Jenis Jabatan
   const [selectedUnitKerja, setSelectedUnitKerja] = useState([]);
   const [selectedJenisJabatan, setSelectedJenisJabatan] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [unitKerjaList, setUnitKerjaList] = useState([]);
   const [unitTree, setUnitTree] = useState([]);
   const [unitOptions, setUnitOptions] = useState([]);
@@ -373,10 +374,12 @@ const Dashboard = () => {
     async ({
       filter,
       kuadran = null,
-      q = "",
+      q,
       page = 1,
       per_page = 10,
     } = {}) => {
+      // If no explicit q provided, use the current dashboard searchQuery as baseline
+      if (q === undefined) q = searchQuery || "";
       try {
         setEmpLoading(true);
         setEmpEmployees([]);
@@ -525,7 +528,7 @@ const Dashboard = () => {
         setEmpLoading(false);
       }
     },
-    [selectedUnitKerja, selectedJenisJabatan, quadrantData],
+    [selectedUnitKerja, selectedJenisJabatan, quadrantData, searchQuery],
   );
 
   const handleJobTypeClick = async (item) => {
@@ -545,7 +548,7 @@ const Dashboard = () => {
 
     if (filter) {
       // await server load so modal mounts with meta/employees already present
-      loadEmployees({ filter, q: "", page: 1, per_page: 10 });
+      loadEmployees({ filter, q: searchQuery, page: 1, per_page: 10 });
     }
   };
 
@@ -633,6 +636,17 @@ const Dashboard = () => {
     };
   }, []);
 
+  // Auto-refresh modal when searchQuery changes while modal is open
+  useEffect(() => {
+    if (!modalState.isOpen) return;
+    if (empKuadran != null) {
+      loadEmployees({ kuadran: empKuadran, q: searchQuery, page: 1, per_page: 10 });
+    } else if (empFilter) {
+      loadEmployees({ filter: empFilter, q: searchQuery, page: 1, per_page: 10 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
   // Tentukan Kotak secara dinamis berdasarkan konfigurasi
   const computeQuadrant = (potensial, kinerja) => {
     return computeQuadrantDynamic(potensial, kinerja);
@@ -710,6 +724,13 @@ const Dashboard = () => {
       return false;
     }
 
+    // Filter by search query (name or NIP)
+    if (searchQuery && searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const hay = `${item.name || ""} ${item.nip || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+
     return true;
   });
 
@@ -736,7 +757,7 @@ const Dashboard = () => {
     setEmpMeta(null);
     // use empKuadran for frontend pagination/search
     setEmpKuadran(quadrantNumber);
-    loadEmployees({ kuadran: quadrantNumber, q: "", page: 1, per_page: 10 });
+    loadEmployees({ kuadran: quadrantNumber, q: searchQuery, page: 1, per_page: 10 });
   };
 
   const handleCloseModal = () => {
@@ -757,7 +778,7 @@ const Dashboard = () => {
 
   const GENDER_COLORS = [PRIMARY_COLORS.blue, "#EC4899"];
   // Warna titik yang kontras dengan warna area; menyesuaikan dark mode
-  const POINT_COLOR = isDark ? "#F3F4F6" : PRIMARY_COLORS.teal;
+  const POINT_COLOR = isDark ? "#F3F4F6" : PRIMARY_COLORS.blue;
 
   const chartRef = useRef(null);
 
@@ -1188,7 +1209,7 @@ const Dashboard = () => {
                     </span>
                     <span
                       className="font-semibold"
-                      style={{ color: POINT_COLOR }}
+                      style={{ color: PRIMARY_COLORS.teal }}
                     >
                       {item.count}
                     </span>
@@ -1218,6 +1239,34 @@ const Dashboard = () => {
             Filter Data
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Search Nama / NIP */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Cari Nama / NIP
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <i className="fas fa-search text-gray-400" aria-hidden="true"></i>
+                </span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari berdasarkan nama atau NIP..."
+                  className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-400 text-sm"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    aria-label="Hapus pencarian"
+                  >
+                    <i className="fas fa-times" aria-hidden="true"></i>
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Filter Unit Kerja */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1257,13 +1306,14 @@ const Dashboard = () => {
           </div>
 
           {/* Reset Filter Button */}
-          {(selectedUnitKerja.length > 0 || selectedJenisJabatan.length > 0) && (
+          {(selectedUnitKerja.length > 0 || selectedJenisJabatan.length > 0 || searchQuery) && (
             <div className="mt-4">
               <IconButton
                 title="Reset Filter"
                 onClick={() => {
                   setSelectedUnitKerja([]);
                   setSelectedJenisJabatan([]);
+                  setSearchQuery("");
                 }}
                 variant="default"
                 size="lg"
