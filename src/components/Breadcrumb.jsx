@@ -60,6 +60,10 @@ const generateBreadcrumbItems = (pathname, t) => {
       "detail": "Detail Pegawai",
       "suksesi": "Suksesi",
       "pengembangan": "Pengembangan",
+      "indeks-kesenjangan": "Indeks Kesenjangan Kompetensi",
+      "rencana": "Rencana",
+      "pelaksanaan": "Pelaksanaan",
+      "evaluasi": "Evaluasi",
       "masterdata": "Masterdata",
       "unit-kerja": "Unit Kerja",
       "jabatan": "Jabatan",
@@ -77,7 +81,11 @@ const generateBreadcrumbItems = (pathname, t) => {
       "daftar-talenta": "fas fa-users",
       "detail": "fas fa-user",
       "suksesi": "fas fa-arrow-trend-up",
-      "pengembangan": "fas fa-chart-line",
+      "pengembangan": "fas fa-graduation-cap",
+      "indeks-kesenjangan": "fas fa-chart-bar",
+      "rencana": "fas fa-calendar-alt",
+      "pelaksanaan": "fas fa-tasks",
+      "evaluasi": "fas fa-clipboard-check",
       "masterdata": "fas fa-database",
       "unit-kerja": "fas fa-building",
       "jabatan": "fas fa-briefcase",
@@ -101,7 +109,7 @@ const generateBreadcrumbItems = (pathname, t) => {
       }
       
       // Paths that are parent/category only (not clickable destinations)
-      const nonClickablePaths = ['masterdata'];
+      const nonClickablePaths = ['masterdata', 'pengembangan'];
       const isClickable = !nonClickablePaths.includes(path);
       
       items.push({

@@ -1029,7 +1029,7 @@ const Dashboard = () => {
       {/* Statistik Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
         {/* Total Pegawai */}
-        <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
+        <div className="bg-gradient-to-br from-[#4095e6] to-[#3085d6] rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-md opacity-90 font-medium">Total Pegawai</p>
@@ -1042,13 +1042,13 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-users text-4xl text-slate-800"></i>
+              <i className="fas fa-users text-4xl text-[#3085d6]"></i>
             </div>
           </div>
         </div>
 
         {/* Struktural */}
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
+        <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-md opacity-90 font-medium">Struktural</p>
@@ -1063,13 +1063,13 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-building text-4xl text-indigo-700"></i>
+              <i className="fas fa-building text-4xl text-teal-500"></i>
             </div>
           </div>
         </div>
 
         {/* Fungsional */}
-        <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-md opacity-90 font-medium">Fungsional</p>
@@ -1084,13 +1084,13 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-award text-4xl text-emerald-700"></i>
+              <i className="fas fa-award text-4xl text-amber-500"></i>
             </div>
           </div>
         </div>
 
         {/* Pelaksana */}
-        <div className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
+        <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-lg shadow-lg p-6 text-white transform transition hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-md opacity-90 font-medium">Pelaksana</p>
@@ -1105,7 +1105,7 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <i className="fas fa-user-circle text-4xl text-amber-700"></i>
+              <i className="fas fa-user-circle text-4xl text-rose-500"></i>
             </div>
           </div>
         </div>

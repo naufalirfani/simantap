@@ -8,6 +8,9 @@ import DaftarTalenta from './pages/DaftarTalenta';
 import DetailPegawai from './pages/DetailPegawai';
 import Suksesi from './pages/Suksesi';
 import Pengembangan from './pages/Pengembangan';
+import Rencana from './pages/pengembangan/Rencana';
+import Pelaksanaan from './pages/pengembangan/Pelaksanaan';
+import Evaluasi from './pages/pengembangan/Evaluasi';
 import UnitKerja from './pages/masterdata/UnitKerja';
 import Jabatan from './pages/masterdata/Jabatan';
 import Pegawai from './pages/masterdata/Pegawai';
@@ -53,7 +56,11 @@ const RoleBasedRoutes = () => {
                         <Route path="/daftar-talenta/detail/:nip" element={<DetailPegawai />} />
                         <Route path="/suksesi" element={<Suksesi />} />
                         <Route path="/suksesi/detail/:nip" element={<DetailPegawai />} />
-                        <Route path="/pengembangan" element={<Pengembangan />} />
+                        <Route path="/pengembangan" element={<Navigate to="/pengembangan/indeks-kesenjangan" replace />} />
+                        <Route path="/pengembangan/indeks-kesenjangan" element={<Pengembangan />} />
+                        <Route path="/pengembangan/rencana" element={<Rencana />} />
+                        <Route path="/pengembangan/pelaksanaan" element={<Pelaksanaan />} />
+                        <Route path="/pengembangan/evaluasi" element={<Evaluasi />} />
                         <Route path="/masterdata/unit-kerja" element={<UnitKerja />} />
                         <Route path="/masterdata/jabatan" element={<Jabatan />} />
                         <Route path="/masterdata/pegawai" element={<Pegawai />} />

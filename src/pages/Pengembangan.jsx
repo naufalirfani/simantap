@@ -60,8 +60,8 @@ const Pengembangan = () => {
   const [standarKompetensi, setStandarKompetensi] = useState([]);
 
   useEffect(() => {
-    document.title = `${t("pengembangan")} | SIMANTAP`;
-  }, [t]);
+    document.title = `Indeks Kesenjangan Kompetensi | SIMANTAP`;
+  }, []);
 
   // Fetch unique values for filters from ANJAB API
   const loadFilterOptions = async () => {
@@ -195,32 +195,45 @@ const Pengembangan = () => {
   // Helper function to get standar for a specific subindikator and jenis jabatan
   const getStandarForSubIndikator = (subIndikatorId, pegawai = null) => {
     if (!pegawai) {
-      // If no pegawai data, return default
       return 5;
     }
-    
-    // Try to find standar matching both subindikator and jenis_jabatan
+
+    // Normalise to string for safe comparison (avoids number vs string mismatch)
+    const subIdStr = String(subIndikatorId);
+
     const jenisJabatanId = pegawai.jenis_jabatan_id;
-    const jenisJabatanName = pegawai.jenis_jabatan?.name || pegawai.jenis_jabatan_name || pegawai.jenis_jabatan;
-    
-    const standar = standarKompetensi.find((s) => {
-      const matchSubindikator = s.subindikator_id === subIndikatorId;
-      
-      // Match by jenis_jabatan_id first (more accurate)
-      if (jenisJabatanId && s.jenis_jabatan_id) {
-        return matchSubindikator && s.jenis_jabatan_id === jenisJabatanId;
-      }
-      
-      // Fallback: match by jenis_jabatan name
-      if (jenisJabatanName && s.jenis_jabatan?.name) {
-        return matchSubindikator && s.jenis_jabatan.name === jenisJabatanName;
-      }
-      
-      // Last resort: just match subindikator
-      return matchSubindikator;
-    });
-    
-    return standar?.standar || 5; // Default to 5 if not found
+    const jenisJabatanName =
+      pegawai.jenis_jabatan?.name ||
+      pegawai.jenis_jabatan_name ||
+      (typeof pegawai.jenis_jabatan === "string" ? pegawai.jenis_jabatan : null);
+
+    // Try exact match by jenis_jabatan_id first
+    if (jenisJabatanId != null) {
+      const byId = standarKompetensi.find(
+        (s) =>
+          String(s.subindikator_id) === subIdStr &&
+          s.jenis_jabatan_id != null &&
+          String(s.jenis_jabatan_id) === String(jenisJabatanId)
+      );
+      if (byId) return byId.standar;
+    }
+
+    // Fallback: match by jenis_jabatan name
+    if (jenisJabatanName) {
+      const byName = standarKompetensi.find(
+        (s) =>
+          String(s.subindikator_id) === subIdStr &&
+          (s.jenis_jabatan?.name === jenisJabatanName ||
+            s.jenis_jabatan_name === jenisJabatanName)
+      );
+      if (byName) return byName.standar;
+    }
+
+    // Last resort: first standar entry for this subindikator (any jabatan)
+    const any = standarKompetensi.find(
+      (s) => String(s.subindikator_id) === subIdStr
+    );
+    return any?.standar ?? 5;
   };
 
   // Helper function to categorize kompetensi
@@ -595,11 +608,7 @@ const Pengembangan = () => {
         const nilai = getNilaiEmp(emp, sub.id);
         if (nilai === null || nilai === undefined)
           return <span className="text-gray-400 text-sm">-</span>;
-        const standar = getStandarForSubIndikator(sub.id, {
-          jenis_jabatan_id: emp.jenis_jabatan_id,
-          jenis_jabatan: emp.jenis_jabatan,
-          jenis_jabatan_name: emp.jenis_jabatan_name,
-        });
+        const standar = getStandarForSubIndikator(sub.id, emp);
         const isMeet = parseFloat(nilai) >= standar;
         return (
           <span
@@ -626,7 +635,7 @@ const Pengembangan = () => {
           cat === "Tinggi"
             ? "bg-teal-500"
             : cat === "Sedang"
-            ? "bg-blue-500"
+            ? "bg-[#3085d6]"
             : "bg-red-500";
         return (
           <span
@@ -639,10 +648,10 @@ const Pengembangan = () => {
       },
     }));
 
-    return [...kompCols, ...potCols];
+    return { all: [...kompCols, ...potCols], kompetensi: kompCols, potensi: potCols };
   };
 
-  const extraColumns = buildExtraColumns();
+  const { all: extraColumns, kompetensi: extraColumnsKompetensi, potensi: extraColumnsPotensi } = buildExtraColumns();
 
   // Lookup: subId → single column (for breakdown drill-down)
   const extraColsBySubId = (() => {
@@ -659,11 +668,7 @@ const Pengembangan = () => {
           const nilai = getNilaiEmp(emp, sub.id);
           if (nilai === null || nilai === undefined)
             return <span className="text-gray-400 text-sm">-</span>;
-          const standar = getStandarForSubIndikator(sub.id, {
-            jenis_jabatan_id: emp.jenis_jabatan_id,
-            jenis_jabatan: emp.jenis_jabatan,
-            jenis_jabatan_name: emp.jenis_jabatan_name,
-          });
+          const standar = getStandarForSubIndikator(sub.id, emp);
           const isMeet = parseFloat(nilai) >= standar;
           return (
             <span
@@ -685,7 +690,7 @@ const Pengembangan = () => {
             return <span className="text-gray-400 text-sm">-</span>;
           const fv = parseFloat(nilai);
           const cat = fv >= 4 ? "Tinggi" : fv >= 2 ? "Sedang" : "Rendah";
-          const bg = cat === "Tinggi" ? "bg-teal-500" : cat === "Sedang" ? "bg-blue-500" : "bg-red-500";
+          const bg = cat === "Tinggi" ? "bg-teal-500" : cat === "Sedang" ? "bg-[#3085d6]" : "bg-red-500";
           return (
             <span
               className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-sm font-semibold text-white ${bg}`}
@@ -704,21 +709,21 @@ const Pengembangan = () => {
   const StatCard = ({ icon, label, value, sub, colorClass, onClick }) => (
     <button
       onClick={onClick}
-      className={`group relative w-full text-left bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${onClick ? "cursor-pointer" : "cursor-default"}`}
+      className={`group flex items-center gap-3 w-full text-left bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-4 py-3 transition-all duration-200 ${
+        onClick ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5" : "cursor-default"
+      }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center ${colorClass}`}>
-          <i className={`${icon} text-lg`}></i>
-        </div>
-        {onClick && (
-          <span className="text-sm text-gray-400 dark:text-gray-500 group-hover:text-teal-500 dark:group-hover:text-teal-400 transition-colors mt-1">
-            <i className="fas fa-external-link-alt"></i>
-          </span>
-        )}
+      <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${colorClass}`}>
+        <i className={`${icon} text-base`}></i>
       </div>
-      <p className="mt-3 text-2xl font-bold text-gray-800 dark:text-white">{value}</p>
-      <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mt-0.5">{label}</p>
-      {sub && <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{sub}</p>}
+      <div className="min-w-0 flex-1">
+        <p className="text-xl font-bold text-gray-800 dark:text-white leading-tight">{value}</p>
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">{label}</p>
+        {sub && <p className="text-xs text-gray-400 dark:text-gray-500">{sub}</p>}
+      </div>
+      {onClick && (
+        <i className="fas fa-external-link-alt text-xs text-gray-300 dark:text-gray-600 group-hover:text-teal-500 dark:group-hover:text-teal-400 transition-colors flex-shrink-0"></i>
+      )}
     </button>
   );
 
@@ -827,8 +832,8 @@ const Pengembangan = () => {
             onClick={() => openEmpModal("Semua Pegawai", [...analytics.kategoriKompetensi.memenuhiStandar.employees, ...analytics.kategoriKompetensi.diBawahStandar.employees, ...analytics.belumDinilai.employees], "teal")} />
           <StatCard icon="fas fa-clipboard-check" label="Sudah Dinilai" value={analytics.sudahDinilai.count}
             sub={`${analytics.totalPegawai > 0 ? Math.round((analytics.sudahDinilai.count / analytics.totalPegawai) * 100) : 0}% dari total`}
-            colorClass="bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
-            onClick={() => openEmpModal("Pegawai Sudah Dinilai", analytics.sudahDinilai.employees, "blue")} />
+            colorClass="bg-blue-50 dark:bg-blue-900/40 text-[#3085d6] dark:text-blue-400"
+            onClick={() => openEmpModal("Pegawai Sudah Dinilai", analytics.sudahDinilai.employees, "#3085d6")} />
           <StatCard icon="fas fa-chart-line" label="Rata-Rata Kompetensi" value={analytics.rataRataKompetensi} sub="Skala 1–5"
             colorClass="bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400" />
           <StatCard icon="fas fa-star" label="Rata-Rata Potensi" value={analytics.rataRataPotensi} sub="Skala 1–5"
@@ -863,10 +868,10 @@ const Pengembangan = () => {
             <div className="space-y-4">
               <DistBar label="Memenuhi Standar" count={analytics.kategoriKompetensi.memenuhiStandar.count} total={totalKomp}
                 colorBg="bg-teal-500" colorText="text-teal-600 dark:text-teal-400"
-                onClick={() => openEmpModal("Memenuhi Standar Kompetensi", analytics.kategoriKompetensi.memenuhiStandar.employees, "teal")} />
+                onClick={() => openEmpModal("Memenuhi Standar Kompetensi", analytics.kategoriKompetensi.memenuhiStandar.employees, "teal", extraColumnsKompetensi)} />
               <DistBar label="Di Bawah Standar" count={analytics.kategoriKompetensi.diBawahStandar.count} total={totalKomp}
                 colorBg="bg-red-500" colorText="text-red-600 dark:text-red-400"
-                onClick={() => openEmpModal("Di Bawah Standar Kompetensi", analytics.kategoriKompetensi.diBawahStandar.employees, "#e74c3c")} />
+                onClick={() => openEmpModal("Di Bawah Standar Kompetensi", analytics.kategoriKompetensi.diBawahStandar.employees, "#e74c3c", extraColumnsKompetensi)} />
               <div className="pt-2 border-t border-gray-100 dark:border-gray-700 flex gap-4">
                 <div className="text-center flex-1">
                   <p className="text-xl font-bold text-teal-600 dark:text-teal-400">{analytics.kategoriKompetensi.memenuhiStandar.count}</p>
@@ -890,17 +895,17 @@ const Pengembangan = () => {
             <div className="space-y-4">
               <DistBar label="Potensi Tinggi (≥ 4)" count={analytics.kategoriPotensi.tinggi.count} total={totalPot}
                 colorBg="bg-teal-500" colorText="text-teal-600 dark:text-teal-400"
-                onClick={() => openEmpModal("Potensi Tinggi", analytics.kategoriPotensi.tinggi.employees, "teal")} />
+                onClick={() => openEmpModal("Potensi Tinggi", analytics.kategoriPotensi.tinggi.employees, "teal", extraColumnsPotensi)} />
               <DistBar label="Potensi Sedang (2 – 3.99)" count={analytics.kategoriPotensi.sedang.count} total={totalPot}
-                colorBg="bg-blue-500" colorText="text-blue-600 dark:text-blue-400"
-                onClick={() => openEmpModal("Potensi Sedang", analytics.kategoriPotensi.sedang.employees, "#3085d6")} />
+                colorBg="bg-[#3085d6]" colorText="text-[#3085d6] dark:text-blue-400"
+                onClick={() => openEmpModal("Potensi Sedang", analytics.kategoriPotensi.sedang.employees, "#3085d6", extraColumnsPotensi)} />
               <DistBar label="Potensi Rendah (< 2)" count={analytics.kategoriPotensi.rendah.count} total={totalPot}
                 colorBg="bg-red-500" colorText="text-red-600 dark:text-red-400"
-                onClick={() => openEmpModal("Potensi Rendah", analytics.kategoriPotensi.rendah.employees, "#e74c3c")} />
+                onClick={() => openEmpModal("Potensi Rendah", analytics.kategoriPotensi.rendah.employees, "#e74c3c", extraColumnsPotensi)} />
               <div className="pt-2 border-t border-gray-100 dark:border-gray-700 flex gap-3">
                 {[
                   { label: "Tinggi", count: analytics.kategoriPotensi.tinggi.count, color: "text-teal-600 dark:text-teal-400" },
-                  { label: "Sedang", count: analytics.kategoriPotensi.sedang.count, color: "text-blue-600 dark:text-blue-400" },
+                  { label: "Sedang", count: analytics.kategoriPotensi.sedang.count, color: "text-[#3085d6] dark:text-blue-400" },
                   { label: "Rendah", count: analytics.kategoriPotensi.rendah.count, color: "text-red-600 dark:text-red-400" },
                 ].map((i) => (
                   <div key={i.label} className="text-center flex-1">
@@ -972,15 +977,15 @@ const Pengembangan = () => {
                     <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">{data.label}</p>
                     <div className="flex gap-1 h-6 w-full rounded-lg overflow-hidden">
                       {data.tinggi.count > 0 && <button onClick={() => openEmpModal(`${data.label} — Tinggi`, data.tinggi.employees, "teal", [extraColsBySubId[`p_${id}`]])} className="cursor-pointer bg-teal-500 hover:bg-teal-600 transition-colors flex items-center justify-center text-white text-sm font-semibold" style={{ width: `${pctT}%` }} title={`Tinggi: ${data.tinggi.count}`}>{pctT > 10 ? `${pctT}%` : ""}</button>}
-                      {data.sedang.count > 0 && <button onClick={() => openEmpModal(`${data.label} — Sedang`, data.sedang.employees, "#3085d6", [extraColsBySubId[`p_${id}`]])} className="cursor-pointer bg-blue-500 hover:bg-blue-600 transition-colors flex items-center justify-center text-white text-sm font-semibold" style={{ width: `${pctS}%` }} title={`Sedang: ${data.sedang.count}`}>{pctS > 10 ? `${pctS}%` : ""}</button>}
+                      {data.sedang.count > 0 && <button onClick={() => openEmpModal(`${data.label} — Sedang`, data.sedang.employees, "#3085d6", [extraColsBySubId[`p_${id}`]])} className="cursor-pointer bg-[#3085d6] hover:bg-[#2075c6] transition-colors flex items-center justify-center text-white text-sm font-semibold" style={{ width: `${pctS}%` }} title={`Sedang: ${data.sedang.count}`}>{pctS > 10 ? `${pctS}%` : ""}</button>}
                       {data.rendah.count > 0 && <button onClick={() => openEmpModal(`${data.label} — Rendah`, data.rendah.employees, "#e74c3c", [extraColsBySubId[`p_${id}`]])} className="cursor-pointer bg-red-500 hover:bg-red-600 transition-colors flex items-center justify-center text-white text-sm font-semibold" style={{ width: `${pctR}%` }} title={`Rendah: ${data.rendah.count}`}>{pctR > 10 ? `${pctR}%` : ""}</button>}
                     </div>
                     <div className="flex gap-4 mt-1.5">
                       <button onClick={() => openEmpModal(`${data.label} — Tinggi`, data.tinggi.employees, "teal", [extraColsBySubId[`p_${id}`]])} className="cursor-pointer flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
                         <span className="w-2 h-2 rounded-full bg-teal-500 inline-block"></span> Tinggi: {data.tinggi.count}
                       </button>
-                      <button onClick={() => openEmpModal(`${data.label} — Sedang`, data.sedang.employees, "#3085d6", [extraColsBySubId[`p_${id}`]])} className="cursor-pointer flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 inline-block"></span> Sedang: {data.sedang.count}
+                      <button onClick={() => openEmpModal(`${data.label} — Sedang`, data.sedang.employees, "#3085d6", [extraColsBySubId[`p_${id}`]])} className="cursor-pointer flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-[#3085d6] dark:hover:text-blue-400 transition-colors">
+                        <span className="w-2 h-2 rounded-full bg-[#3085d6] inline-block"></span> Sedang: {data.sedang.count}
                       </button>
                       <button onClick={() => openEmpModal(`${data.label} — Rendah`, data.rendah.employees, "#e74c3c", [extraColsBySubId[`p_${id}`]])} className="cursor-pointer flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
                         <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span> Rendah: {data.rendah.count}
@@ -1007,7 +1012,7 @@ const Pengembangan = () => {
       {/* Page Title */}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
-          Pengembangan
+          Indeks Kesenjangan Kompetensi
         </h1>
         <p className="mt-2 text-md md:text-base text-gray-600 dark:text-gray-300">
           Analisis dan penilaian kompetensi manajerial, sosial kultural, serta

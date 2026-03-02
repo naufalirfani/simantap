@@ -8,6 +8,7 @@ const Sidebar = () => {
   const { sidebarExpanded, setSidebarExpanded, t } = useSettings();
   const { user, logout } = useAuth();
   const [masterdataOpen, setMasterdataOpen] = useState(false);
+  const [pengembanganOpen, setPengembanganOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const navRef = useRef(null);
@@ -40,6 +41,7 @@ const Sidebar = () => {
     // Auto-open masterdata dropdown when current route is a child of /masterdata
     if (location && location.pathname) {
       setMasterdataOpen(location.pathname.startsWith("/masterdata"));
+      setPengembanganOpen(location.pathname.startsWith("/pengembangan"));
       // Clear pending path when location actually changes
       setPendingPath(null);
     }
@@ -67,7 +69,7 @@ const Sidebar = () => {
       else window.removeEventListener("resize", check);
       mo.disconnect();
     };
-  }, [sidebarExpanded, isMobile, masterdataOpen]);
+  }, [sidebarExpanded, isMobile, masterdataOpen, pengembanganOpen]);
 
   const menuItems = [
     { path: "/", label: t("dashboard"), icon: "fas fa-chart-line" },
@@ -81,11 +83,37 @@ const Sidebar = () => {
       path: "/pengembangan",
       label: t("pengembangan"),
       icon: "fas fa-graduation-cap",
+      isOpen: pengembanganOpen,
+      toggleOpen: () => setPengembanganOpen((v) => !v),
+      children: [
+        {
+          path: "/pengembangan/indeks-kesenjangan",
+          label: "Indeks Kesenjangan Kompetensi",
+          icon: "fas fa-chart-bar",
+        },
+        {
+          path: "/pengembangan/rencana",
+          label: "Rencana",
+          icon: "fas fa-calendar-alt",
+        },
+        {
+          path: "/pengembangan/pelaksanaan",
+          label: "Pelaksanaan",
+          icon: "fas fa-tasks",
+        },
+        {
+          path: "/pengembangan/evaluasi",
+          label: "Evaluasi",
+          icon: "fas fa-clipboard-check",
+        },
+      ],
     },
     {
       path: "/masterdata",
       label: t("masterdata"),
       icon: "fas fa-database",
+      isOpen: masterdataOpen,
+      toggleOpen: () => setMasterdataOpen((v) => !v),
       children: [
         {
           path: "/masterdata/unit-kerja",
@@ -311,7 +339,7 @@ const Sidebar = () => {
                     {sidebarExpanded ? (
                       <>
                         <button
-                          onClick={() => setMasterdataOpen(!masterdataOpen)}
+                          onClick={() => item.toggleOpen()}
                           className="w-full flex items-center cursor-pointer px-4 py-3 hover:bg-teal-500 hover:text-white group rounded-lg text-gray-700"
                         >
                           <i
@@ -322,13 +350,13 @@ const Sidebar = () => {
                           </span>
                           <i
                             className={`fas fa-chevron-right text-teal-500 group-hover:text-white transition-all duration-300 ${
-                              masterdataOpen ? "rotate-90" : ""
+                              item.isOpen ? "rotate-90" : ""
                             }`}
                           ></i>
                         </button>
                         <div
                           className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                            masterdataOpen
+                            item.isOpen
                               ? "max-h-96 opacity-100"
                               : "max-h-0 opacity-0"
                           }`}
@@ -368,10 +396,10 @@ const Sidebar = () => {
                       // Minimized sidebar - show icons vertically below parent
                       <div className="relative">
                         <button
-                          onClick={() => setMasterdataOpen(!masterdataOpen)}
+                          onClick={() => item.toggleOpen()}
                           title={item.label}
                           className={`masterdata-button w-full flex items-center cursor-pointer px-4 py-3 justify-center hover:bg-teal-500 hover:text-white transition-all duration-200 rounded-lg relative group/tooltip text-gray-700 ${
-                            masterdataOpen ? "bg-gray-100" : ""
+                            item.isOpen ? "bg-gray-100" : ""
                           }`}
                         >
                           <i
@@ -385,7 +413,7 @@ const Sidebar = () => {
                         {/* Child icons vertically below parent */}
                         <div
                           className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                            masterdataOpen
+                            item.isOpen
                               ? "max-h-96 opacity-100"
                               : "max-h-0 opacity-0"
                           }`}
@@ -402,7 +430,7 @@ const Sidebar = () => {
                                   key={child.path}
                                   to={child.path}
                                   onClick={() => {
-                                    setMasterdataOpen(false);
+                                    if (item.isOpen) item.toggleOpen();
                                     setPendingPath(child.path);
                                   }}
                                   title={child.label}
