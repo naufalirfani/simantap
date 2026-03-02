@@ -334,7 +334,7 @@ const Pengembangan = () => {
     if (percentage >= 75) return "text-[#3085d6] dark:text-blue-400 font-semibold";
     if (percentage >= 60) return "text-yellow-500 dark:text-yellow-400 font-semibold";
     if (percentage >= 50) return "text-orange-500 dark:text-orange-400";
-    return "text-red-600 dark:text-red-400";
+    return "text-red-500 dark:text-red-400";
   };
 
   // Build columns dynamically
@@ -828,7 +828,7 @@ const Pengembangan = () => {
         </div>
         {/* ── Row 1: Summary cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon="fas fa-users" label="Total Pegawai" value={analytics.totalPegawai} colorClass="bg-teal-50 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400"
+          <StatCard icon="fas fa-users" label="Total Pegawai" value={analytics.totalPegawai} colorClass="bg-teal-50 dark:bg-teal-900/40 text-teal-500 dark:text-teal-400"
             onClick={() => openEmpModal("Semua Pegawai", [...analytics.kategoriKompetensi.memenuhiStandar.employees, ...analytics.kategoriKompetensi.diBawahStandar.employees, ...analytics.belumDinilai.employees], "teal")} />
           <StatCard icon="fas fa-clipboard-check" label="Sudah Dinilai" value={analytics.sudahDinilai.count}
             sub={`${analytics.totalPegawai > 0 ? Math.round((analytics.sudahDinilai.count / analytics.totalPegawai) * 100) : 0}% dari total`}
@@ -867,19 +867,19 @@ const Pengembangan = () => {
           <SectionCard title="Distribusi Kompetensi Manajerial dan Sosial Kultural" icon="fas fa-clipboard-check">
             <div className="space-y-4">
               <DistBar label="Memenuhi Standar" count={analytics.kategoriKompetensi.memenuhiStandar.count} total={totalKomp}
-                colorBg="bg-teal-500" colorText="text-teal-600 dark:text-teal-400"
+                colorBg="bg-teal-500" colorText="text-teal-500 dark:text-teal-400"
                 onClick={() => openEmpModal("Memenuhi Standar Kompetensi", analytics.kategoriKompetensi.memenuhiStandar.employees, "teal", extraColumnsKompetensi)} />
               <DistBar label="Di Bawah Standar" count={analytics.kategoriKompetensi.diBawahStandar.count} total={totalKomp}
-                colorBg="bg-red-500" colorText="text-red-600 dark:text-red-400"
+                colorBg="bg-red-500" colorText="text-red-500 dark:text-red-400"
                 onClick={() => openEmpModal("Di Bawah Standar Kompetensi", analytics.kategoriKompetensi.diBawahStandar.employees, "#e74c3c", extraColumnsKompetensi)} />
               <div className="pt-2 border-t border-gray-100 dark:border-gray-700 flex gap-4">
                 <div className="text-center flex-1">
-                  <p className="text-xl font-bold text-teal-600 dark:text-teal-400">{analytics.kategoriKompetensi.memenuhiStandar.count}</p>
+                  <p className="text-xl font-bold text-teal-500 dark:text-teal-400">{analytics.kategoriKompetensi.memenuhiStandar.count}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Memenuhi</p>
                 </div>
                 <div className="w-px bg-gray-100 dark:bg-gray-700"></div>
                 <div className="text-center flex-1">
-                  <p className="text-xl font-bold text-red-600 dark:text-red-400">{analytics.kategoriKompetensi.diBawahStandar.count}</p>
+                  <p className="text-xl font-bold text-red-500 dark:text-red-400">{analytics.kategoriKompetensi.diBawahStandar.count}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Di Bawah Standar</p>
                 </div>
                 <div className="w-px bg-gray-100 dark:bg-gray-700"></div>
@@ -894,19 +894,19 @@ const Pengembangan = () => {
           <SectionCard title="Distribusi Potensi Talenta" icon="fas fa-star">
             <div className="space-y-4">
               <DistBar label="Potensi Tinggi (≥ 4)" count={analytics.kategoriPotensi.tinggi.count} total={totalPot}
-                colorBg="bg-teal-500" colorText="text-teal-600 dark:text-teal-400"
+                colorBg="bg-teal-500" colorText="text-teal-500 dark:text-teal-400"
                 onClick={() => openEmpModal("Potensi Tinggi", analytics.kategoriPotensi.tinggi.employees, "teal", extraColumnsPotensi)} />
               <DistBar label="Potensi Sedang (2 – 3.99)" count={analytics.kategoriPotensi.sedang.count} total={totalPot}
                 colorBg="bg-[#3085d6]" colorText="text-[#3085d6] dark:text-blue-400"
                 onClick={() => openEmpModal("Potensi Sedang", analytics.kategoriPotensi.sedang.employees, "#3085d6", extraColumnsPotensi)} />
               <DistBar label="Potensi Rendah (< 2)" count={analytics.kategoriPotensi.rendah.count} total={totalPot}
-                colorBg="bg-red-500" colorText="text-red-600 dark:text-red-400"
+                colorBg="bg-red-500" colorText="text-red-500 dark:text-red-400"
                 onClick={() => openEmpModal("Potensi Rendah", analytics.kategoriPotensi.rendah.employees, "#e74c3c", extraColumnsPotensi)} />
               <div className="pt-2 border-t border-gray-100 dark:border-gray-700 flex gap-3">
                 {[
-                  { label: "Tinggi", count: analytics.kategoriPotensi.tinggi.count, color: "text-teal-600 dark:text-teal-400" },
+                  { label: "Tinggi", count: analytics.kategoriPotensi.tinggi.count, color: "text-teal-500 dark:text-teal-400" },
                   { label: "Sedang", count: analytics.kategoriPotensi.sedang.count, color: "text-[#3085d6] dark:text-blue-400" },
-                  { label: "Rendah", count: analytics.kategoriPotensi.rendah.count, color: "text-red-600 dark:text-red-400" },
+                  { label: "Rendah", count: analytics.kategoriPotensi.rendah.count, color: "text-red-500 dark:text-red-400" },
                 ].map((i) => (
                   <div key={i.label} className="text-center flex-1">
                     <p className={`text-xl font-bold ${i.color}`}>{i.count}</p>
