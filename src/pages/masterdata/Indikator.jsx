@@ -44,6 +44,7 @@ const Indikator = () => {
     subindikator: "",
     bobot: "",
     isactive: true,
+    auto_sync: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [submittingSub, setSubmittingSub] = useState(false);
@@ -364,12 +365,14 @@ const Indikator = () => {
         subindikator: subIndikator.subindikator,
         bobot: subIndikator.bobot,
         isactive: subIndikator.isactive,
+        auto_sync: subIndikator.auto_sync || false,
       });
     } else {
       setSubFormData({
         subindikator: "",
         bobot: "",
         isactive: true,
+        auto_sync: false,
       });
     }
 
@@ -383,6 +386,7 @@ const Indikator = () => {
       subindikator: "",
       bobot: "",
       isactive: true,
+      auto_sync: false,
     });
   };
 
@@ -1629,9 +1633,12 @@ const Indikator = () => {
                                 Instrumen
                               </th>
                               <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-30">
+                                Input Data
+                              </th>
+                              <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-30">
                                 Status
                               </th>
-                              <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider"></th>
+                              <th className="px-3 py-2 text-center text-md font-semibold text-gray-500 dark:text-gray-300 tracking-wider w-30"></th>
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -1682,6 +1689,18 @@ const Indikator = () => {
                                       return count > 0 ? `${count} Instrumen` : "Belum ada";
                                     })()}
                                   </span>
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-sm w-20 text-center">
+                                  {sub.auto_sync ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium bg-purple-50 border border-purple-400 dark:bg-purple-900/30 dark:border-purple-700 text-purple-700 dark:text-purple-300">
+                                      <i className="fas fa-sync-alt text-xs" />
+                                      Otomatis
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-50 border border-gray-300 dark:bg-gray-800 dark:border-gray-600 text-gray-500 dark:text-gray-400">
+                                      Manual
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="px-3 py-2 whitespace-nowrap text-sm w-20 text-center">
                                   <span

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-const SearchableSelect = ({ value, onChange, options, placeholder, label, multiple = false }) => {
+const SearchableSelect = ({ value, onChange, options, placeholder, label, multiple = false, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -162,8 +162,9 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label, multip
     <div ref={dropdownRef} className="relative">
       {/* Input trigger */}
       <div
-        className="relative cursor-pointer"
+        className={`relative ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         onClick={() => {
+          if (disabled) return;
           setIsOpen(!isOpen);
           if (!isOpen) {
             setTimeout(() => inputRef.current?.focus(), 0);
@@ -174,26 +175,35 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label, multip
           ref={inputRef}
           type="text"
           value={isOpen ? searchTerm : displayValue}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(e) => { if (!disabled) setSearchTerm(e.target.value); }}
+          onKeyDown={disabled ? undefined : handleKeyDown}
           placeholder={placeholder}
-          className="w-full px-3 pr-20 py-2.5 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 dark:text-white cursor-pointer"
-          readOnly={!isOpen}
+          className={`w-full px-3 pr-20 py-2.5 border rounded-lg text-sm dark:text-white ${
+            disabled
+              ? 'bg-gray-100 dark:bg-gray-600 border-gray-200 dark:border-gray-600 cursor-not-allowed text-gray-500'
+              : 'bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-teal-500 cursor-pointer'
+          }`}
+          readOnly
+          disabled={disabled}
         />
-        <div className="absolute right-2 top-2 flex items-center gap-1">
-          {hasValue && (
+        <div className={`absolute right-3 ${hasValue && !disabled ? 'top-1.5' : 'top-3.5'} flex items-center gap-1`}>
+          {hasValue && !disabled && (
             <button
               onClick={handleClear}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-500 rounded transition-colors cursor-pointer"
               type="button"
             >
-              <i className="fas fa-times w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+              <i className="fas fa-times text-sm text-gray-500 dark:text-gray-400" aria-hidden="true" />
             </button>
           )}
-          <i
-            className={`fas fa-chevron-down w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''}`}
-            aria-hidden="true"
-          />
+          {disabled ? (
+            <i className="fas fa-lock text-sm text-gray-400" aria-hidden="true" />
+          ) : (
+            <i
+              className={`fas fa-chevron-down text-sm text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''}`}
+              aria-hidden="true"
+            />
+          )}
         </div>
       </div>
 
@@ -260,6 +270,7 @@ SearchableSelect.propTypes = {
   placeholder: PropTypes.string,
   label: PropTypes.string,
   multiple: PropTypes.bool,
+  disabled: PropTypes.bool,
 };
 
 export default SearchableSelect;

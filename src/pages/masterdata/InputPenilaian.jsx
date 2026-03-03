@@ -16,6 +16,7 @@ import {
   updatePenilaian,
   fetchPegawaiByNip,
   fetchStandarKompetensiMSK,
+  syncPenilaian,
 } from "../../services/apiService";
 import Swal from "sweetalert2";
 
@@ -25,6 +26,7 @@ const InputPenilaian = () => {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isSyncingPenilaian, setIsSyncingPenilaian] = useState(false);
   const [indikators, setIndikators] = useState([]);
   const [instrumens, setInstrumens] = useState([]);
   const [standarMSK, setStandarMSK] = useState([]);
@@ -37,6 +39,46 @@ const InputPenilaian = () => {
     document.title = `Input Penilaian | SIMANTAP`;
     loadData();
   }, [nip]);
+
+  const handleSyncPenilaian = async () => {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Sinkronisasi Penilaian",
+      html: pegawai
+        ? `Sinkronisasi penilaian untuk <strong>${pegawai.nama || pegawai.name}</strong> (${nip})?`
+        : `Sinkronisasi penilaian untuk NIP <strong>${nip}</strong>?`,
+      showCancelButton: true,
+      confirmButtonText: "Ya, Sinkronisasi",
+      cancelButtonText: "Batal",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsSyncingPenilaian(true);
+      await syncPenilaian([nip]);
+      await loadData();
+      Swal.fire({
+        icon: "success",
+        title: "Sukses",
+        text: "Sinkronisasi penilaian selesai",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.message || "Sinkronisasi penilaian gagal",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+    } finally {
+      setIsSyncingPenilaian(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -489,14 +531,32 @@ const InputPenilaian = () => {
 
       {/* Page Title */}
       <div className="mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
-            Input Penilaian Pegawai
-          </h1>
-          <p className="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-300">
-            Masukkan penilaian berdasarkan indikator dan subindikator yang telah
-            ditentukan
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
+              Input Penilaian Pegawai
+            </h1>
+            <p className="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-300">
+              Masukkan penilaian berdasarkan indikator dan subindikator yang telah
+              ditentukan
+            </p>
+          </div>
+          <div className="flex-shrink-0">
+            <IconButton
+              onClick={handleSyncPenilaian}
+              variant="blue"
+              size="lg"
+              disabled={isSyncingPenilaian}
+              title="Sinkronisasi Penilaian Pegawai Ini"
+            >
+              {isSyncingPenilaian ? (
+                <i className="fas fa-spinner fa-spin mr-2" />
+              ) : (
+                <i className="fas fa-sync mr-2" />
+              )}
+              Sinkronisasi Penilaian
+            </IconButton>
+          </div>
         </div>
       </div>
       {/* Back Button */}
@@ -1001,42 +1061,61 @@ const InputPenilaian = () => {
                                         label: `${instr.instrumen} (Skor: ${instr.skor})`,
                                       }))}
                                       placeholder="-- Pilih Penilaian --"
+                                      disabled={!!subindikator.auto_sync}
                                     />
                                   ) : (
-                                    <input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      max={
-                                        indikator.indikator?.toLowerCase() ===
-                                          "Penilaian Kompetensi Manajerial dan Sosial Kultural".toLowerCase() ||
-                                        indikator.indikator?.toLowerCase() ===
-                                          "Penilaian Potensi Talenta".toLowerCase()
-                                          ? "5"
-                                          : "100"
-                                      }
-                                      value={currentNilai}
-                                      onChange={(e) =>
-                                        handleInputChange(
-                                          subindikator.id,
-                                          "nilai",
-                                          e.target.value,
-                                        )
-                                      }
-                                      className="block w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium transition-all"
-                                      style={{
-                                        "--tw-ring-color": PRIMARY_COLORS.teal,
-                                      }}
-                                      onFocus={(e) =>
-                                        (e.target.style.borderColor =
-                                          PRIMARY_COLORS.teal)
-                                      }
-                                      onBlur={(e) =>
-                                        (e.target.style.borderColor = "")
-                                      }
-                                      placeholder="0.00"
-                                      required={!isPenilaianTambahan}
-                                    />
+                                    <div className="relative">
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max={
+                                          indikator.indikator?.toLowerCase() ===
+                                            "Penilaian Kompetensi Manajerial dan Sosial Kultural".toLowerCase() ||
+                                          indikator.indikator?.toLowerCase() ===
+                                            "Penilaian Potensi Talenta".toLowerCase()
+                                            ? "5"
+                                            : "100"
+                                        }
+                                        value={currentNilai}
+                                        onChange={(e) =>
+                                          !subindikator.auto_sync &&
+                                          handleInputChange(
+                                            subindikator.id,
+                                            "nilai",
+                                            e.target.value,
+                                          )
+                                        }
+                                        readOnly={!!subindikator.auto_sync}
+                                        className={`block w-full px-3 py-2 border-2 rounded-lg shadow-sm focus:outline-none font-medium transition-all ${
+                                          subindikator.auto_sync
+                                            ? "border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white cursor-not-allowed"
+                                            : "border-gray-300 dark:border-gray-600 focus:ring-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        }`}
+                                        style={{
+                                          "--tw-ring-color":
+                                            PRIMARY_COLORS.teal,
+                                        }}
+                                        onFocus={(e) => {
+                                          if (!subindikator.auto_sync)
+                                            e.target.style.borderColor =
+                                              PRIMARY_COLORS.teal;
+                                        }}
+                                        onBlur={(e) =>
+                                          (e.target.style.borderColor = "")
+                                        }
+                                        placeholder="0.00"
+                                        required={
+                                          !isPenilaianTambahan &&
+                                          !subindikator.auto_sync
+                                        }
+                                      />
+                                      {subindikator.auto_sync && (
+                                        <div className="absolute inset-y-0 right-3 top-3 flex items-center pointer-events-none">
+                                          <i className="fas fa-lock text-sm text-gray-400"></i>
+                                        </div>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -1056,8 +1135,8 @@ const InputPenilaian = () => {
                                     className="block w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg shadow-sm bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white font-semibold cursor-not-allowed"
                                     placeholder="0.00"
                                   />
-                                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                    <i className="fas fa-lock text-gray-400 text-sm"></i>
+                                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                    <i className="fas fa-lock text-sm text-gray-400"></i>
                                   </div>
                                 </div>
                               </div>
@@ -1086,8 +1165,8 @@ const InputPenilaian = () => {
                                     readOnly
                                     className="block w-full px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-lg shadow-sm bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white font-semibold cursor-not-allowed"
                                   />
-                                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                    <i className="fas fa-lock text-gray-400 text-sm"></i>
+                                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                    <i className="fas fa-lock text-sm text-gray-400"></i>
                                   </div>
                                 </div>
                               </div>

@@ -7,6 +7,16 @@
   
   /* Configure dark mode to use class strategy */
   --color-scheme: light;
+
+  /* Custom App Colors */
+  --color-app-red: #d33333;
+  --color-app-red-dark: #c22222;
+  --color-app-green: #2fa84f;
+  --color-app-green-dark: #258a3f;
+  --color-app-blue: #3085d6;
+  --color-app-blue-dark: #2075c6;
+  --color-app-orange: #f39c12;
+  --color-app-orange-dark: #d38c02;
 }
 
 @variant dark (&:where(.dark, .dark *));

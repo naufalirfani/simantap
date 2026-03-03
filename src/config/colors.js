@@ -11,7 +11,7 @@ export const PRIMARY_COLORS = {
   orange: '#f39c12',     // Orange - untuk alerts, important info
   blue: '#3085d6',       // Biru - untuk primary actions, links
   teal: '#14B8A6',       // Teal - untuk info, secondary actions
-  red: '#d33333',           // Merah - untuk danger, errors
+  red: '#d33',           // Merah - untuk danger, errors
 };
 
 // Secondary Colors - Versi lebih terang untuk backgrounds, hovers
@@ -22,7 +22,7 @@ export const SECONDARY_COLORS = {
   orange: '#f5ad32',     // Lighter orange
   blue: '#4095e6',       // Lighter blue
   teal: '#28d0b8',       // Lighter teal
-  red: '#e44444',           // Lighter red
+  red: '#e44',           // Lighter red
 };
 
 // Darker variants untuk hover states
@@ -33,7 +33,7 @@ export const DARK_COLORS = {
   orange: '#d38c02',     // Darker orange
   blue: '#2075c6',       // Darker blue
   teal: '#0D9488',       // Darker teal
-  red: '#c22222',           // Darker red
+  red: '#c22',           // Darker red
 };
 
 // Neutral colors - untuk teks, background, borders (dipertahankan dari sistem)

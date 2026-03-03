@@ -30,6 +30,7 @@ const PenilaianPegawai = () => {
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSyncingPenilaian, setIsSyncingPenilaian] = useState(false);
+  const [syncingNips, setSyncingNips] = useState(new Set());
   const [subIndikators, setSubIndikators] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -159,28 +160,86 @@ const PenilaianPegawai = () => {
   };
 
   const handleSyncPenilaian = async () => {
-    const result = await Swal.fire({
+    const { value: formValues, isConfirmed } = await Swal.fire({
       icon: "question",
       title: "Sinkronisasi Penilaian",
-      text: "Sinkronisasi akan mengambil data penilaian terbaru dari layanan. Lanjutkan?",
+      html: `
+        <p style="margin-bottom:14px;color:#4b5563;font-size:14px;">
+          Pilih cakupan sinkronisasi data penilaian dari layanan.
+        </p>
+        <div style="text-align:left;margin-bottom:14px;">
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;font-size:14px;">
+            <input type="radio" name="syncType" value="all" checked /> Semua pegawai
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;">
+            <input type="radio" name="syncType" value="specific" /> Pegawai tertentu (berdasarkan NIP)
+          </label>
+        </div>
+        <div id="nipInputContainer" style="display:none;">
+          <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:#374151;text-align:left;">NIP Pegawai</label>
+          <textarea id="nipInput"
+            placeholder="Masukkan NIP, pisahkan dengan koma atau enter untuk beberapa pegawai..."
+            style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:8px;font-size:13px;min-height:90px;resize:vertical;box-sizing:border-box;"
+          ></textarea>
+          <p style="font-size:12px;color:#6b7280;margin-top:4px;text-align:left;">
+            Contoh: <em>199001012020011001</em> atau beberapa NIP dipisahkan koma/enter
+          </p>
+        </div>
+      `,
+      didOpen: () => {
+        const radios = document.querySelectorAll('input[name="syncType"]');
+        const nipContainer = document.getElementById("nipInputContainer");
+        radios.forEach((radio) => {
+          radio.addEventListener("change", () => {
+            nipContainer.style.display =
+              radio.value === "specific" ? "block" : "none";
+          });
+        });
+      },
       showCancelButton: true,
-      confirmButtonText: "Ya",
+      confirmButtonText: "Sinkronisasi",
       cancelButtonText: "Batal",
       confirmButtonColor: PRIMARY_COLORS.blue,
       cancelButtonColor: PRIMARY_COLORS.red,
       reverseButtons: true,
+      preConfirm: () => {
+        const syncType = document.querySelector(
+          'input[name="syncType"]:checked'
+        )?.value;
+        if (syncType === "specific") {
+          const nipRaw = document
+            .getElementById("nipInput")
+            ?.value?.trim();
+          if (!nipRaw) {
+            Swal.showValidationMessage(
+              "Masukkan minimal satu NIP pegawai"
+            );
+            return false;
+          }
+          const nips = nipRaw
+            .split(/[\n,]+/)
+            .map((n) => n.trim())
+            .filter(Boolean);
+          return { syncType: "specific", nips };
+        }
+        return { syncType: "all", nips: null };
+      },
     });
 
-    if (!result.isConfirmed) return;
+    if (!isConfirmed || !formValues) return;
 
     try {
       setIsSyncingPenilaian(true);
-      await syncPenilaian();
+      await syncPenilaian(formValues.nips);
       setRefreshKey((k) => k + 1);
+      const nipInfo =
+        formValues.syncType === "specific"
+          ? ` untuk ${formValues.nips.length} pegawai`
+          : "";
       Swal.fire({
         icon: "success",
         title: "Sukses",
-        text: "Sinkronisasi penilaian selesai",
+        text: `Sinkronisasi penilaian${nipInfo} selesai`,
         timer: 2000,
         showConfirmButton: false,
       });
@@ -193,6 +252,48 @@ const PenilaianPegawai = () => {
       });
     } finally {
       setIsSyncingPenilaian(false);
+    }
+  };
+
+  const handleSyncPenilaianSingle = async (nip, nama) => {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Sinkronisasi Penilaian",
+      html: `Sinkronisasi penilaian untuk <strong>${nama}</strong> (${nip})?`,
+      showCancelButton: true,
+      confirmButtonText: "Ya, Sinkronisasi",
+      cancelButtonText: "Batal",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    setSyncingNips((prev) => new Set(prev).add(nip));
+    try {
+      await syncPenilaian([nip]);
+      setRefreshKey((k) => k + 1);
+      Swal.fire({
+        icon: "success",
+        title: "Sukses",
+        text: `Sinkronisasi penilaian untuk ${nama} selesai`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.message || "Sinkronisasi penilaian gagal",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+    } finally {
+      setSyncingNips((prev) => {
+        const next = new Set(prev);
+        next.delete(nip);
+        return next;
+      });
     }
   };
 
@@ -380,6 +481,7 @@ const PenilaianPegawai = () => {
             item.penilaian_entries.length > 0) ||
           (item.penilaian_count && item.penilaian_count > 0);
         
+        const isSyncingThis = syncingNips.has(item.nip);
         return (
           <div className="flex items-center justify-center gap-2">
             {hasPenilaian && (
@@ -393,6 +495,20 @@ const PenilaianPegawai = () => {
                 Lihat
               </IconButton>
             )}
+            <IconButton
+              onClick={() => handleSyncPenilaianSingle(item.nip, item.nama)}
+              variant="blue"
+              size="lg"
+              disabled={isSyncingThis}
+              title="Sinkronisasi Penilaian Pegawai Ini"
+            >
+              {isSyncingThis ? (
+                <i className="fas fa-spinner fa-spin mr-2" />
+              ) : (
+                <i className="fas fa-sync mr-2" />
+              )}
+              Sync
+            </IconButton>
             <IconButton
               onClick={() => handlePenilaian(item.nip)}
               variant="primary"

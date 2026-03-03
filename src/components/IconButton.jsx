@@ -1,9 +1,4 @@
 import PropTypes from "prop-types";
-import {
-  PRIMARY_COLORS,
-  SECONDARY_COLORS,
-  DARK_COLORS,
-} from "../config/colors";
 
 const IconButton = ({
   onClick,
@@ -27,10 +22,11 @@ const IconButton = ({
     default:
       "bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200",
     primary: `bg-teal-500 text-white hover:bg-teal-600 font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 transition-all duration-200`,
-    blue: `bg-[${PRIMARY_COLORS.blue}] text-white hover:bg-[${DARK_COLORS.blue}] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[${DARK_COLORS.blue}] focus:ring-offset-2 transition-all duration-200`,
-    danger: `bg-[${PRIMARY_COLORS.red}] text-white hover:bg-[${DARK_COLORS.red}] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[${DARK_COLORS.red}] focus:ring-offset-2 transition-all duration-200`,
-    success: `bg-[${PRIMARY_COLORS.green}] text-white hover:bg-[${DARK_COLORS.green}] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[${DARK_COLORS.green}] focus:ring-offset-2 transition-all duration-200`,
-    warn: `bg-[${PRIMARY_COLORS.orange}] text-white hover:bg-[${DARK_COLORS.orange}] font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[${DARK_COLORS.orange}] focus:ring-offset-2 transition-all duration-200`,
+    blue: `bg-app-blue text-white hover:bg-app-blue-dark font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-app-blue-dark focus:ring-offset-2 transition-all duration-200`,
+    danger: `bg-app-red text-white hover:bg-app-red-dark font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-app-red-dark focus:ring-offset-2 transition-all duration-200`,
+    success: `bg-app-green text-white hover:bg-app-green-dark font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-app-green-dark focus:ring-offset-2 transition-all duration-200`,
+    warn: `bg-app-orange text-white hover:bg-app-orange-dark font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-app-orange-dark focus:ring-offset-2 transition-all duration-200`,
+
     ghost:
       "bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700",
   };

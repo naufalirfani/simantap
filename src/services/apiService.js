@@ -1086,15 +1086,22 @@ export const syncPegawai = async () => {
 /**
  * Trigger sync for penilaian on the remote service
  */
-export const syncPenilaian = async () => {
+export const syncPenilaian = async (nips = null) => {
   try {
     const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+
+    const body = {};
+    if (nips && nips.length > 0) {
+      body.nip = nips.length === 1 ? nips[0] : nips;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/penilaians/sync`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-API-TOKEN": encryptedToken,
       },
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
