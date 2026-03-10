@@ -171,22 +171,25 @@ const SearchableSelect = ({ value, onChange, options, placeholder, label, multip
           }
         }}
       >
-        <input
-          ref={inputRef}
-          type="text"
-          value={isOpen ? searchTerm : displayValue}
-          onChange={(e) => { if (!disabled) setSearchTerm(e.target.value); }}
-          onKeyDown={disabled ? undefined : handleKeyDown}
-          placeholder={placeholder}
-          className={`w-full px-3 pr-20 py-2.5 border rounded-lg text-sm dark:text-white ${
-            disabled
-              ? 'bg-gray-100 dark:bg-gray-600 border-gray-200 dark:border-gray-600 cursor-not-allowed text-gray-500'
-              : 'bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-teal-500 cursor-pointer'
-          }`}
-          readOnly
-          disabled={disabled}
-        />
-        <div className={`absolute right-3 ${hasValue && !disabled ? 'top-1.5' : 'top-3.5'} flex items-center gap-1`}>
+        {disabled ? (
+          <div
+            className="w-full px-3 pr-10 py-2.5 border rounded-lg text-sm bg-gray-100 dark:bg-gray-600 border-gray-200 dark:border-gray-600 cursor-not-allowed text-gray-500 dark:text-gray-300 min-h-[42px] whitespace-pre-wrap break-words leading-snug flex items-center"
+          >
+            {displayValue || <span className="text-gray-400">{placeholder}</span>}
+          </div>
+        ) : (
+          <input
+            ref={inputRef}
+            type="text"
+            value={isOpen ? searchTerm : displayValue}
+            onChange={(e) => { setSearchTerm(e.target.value); }}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            className="w-full px-3 pr-20 py-2.5 border rounded-lg text-sm dark:text-white bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-teal-500 cursor-pointer"
+            readOnly
+          />
+        )}
+        <div className={`absolute right-3 ${hasValue && !disabled ? 'top-1.5' : 'top-1/2 -translate-y-1/2'} flex items-center gap-1`}>
           {hasValue && !disabled && (
             <button
               onClick={handleClear}

@@ -17,8 +17,88 @@ import {
   fetchPegawaiByNip,
   fetchStandarKompetensiMSK,
   syncPenilaian,
+  fetchSyncPenilaianStatus,
 } from "../../services/apiService";
 import Swal from "sweetalert2";
+import {
+  loadKotakConfig,
+  computeQuadrantDynamic,
+} from "../../services/kotakConfigService";
+
+// Poll sync job progress, resolves when queue is empty or user closes the dialog
+const pollSyncProgress = (nips = null) =>
+  new Promise((resolve) => {
+    let timerId = null;
+    let settled = false;
+
+    const finish = (completed, data) => {
+      if (settled) return;
+      settled = true;
+      clearInterval(timerId);
+      resolve({ completed, data });
+    };
+
+    const tick = async () => {
+      try {
+        const status = await fetchSyncPenilaianStatus(nips);
+        const total = status.session_total_nips ?? status.total ?? 0;
+        const synced = status.session_synced ?? 0;
+        const pending = status.session_pending ?? null;
+        const pct = total > 0 ? Math.round((synced / total) * 100) : 0;
+
+        const bar = document.getElementById("swal-sync-bar");
+        const stats = document.getElementById("swal-sync-stats");
+        const queue = document.getElementById("swal-sync-queue");
+        if (bar) bar.style.width = `${pct}%`;
+        if (stats)
+          stats.textContent = `${synced} dari ${total} pegawai terproses (${pct}%)`;
+        if (queue) {
+          const parts = [];
+          if (status.queue_pending !== null && status.queue_pending !== undefined)
+            parts.push(`Antrian tersisa: ${status.queue_pending}`);
+          if (status.queue_completed !== null && status.queue_completed !== undefined)
+            parts.push(`Batch selesai: ${status.queue_completed}`);
+          if (pending !== null)
+            parts.push(`Pending sesi: ${pending}`);
+          queue.textContent = parts.join(" · ");
+        }
+        if (status.queue_pending !== null && status.queue_pending !== undefined && status.queue_pending === 0
+          && status.session_pending !== null && status.session_pending !== undefined && status.session_pending === 0) {
+          finish(true, status);
+          Swal.close();
+        }
+      } catch (_) {
+        /* keep polling */
+      }
+    };
+
+    Swal.fire({
+      title: "Sinkronisasi Berjalan...",
+      html: `
+        <p style="font-size:14px;color:#4b5563;margin-bottom:12px;">
+          Job sinkronisasi penilaian sedang diproses di latar belakang.
+        </p>
+        <div style="background:#e5e7eb;border-radius:9999px;height:10px;overflow:hidden;margin-bottom:10px;">
+          <div id="swal-sync-bar" style="height:100%;background:#3b82f6;border-radius:9999px;width:0%;transition:width 0.4s;"></div>
+        </div>
+        <div id="swal-sync-stats" style="font-size:13px;font-weight:600;color:#374151;margin-bottom:4px;">Memuat status...</div>
+        <div id="swal-sync-queue" style="font-size:12px;color:#6b7280;"></div>
+      `,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      showCancelButton: true,
+      cancelButtonText: "Tutup (lanjutkan di latar)",
+      cancelButtonColor: "#6b7280",
+      didOpen: () => {
+        tick();
+        timerId = setInterval(tick, 2500);
+      },
+      willClose: () => {
+        finish(false, null);
+      },
+    });
+  });
 
 const InputPenilaian = () => {
   const { nip } = useParams();
@@ -60,14 +140,94 @@ const InputPenilaian = () => {
     try {
       setIsSyncingPenilaian(true);
       await syncPenilaian([nip]);
-      await loadData();
-      Swal.fire({
-        icon: "success",
-        title: "Sukses",
-        text: "Sinkronisasi penilaian selesai",
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      // Job dispatched — poll progress
+      const { completed } = await pollSyncProgress([nip]);
+      const freshData = await loadData();
+
+      // Recalculate hasil values from fresh data and save to update Profil Pegawai
+      try {
+        if (freshData.existingPenilaian && Object.keys(freshData.penilaianData).length > 0) {
+          const getStandarFresh = (subId) => {
+            if (!Array.isArray(freshData.standarMSK)) return null;
+            const found = freshData.standarMSK.find(
+              (s) =>
+                s.subindikator_id === subId ||
+                String(s.subindikator_id) === String(subId),
+            );
+            return found != null ? Number(found.standar) : null;
+          };
+
+          const penilaianObj = {};
+          for (const indikator of freshData.indikators) {
+            if (!indikator.sub_indikators) continue;
+            const indNama = (indikator.indikator || "").toLowerCase();
+            const isMSK =
+              indNama === "penilaian kompetensi manajerial dan sosial kultural";
+            const isPotensiTalenta =
+              indNama === "penilaian potensi talenta";
+
+            for (const sub of indikator.sub_indikators) {
+              if (!sub.isactive) continue;
+              const entry =
+                freshData.penilaianData[sub.id] ||
+                freshData.penilaianData[String(sub.id)];
+              if (
+                !entry ||
+                entry.nilai === null ||
+                entry.nilai === undefined ||
+                entry.nilai === ""
+              )
+                continue;
+
+              const nilaiNum = parseFloat(entry.nilai);
+              if (isNaN(nilaiNum)) continue;
+
+              const bobot = parseFloat(sub.bobot) || 0;
+              let hasil = 0;
+              if (isMSK) {
+                const standar = getStandarFresh(sub.id) || 0;
+                hasil = standar > 0 ? (nilaiNum / standar) * 100 * (bobot / 100) : 0;
+              } else if (isPotensiTalenta) {
+                hasil = (nilaiNum / 5) * 100 * (bobot / 100);
+              } else {
+                hasil = nilaiNum * (bobot / 100);
+              }
+
+              penilaianObj[sub.id] = {
+                nilai: nilaiNum,
+                hasil: isNaN(hasil) ? 0 : hasil,
+              };
+            }
+          }
+
+          if (Object.keys(penilaianObj).length > 0) {
+            await updatePenilaian(freshData.existingPenilaian.id, {
+              pegawai_id: freshData.pegawai?.id || null,
+              penilaian: penilaianObj,
+            });
+          }
+        }
+      } catch (recalcErr) {
+        console.error("Recalculate profil pegawai values error:", recalcErr);
+      }
+
+      if (completed) {
+        Swal.fire({
+          icon: "success",
+          title: "Sukses",
+          text: "Sinkronisasi penilaian selesai",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Job Masih Berjalan",
+          text: "Sinkronisasi masih diproses di latar belakang. Penilaian akan diperbarui setelah selesai.",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+      }
     } catch (err) {
       Swal.fire({
         icon: "error",
@@ -81,16 +241,26 @@ const InputPenilaian = () => {
   };
 
   const loadData = async () => {
+    const freshData = {
+      indikators: [],
+      instrumens: [],
+      penilaianData: {},
+      existingPenilaian: null,
+      pegawai: null,
+      standarMSK: [],
+    };
     try {
       setLoading(true);
 
       // Load indikators with subindikators
       const indikatorResult = await fetchIndikators();
       setIndikators(indikatorResult);
+      freshData.indikators = indikatorResult;
 
       // Load instrumens
       const instrumenResult = await fetchInstrumens();
       setInstrumens(instrumenResult);
+      freshData.instrumens = instrumenResult;
 
       // Try to load existing penilaian
       try {
@@ -178,6 +348,8 @@ const InputPenilaian = () => {
             );
           }
           setPenilaianData(initialData);
+          freshData.penilaianData = initialData;
+          freshData.existingPenilaian = existingData;
         }
       } catch (error) {
         // No existing penilaian, that's okay
@@ -189,12 +361,14 @@ const InputPenilaian = () => {
         const peg = await fetchPegawaiByNip(nip);
         if (peg) {
           setPegawai(peg);
+          freshData.pegawai = peg;
           // Load standar kompetensi MSK
           try {
             const standarResult = await fetchStandarKompetensiMSK(
               peg?.jenis_jabatan_id,
             );
             setStandarMSK(standarResult || []);
+            freshData.standarMSK = standarResult || [];
           } catch (err) {
             console.error("Could not load standar MSK:", err);
             setStandarMSK([]);
@@ -214,6 +388,7 @@ const InputPenilaian = () => {
     } finally {
       setLoading(false);
     }
+    return freshData;
   };
 
   const handleBack = () => {
@@ -675,6 +850,30 @@ const InputPenilaian = () => {
                     {calculateTotalNilai().nilaiTalenta.toFixed(2)}
                   </div>
                 </div>
+                {(() => {
+                  const { nilaiPotensial, nilaiKinerja } = calculateTotalNilai();
+                  const cfg = loadKotakConfig();
+                  const kotakId = computeQuadrantDynamic(nilaiPotensial, nilaiKinerja);
+                  const kotak =
+                    cfg && Array.isArray(cfg.kotak)
+                      ? cfg.kotak.find((k) => Number(k.id) === Number(kotakId))
+                      : null;
+                  const warna = kotak?.warna || "#6366f1";
+                  const kategori = kotak?.kategori || "";
+                  return (
+                    <div
+                      className="rounded-lg p-4 text-center min-w-[120px] flex flex-col justify-center"
+                      style={{ backgroundColor: warna + "22" }}
+                    >
+                      <div className="text-sm font-medium mb-1" style={{ color: warna }}>
+                        Kotak Talenta
+                      </div>
+                      <div className="text-3xl font-bold" style={{ color: warna }}>
+                        {kotakId ? `Kotak ${kotakId}` : "-"}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

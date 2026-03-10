@@ -431,6 +431,7 @@ const DetailPegawai = () => {
   const [expandedPotensial, setExpandedPotensial] = useState({});
   const [expandedKinerja, setExpandedKinerja] = useState({});
   const [activeRadarTab, setActiveRadarTab] = useState("msk"); // 'msk' or 'potensi'
+  const [activeRiwayatTab, setActiveRiwayatTab] = useState("jabatan");
 
   const togglePotensial = (name) => {
     setExpandedPotensial((p) => ({ ...p, [name]: !p[name] }));
@@ -1559,7 +1560,7 @@ const DetailPegawai = () => {
               <div className="flex items-center">
                 {/* Y-axis label (outside chart) */}
                 <div className="flex items-center pr-3" style={{ width: 28 }}>
-                  <div className="transform -rotate-90 origin-center text-sm font-semibold text-gray-600 dark:text-gray-300">
+                  <div className="transform -rotate-90 origin-center text-md font-semibold text-gray-600 dark:text-gray-300">
                     Kinerja
                   </div>
                 </div>
@@ -1579,7 +1580,7 @@ const DetailPegawai = () => {
                       plugins={[backgroundPlugin]}
                     />
                   </div>
-                  <div className="text-center mt-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                  <div className="text-center mt-2 text-md font-semibold text-gray-600 dark:text-gray-300">
                     Potensial
                   </div>
                 </div>
@@ -1948,92 +1949,76 @@ const DetailPegawai = () => {
         />
       )}
 
-      {/* History Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pendidikan Formal */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <i className="fas fa-graduation-cap text-purple-600"></i>
-            Riwayat Pendidikan Formal
+      {/* Riwayat Pegawai */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-4" style={{ backgroundColor: PRIMARY_COLORS.teal }}>
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <i className="fas fa-history"></i>
+            Riwayat Pegawai
           </h3>
-          {loadingProfile ? (
-            <div className="flex items-center justify-center py-10">
-              <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                <p className="mt-3 text-gray-600 dark:text-gray-300 text-sm">
-                  Memuat riwayat...
-                </p>
-              </div>
-            </div>
-          ) : !pegawaiData || !jsonData ? (
-            <div className="flex items-center justify-center py-10">
-              <p className="text-gray-500 dark:text-gray-400">
-                Data tidak tersedia
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <HistoryCard
-                title={jsonData.pendidikanTerakhirNama}
-                subtitle={`Lulus: ${
-                  jsonData.tahunLulus
-                    ? formatDateIndo(jsonData.tahunLulus)
-                    : "-"
-                }`}
-                icon="graduation-cap"
-                color="purple"
-              />
-            </div>
-          )}
         </div>
 
-        {/* Penghargaan */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <i className="fas fa-trophy text-yellow-600"></i>
-            Riwayat Penghargaan
-          </h3>
+        {/* Tabs */}
+        <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+          {[
+            { key: "jabatan", label: "Jabatan", icon: "briefcase" },
+            { key: "skp", label: "SKP", icon: "chart-line" },
+            { key: "pengembangan", label: "Pengembangan", icon: "book-open" },
+            { key: "diklat", label: "Diklat", icon: "graduation-cap" },
+            { key: "sertifikasi", label: "Sertifikasi", icon: "certificate" },
+            { key: "pendidikan", label: "Pendidikan", icon: "university" },
+            { key: "penghargaan", label: "Penghargaan", icon: "trophy" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveRiwayatTab(tab.key)}
+              className={`cursor-pointer px-4 py-3 text-md font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${
+                activeRiwayatTab === tab.key
+                  ? "border-teal-500 bg-white dark:bg-gray-800 dark:text-teal-400"
+                  : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/60"
+              }`}
+              style={activeRiwayatTab === tab.key ? { color: PRIMARY_COLORS.teal } : {}}
+            >
+              <i className={`fas fa-${tab.icon} text-sm`}></i>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-6 min-h-[320px]">
           {loadingProfile ? (
-            <div className="flex items-center justify-center py-10">
+            <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600"></div>
-                <p className="mt-3 text-gray-600 dark:text-gray-300 text-sm">
-                  Memuat penghargaan...
-                </p>
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-300">Memuat data riwayat...</p>
               </div>
             </div>
-          ) : !pegawaiData || !jsonData ? (
-            <div className="flex items-center justify-center py-10">
-              <p className="text-gray-500 dark:text-gray-400">
-                Data tidak tersedia
-              </p>
-            </div>
           ) : (
-            <div className="space-y-2">
-              {satyalancanaAwards.length > 0 ? (
-                satyalancanaAwards.map((award, idx) => {
-                  let c = "yellow";
-                  if (award.name && award.name.includes("XXX")) c = "gold";
-                  else if (award.name && award.name.includes("XX"))
-                    c = "silver";
-                  else if (award.name && award.name.includes("X")) c = "bronze";
-
-                  return (
-                    <HistoryCard
-                      key={idx}
-                      title={award.name}
-                      subtitle={`${award.years} tahun masa kerja`}
-                      icon="medal"
-                      color={c}
-                    />
-                  );
-                })
-              ) : (
-                <p className="text-md text-gray-500 dark:text-gray-400 italic">
-                  Belum memenuhi syarat penghargaan
-                </p>
+            <>
+              {activeRiwayatTab === "jabatan" && (
+                <RiwayatJabatanPanel data={pegawaiData?.riwayat_jabatan} formatDateIndo={formatDateIndo} />
               )}
-            </div>
+              {activeRiwayatTab === "skp" && (
+                <RiwayatSKPPanel data={pegawaiData?.riwayat_skp} />
+              )}
+              {activeRiwayatTab === "pengembangan" && (
+                <RiwayatPengembanganPanel data={pegawaiData?.riwayat_pengembangan_kompetensi} formatDateIndo={formatDateIndo} />
+              )}
+              {activeRiwayatTab === "diklat" && (
+                <RiwayatDiklatPanel data={pegawaiData?.riwayat_diklat} formatDateIndo={formatDateIndo} />
+              )}
+              {activeRiwayatTab === "sertifikasi" && (
+                <RiwayatSertifikasiPanel data={pegawaiData?.riwayat_sertifikasi} formatDateIndo={formatDateIndo} />
+              )}
+              {activeRiwayatTab === "pendidikan" && (
+                <RiwayatPendidikanPanel data={pegawaiData?.riwayat_pendidikan} formatDateIndo={formatDateIndo} />
+              )}
+              {activeRiwayatTab === "penghargaan" && (
+                <PenghargaanPanel awards={satyalancanaAwards} />
+              )}
+            </>
           )}
         </div>
       </div>
@@ -2310,6 +2295,434 @@ const HistoryCard = ({ title, subtitle, icon, color }) => {
         </p>
         <p className="text-md text-gray-600 dark:text-gray-400">{subtitle}</p>
       </div>
+    </div>
+  );
+};
+
+// ─── Riwayat Panel Components ──────────────────────────────────────────────
+
+const EmptyState = ({ icon, message }) => (
+  <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-600">
+    <i className={`fas fa-${icon} text-5xl mb-4 opacity-25`}></i>
+    <p className="text-sm">{message}</p>
+  </div>
+);
+
+const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
+  if (!data || data.length === 0)
+    return <EmptyState icon="briefcase" message="Tidak ada data riwayat jabatan" />;
+
+  const eselonMeta = (eselon) => {
+    if (!eselon) return { dot: "border-gray-400 bg-gray-200", badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" };
+    const e = eselon.toUpperCase();
+    if (e.startsWith("I.") || e === "I")   return { dot: "border-purple-500 bg-purple-200 dark:bg-purple-900/40", badge: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300" };
+    if (e.startsWith("II.") || e === "II") return { dot: "border-[#3085d6] bg-blue-200 dark:bg-blue-900/40", badge: "bg-blue-100 text-[#3085d6] dark:bg-blue-900/30 dark:text-blue-300" };
+    if (e.startsWith("III."))              return { dot: "border-teal-500 bg-teal-200 dark:bg-teal-900/40", badge: "bg-teal-100 text-teal-500 dark:bg-teal-900/30 dark:text-teal-400" };
+    if (e.startsWith("IV."))               return { dot: "border-orange-400 bg-orange-200 dark:bg-orange-900/40", badge: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300" };
+    return { dot: "border-gray-400 bg-gray-200", badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" };
+  };
+
+  return (
+    <div className="relative">
+      <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">{data.length} entri jabatan</p>
+      <div className="space-y-1">
+        {data.map((item, idx) => {
+          const meta = eselonMeta(item.eselon);
+          return (
+            <div key={item.id} className="flex gap-4">
+              {/* Timeline line + dot */}
+              <div className="flex flex-col items-center pt-1.5">
+                <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${meta.dot}`}></div>
+                {idx < data.length - 1 && <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-700 mt-1 min-h-[20px]"></div>}
+              </div>
+              {/* Card */}
+              <div className="flex-1 pb-3">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+                  <div className="flex flex-wrap items-start justify-between gap-2 mb-1.5">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-white leading-tight flex-1">
+                      {item.namaJabatan}
+                    </h4>
+                    {item.eselon && (
+                      <span className={`text-sm font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${meta.badge}`}>
+                        Eselon {item.eselon}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-0.5">
+                    <i className="fas fa-building mr-1 opacity-60"></i>
+                    {item.namaUnor || item.unorNama}
+                  </p>
+                  {item.instansiKerjaNama && (
+                    <p className="text-sm text-gray-500 dark:text-gray-500 mb-2">
+                      <i className="fas fa-landmark mr-1 opacity-60"></i>
+                      {item.instansiKerjaNama}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
+                    {item.tmtJabatan && (
+                      <span><i className="fas fa-calendar-check mr-1"></i>TMT: {formatDateIndo(item.tmtJabatan)}</span>
+                    )}
+                    {item.nomorSk && (
+                      <span><i className="fas fa-file-alt mr-1"></i>SK: {item.nomorSk}</span>
+                    )}
+                    {item.tanggalSk && (
+                      <span><i className="fas fa-calendar mr-1"></i>{formatDateIndo(item.tanggalSk)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const RiwayatSKPPanel = ({ data }) => {
+  if (!data || data.length === 0)
+    return <EmptyState icon="chart-line" message="Tidak ada data riwayat SKP" />;
+
+  const sorted = [...data].sort((a, b) => Number(b.tahun) - Number(a.tahun));
+
+  const kuadranColor = (k) => {
+    if (!k) return "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
+    const v = k.toUpperCase();
+    if (v.includes("SANGAT BAIK") || v.includes("ISTIMEWA"))
+      return "bg-teal-100 text-teal-500 dark:bg-teal-900/30 dark:text-teal-400";
+    if (v.includes("BAIK"))
+      return "bg-blue-100 text-[#3085d6] dark:bg-blue-900/30 dark:text-blue-300";
+    if (v.includes("CUKUP"))
+      return "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-300";
+    return "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300";
+  };
+
+  const hasilColor = (h) => {
+    if (!h) return "text-gray-500 dark:text-gray-400";
+    const v = h.toUpperCase();
+    if (v.includes("DIATAS") || v.includes("ATAS")) return "text-teal-500 dark:text-teal-400 font-semibold";
+    if (v.includes("SESUAI")) return "text-[#3085d6] dark:text-blue-400 font-semibold";
+    return "text-orange-600 dark:text-orange-400 font-semibold";
+  };
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      {sorted.map((item) => (
+        <div
+          key={item.id}
+          className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-3xl font-extrabold text-gray-800 dark:text-white">{item.tahun}</span>
+            <span className={`text-md font-semibold px-2.5 py-1 rounded-full ${kuadranColor(item.kuadranKinerja)}`}>
+              {item.kuadranKinerja}
+            </span>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 dark:text-gray-500 w-28 flex-shrink-0">Hasil Kinerja</span>
+              <span className={hasilColor(item.hasilKinerja)}>{item.hasilKinerja}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 dark:text-gray-500 w-28 flex-shrink-0">Perilaku Kerja</span>
+              <span className={hasilColor(item.perilakuKerja)}>{item.perilakuKerja}</span>
+            </div>
+            <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
+                <i className="fas fa-user-tie mr-1 opacity-60"></i>
+                {item.namaPenilai}
+              </p>
+              <p className="text-gray-400 dark:text-gray-500 mt-0.5">{item.penilaiJabatanNm}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
+  if (!data || data.length === 0)
+    return <EmptyState icon="book-open" message="Tidak ada data riwayat pengembangan kompetensi" />;
+
+  const sorted = [...data].sort((a, b) => {
+    const ya = parseInt(a.tahunKursus) || 0;
+    const yb = parseInt(b.tahunKursus) || 0;
+    return yb - ya;
+  });
+
+  const totalJam = sorted.reduce((s, i) => s + (parseInt(i.jumlahJam) || 0), 0);
+
+  const jenisColor = (j) => {
+    if (!j) return "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400";
+    const v = j.toUpperCase();
+    if (v.includes("SEMINAR") || v.includes("WORKSHOP"))
+      return "bg-blue-100 text-[#3085d6] dark:bg-blue-900/30 dark:text-blue-300";
+    if (v.includes("TEKNIS"))
+      return "bg-teal-100 text-teal-500 dark:bg-teal-900/30 dark:text-teal-400";
+    return "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300";
+  };
+
+  return (
+    <div>
+      {/* Summary */}
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-4 text-center">
+          <div className="text-3xl font-extrabold text-teal-500 dark:text-teal-400">{sorted.length}</div>
+          <div className="text-sm text-teal-500 dark:text-teal-400 mt-0.5">Total Pelatihan</div>
+        </div>
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
+          <div className="text-3xl font-extrabold text-[#3085d6] dark:text-blue-400">{totalJam}</div>
+          <div className="text-sm text-[#3085d6] dark:text-blue-400 mt-0.5">Total JP</div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {sorted.map((item) => (
+          <div
+            key={item.id}
+            className="flex gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
+          >
+            {/* JP circle */}
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-teal-100 dark:bg-teal-900/40 flex flex-col items-center justify-center">
+              <span className="text-sm font-bold text-teal-500 dark:text-teal-400 leading-none">{item.jumlahJam || 0}</span>
+              <span className="text-[9px] text-teal-500 dark:text-teal-400">JP</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-2 mb-1.5">
+                <h4 className="text-md font-semibold text-gray-900 dark:text-white leading-tight flex-1">
+                  {item.namaKursus}
+                </h4>
+                {item.jenisKursusSertifikat && (
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${jenisColor(item.jenisKursusSertifikat)}`}>
+                    {item.jenisKursusSertifikat}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+                {item.institusiPenyelenggara && (
+                  <span><i className="fas fa-building mr-1 opacity-60"></i>{item.institusiPenyelenggara}</span>
+                )}
+                {item.tanggalKursus && (
+                  <span>
+                    <i className="fas fa-calendar mr-1 opacity-60"></i>
+                    {formatDateIndo(item.tanggalKursus)}
+                    {item.tanggalSelesaiKursus && item.tanggalSelesaiKursus !== item.tanggalKursus
+                      ? ` – ${formatDateIndo(item.tanggalSelesaiKursus)}`
+                      : ""}
+                  </span>
+                )}
+                {item.noSertipikat && item.noSertipikat !== "-" && item.noSertipikat.trim() !== "" && (
+                  <span><i className="fas fa-certificate mr-1 opacity-60"></i>{item.noSertipikat}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const RiwayatDiklatPanel = ({ data, formatDateIndo }) => {
+  if (!data || data.length === 0)
+    return <EmptyState icon="graduation-cap" message="Tidak ada data riwayat diklat" />;
+
+  const sorted = [...data].sort((a, b) => Number(b.tahun) - Number(a.tahun));
+
+  return (
+    <div className="space-y-4">
+      {sorted.map((item) => (
+        <div
+          key={item.id}
+          className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
+        >
+          <div className="flex flex-wrap items-start gap-2 mb-3">
+            <div className="flex-shrink-0 w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center">
+              <i className="fas fa-graduation-cap text-purple-600 dark:text-purple-400"></i>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-start gap-2">
+                <h4 className="text-md font-semibold text-gray-900 dark:text-white flex-1 leading-tight">
+                  {item.latihanStrukturalNama}
+                </h4>
+                <span className="text-md font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex-shrink-0">
+                  {item.tahun}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-gray-500 dark:text-gray-400">
+            {item.institusiPenyelenggara && (
+              <span><i className="fas fa-building mr-1 opacity-60"></i>{item.institusiPenyelenggara}</span>
+            )}
+            {item.jumlahJam && (
+              <span><i className="fas fa-clock mr-1 opacity-60"></i>{item.jumlahJam} JP</span>
+            )}
+            {item.tanggal && (
+              <span>
+                <i className="fas fa-calendar-alt mr-1 opacity-60"></i>
+                {formatDateIndo(item.tanggal)}
+                {item.tanggalSelesai ? ` s/d ${formatDateIndo(item.tanggalSelesai)}` : ""}
+              </span>
+            )}
+            {item.nomor && (
+              <span><i className="fas fa-file-alt mr-1 opacity-60"></i>No: {item.nomor}</span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const RiwayatSertifikasiPanel = ({ data, formatDateIndo }) => {
+  if (!data || data.length === 0)
+    return <EmptyState icon="certificate" message="Tidak ada data riwayat sertifikasi" />;
+
+  return (
+    <div className="space-y-4">
+      {data.map((item) => (
+        <div
+          key={item.id}
+          className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 rounded-xl p-5 border border-amber-100 dark:border-amber-900/30 hover:shadow-md transition-shadow"
+        >
+          <div className="flex gap-3 mb-3">
+            <div className="flex-shrink-0 w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center">
+              <i className="fas fa-certificate text-amber-600 dark:text-amber-400"></i>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-md font-semibold text-gray-900 dark:text-white leading-tight">{item.namaSertifikasi}</h4>
+              <span className="text-sm text-amber-600 dark:text-amber-400">{item.jenisSertifikasiNama}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-gray-600 dark:text-gray-400">
+            {item.lembagaSertifikasiNama && (
+              <span><i className="fas fa-landmark mr-1 opacity-60"></i>{item.lembagaSertifikasiNama}</span>
+            )}
+            {item.noSertifikat && (
+              <span><i className="fas fa-hashtag mr-1 opacity-60"></i>No: {item.noSertifikat}</span>
+            )}
+            {item.tanggalSertifikat && (
+              <span><i className="fas fa-calendar-check mr-1 opacity-60"></i>{formatDateIndo(item.tanggalSertifikat)}</span>
+            )}
+            {item.masaBerlakuSertMulai && (
+              <span>
+                <i className="fas fa-hourglass-half mr-1 opacity-60"></i>
+                Berlaku: {formatDateIndo(item.masaBerlakuSertMulai)}
+                {item.masaBerlakuSertSelesai ? ` s/d ${formatDateIndo(item.masaBerlakuSertSelesai)}` : ""}
+              </span>
+            )}
+          </div>
+          {item.rumpunJabatanNama && (
+            <div className="mt-3 pt-3 border-t border-amber-100 dark:border-amber-900/30">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                <i className="fas fa-tag mr-1 opacity-60"></i>Rumpun: {item.rumpunJabatanNama}
+              </span>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const RiwayatPendidikanPanel = ({ data, formatDateIndo }) => {
+  if (!data || data.length === 0)
+    return <EmptyState icon="university" message="Tidak ada data riwayat pendidikan" />;
+
+  const sorted = [...data].sort((a, b) => Number(b.tkPendidikanId || 0) - Number(a.tkPendidikanId || 0));
+
+  const levelMeta = (level) => {
+    if (!level) return { bg: "bg-gray-100 dark:bg-gray-700", text: "text-gray-600 dark:text-gray-400", border: "border-gray-200 dark:border-gray-600", icon: "school" };
+    const l = level.toUpperCase();
+    if (l.includes("S-3") || l.includes("DOKTOR"))
+      return { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-500 dark:text-purple-300", border: "border-purple-200 dark:border-purple-700", icon: "user-graduate" };
+    if (l.includes("S-2") || l.includes("MAGISTER"))
+      return { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-[#3085d6] dark:text-blue-300", border: "border-blue-200 dark:border-blue-700", icon: "graduation-cap" };
+    if (l.includes("S-1") || l.includes("D-IV"))
+      return { bg: "bg-teal-100 dark:bg-teal-900/30", text: "text-teal-500 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700", icon: "graduation-cap" };
+    if (l.includes("D-"))
+      return { bg: "bg-indigo-100 dark:bg-indigo-900/30", text: "text-indigo-600 dark:text-indigo-300", border: "border-indigo-200 dark:border-indigo-700", icon: "certificate" };
+    if (l.includes("SMA") || l.includes("SLTA"))
+      return { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-600 dark:text-green-300", border: "border-green-200 dark:border-green-700", icon: "school" };
+    if (l.includes("SMP") || l.includes("SLTP"))
+      return { bg: "bg-lime-100 dark:bg-lime-900/30", text: "text-lime-600 dark:text-lime-300", border: "border-lime-200 dark:border-lime-700", icon: "school" };
+    return { bg: "bg-gray-100 dark:bg-gray-700", text: "text-gray-600 dark:text-gray-400", border: "border-gray-200 dark:border-gray-600", icon: "school" };
+  };
+
+  return (
+    <div className="space-y-4">
+      {sorted.map((item) => {
+        const meta = levelMeta(item.tkPendidikanNama);
+        const gelar = [item.gelarDepan, item.gelarBelakang].filter(Boolean).join(" / ");
+        return (
+          <div
+            key={item.id}
+            className={`rounded-xl p-5 border ${meta.bg} ${meta.border} hover:shadow-md transition-shadow`}
+          >
+            <div className="flex gap-3 mb-3">
+              <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-white/60 dark:bg-gray-900/30 flex items-center justify-center`}>
+                <i className={`fas fa-${meta.icon} ${meta.text} text-lg`}></i>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                  <span className={`text-sm font-bold uppercase tracking-wide ${meta.text}`}>{item.tkPendidikanNama}</span>
+                  {item.tahunLulus && (
+                    <span className="text-sm px-2 py-0.5 rounded-full bg-white/70 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 font-medium">
+                      Lulus {item.tahunLulus}
+                    </span>
+                  )}
+                </div>
+                <p className="text-md font-semibold text-gray-900 dark:text-white leading-tight">{item.pendidikanNama}</p>
+              </div>
+            </div>
+            <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+              {item.namaSekolah && (
+                <p><i className="fas fa-university mr-1 opacity-60"></i>{item.namaSekolah}</p>
+              )}
+              {item.nomorIjasah && (
+                <p><i className="fas fa-file-alt mr-1 opacity-60"></i>No. Ijazah: {item.nomorIjasah}</p>
+              )}
+              {gelar && (
+                <p><i className="fas fa-user-graduate mr-1 opacity-60"></i>Gelar: {gelar}</p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const PenghargaanPanel = ({ awards }) => {
+  if (!awards || awards.length === 0)
+    return <EmptyState icon="trophy" message="Belum memenuhi syarat penghargaan Satyalancana" />;
+
+  const colorMap = {
+    gold:   { bg: "bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/20 dark:to-amber-900/20", text: "text-yellow-600 dark:text-yellow-300", border: "border-yellow-300 dark:border-yellow-700", icon: "bg-yellow-200 dark:bg-yellow-800/40 text-yellow-700 dark:text-yellow-300" },
+    silver: { bg: "bg-gradient-to-r from-gray-100 to-slate-100 dark:from-gray-700/40 dark:to-slate-700/40", text: "text-gray-700 dark:text-gray-300", border: "border-gray-300 dark:border-gray-600", icon: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" },
+    bronze: { bg: "bg-gradient-to-r from-orange-100 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/10", text: "text-orange-600 dark:text-orange-300", border: "border-orange-300 dark:border-orange-700", icon: "bg-orange-200 dark:bg-orange-800/40 text-orange-700 dark:text-orange-300" },
+  };
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {awards.map((award, idx) => {
+        let key = "bronze";
+        if (award.name && award.name.includes("XXX")) key = "gold";
+        else if (award.name && award.name.includes("XX")) key = "silver";
+        const c = colorMap[key];
+        return (
+          <div key={idx} className={`flex items-center gap-4 p-5 rounded-xl border ${c.bg} ${c.border} hover:shadow-md transition-shadow`}>
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 ${c.icon}`}>
+              <i className="fas fa-medal text-2xl"></i>
+            </div>
+            <div>
+              <h4 className={`font-bold text-sm leading-tight ${c.text}`}>{award.name}</h4>
+              <p className={`text-sm mt-0.5 opacity-80 ${c.text}`}>{award.years} tahun masa kerja</p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

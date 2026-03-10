@@ -1116,6 +1116,38 @@ export const syncPenilaian = async (nips = null) => {
   }
 };
 
+/**
+ * Fetch sync status for penilaian jobs
+ */
+export const fetchSyncPenilaianStatus = async (nips = null) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const params = new URLSearchParams();
+    if (nips && nips.length > 0) {
+      if (nips.length === 1) {
+        params.append("nip", nips[0]);
+      } else {
+        nips.forEach((n) => params.append("nip[]", n));
+      }
+    }
+    const url = `${API_BASE_URL}/api/penilaians/sync-status${
+      params.toString() ? "?" + params.toString() : ""
+    }`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+    if (!response.ok) throw new Error("Failed to fetch sync status");
+    return await response.json();
+  } catch (error) {
+    console.error("fetchSyncPenilaianStatus error:", error);
+    throw error;
+  }
+};
+
 // ==================== PENILAIAN API FUNCTIONS ====================
 
 /**
