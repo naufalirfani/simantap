@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { PRIMARY_COLORS, STATUS_COLORS } from "../config/colors";
 import IconButton from '../components/IconButton';
+import logo from '../assets/logo.png';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -45,30 +46,12 @@ const AdminLogin = () => {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div 
-              className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
-              style={{ backgroundColor: PRIMARY_COLORS.teal }}
-            >
-              <svg
-                className="w-8 h-8 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                />
-              </svg>
+            <div className="flex justify-center mb-4">
+              <img src={logo} alt="Logo Aplikasi" className="h-20 object-contain" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Admin Login
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Masuk sebagai Super Admin
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Admin Portal SIMANTAP
+            </h1>
           </div>
 
           {/* Error Message */}

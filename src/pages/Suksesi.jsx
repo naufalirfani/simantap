@@ -144,7 +144,7 @@ const Suksesi = () => {
   const totalPages = Math.max(1, Math.ceil(filteredJabatan.length / PAGE_SIZE));
   const pagedJabatan = filteredJabatan.slice(
     (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    currentPage * PAGE_SIZE,
   );
 
   const getPageNumbers = () => {
@@ -182,8 +182,6 @@ const Suksesi = () => {
       { header: "Unit Kerja", key: "unit_kerja", width: 35 },
       { header: "Jenis Jabatan", key: "jenis_jabatan", width: 25 },
       { header: "Kelas Jabatan", key: "kelas_jabatan", width: 16 },
-      { header: "Kebutuhan Pegawai", key: "kebutuhan_pegawai", width: 20 },
-      { header: "Bezetting", key: "bezetting", width: 14 },
       { header: "Pejabat Saat Ini", key: "pejabat", width: 30 },
       { header: "Tanggal Pensiun", key: "tanggal_pensiun", width: 20 },
       { header: "Sisa Masa Kerja", key: "sisa_masa_kerja", width: 22 },
@@ -192,12 +190,22 @@ const Suksesi = () => {
     // Style header row
     const headerRow = sheet.getRow(1);
     headerRow.eachCell((cell) => {
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D9488" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF0D9488" },
+      };
       cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+        wrapText: true,
+      };
       cell.border = {
-        top: { style: "thin" }, left: { style: "thin" },
-        bottom: { style: "thin" }, right: { style: "thin" },
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
       };
     });
     headerRow.height = 24;
@@ -219,8 +227,6 @@ const Suksesi = () => {
         unit_kerja: j.unit_kerja || "-",
         jenis_jabatan: j.jenis_jabatan || "-",
         kelas_jabatan: j.kelas_jabatan || "-",
-        kebutuhan_pegawai: j.kebutuhan_pegawai ?? "-",
-        bezetting: j.bezetting ?? "-",
         pejabat: pejabatNames || "-",
         tanggal_pensiun: tanggalPensiun || "-",
         sisa_masa_kerja: sisaMasaKerja || "-",
@@ -228,11 +234,17 @@ const Suksesi = () => {
       row.eachCell((cell) => {
         cell.alignment = { vertical: "middle", wrapText: true };
         cell.border = {
-          top: { style: "thin" }, left: { style: "thin" },
-          bottom: { style: "thin" }, right: { style: "thin" },
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
         };
         if (idx % 2 === 1) {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0FDFA" } };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF0FDFA" },
+          };
         }
       });
     });
@@ -341,13 +353,19 @@ const Suksesi = () => {
             <input
               type="text"
               value={tableSearch}
-              onChange={(e) => { setTableSearch(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setTableSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Cari nama jabatan, unit kerja, atau jenis jabatan..."
               className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-600"
             />
             {tableSearch && (
               <button
-                onClick={() => { setTableSearch(""); setCurrentPage(1); }}
+                onClick={() => {
+                  setTableSearch("");
+                  setCurrentPage(1);
+                }}
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <i className="fas fa-times" aria-hidden="true"></i>
@@ -365,21 +383,36 @@ const Suksesi = () => {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                 <thead>
                   <tr style={{ backgroundColor: PRIMARY_COLORS.teal }}>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider w-8">No</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Nama Jabatan</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Unit Kerja</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Jenis Jabatan</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Kelas</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Kebutuhan</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Bezetting</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Pejabat Saat Ini</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider w-8">
+                      No
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider">
+                      Nama Jabatan
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider">
+                      Unit Kerja
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white uppercase tracking-wider">
+                      Jenis Jabatan
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-white uppercase tracking-wider">
+                      Kelas Jabatan
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-white uppercase tracking-wider">
+                      Pejabat Saat Ini
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                   {filteredJabatan.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
-                        {tableSearch ? "Tidak ada jabatan yang cocok dengan pencarian." : "Tidak ada data jabatan."}
+                      <td
+                        colSpan={6}
+                        className="px-4 py-8 text-center text-gray-400 dark:text-gray-500"
+                      >
+                        {tableSearch
+                          ? "Tidak ada jabatan yang cocok dengan pencarian."
+                          : "Tidak ada data jabatan."}
                       </td>
                     </tr>
                   ) : (
@@ -394,42 +427,72 @@ const Suksesi = () => {
                             isSelected
                               ? "bg-teal-50 dark:bg-teal-900/30 border-l-4"
                               : idx % 2 === 0
-                              ? "bg-white dark:bg-gray-800 hover:bg-teal-50/50 dark:hover:bg-teal-900/10"
-                              : "bg-gray-50 dark:bg-gray-750 hover:bg-teal-50/50 dark:hover:bg-teal-900/10"
+                                ? "bg-white dark:bg-gray-800 hover:bg-teal-50/50 dark:hover:bg-teal-900/10"
+                                : "bg-gray-50 dark:bg-gray-750 hover:bg-teal-50/50 dark:hover:bg-teal-900/10"
                           }`}
-                          style={isSelected ? { borderLeftColor: PRIMARY_COLORS.teal } : {}}
+                          style={
+                            isSelected
+                              ? { borderLeftColor: PRIMARY_COLORS.teal }
+                              : {}
+                          }
                         >
-                          <td className="px-4 py-3 text-gray-500 dark:text-gray-400 font-medium">{rowNum}</td>
+                          <td className="px-4 py-3 text-gray-500 dark:text-gray-400 font-medium">
+                            {rowNum}
+                          </td>
                           <td className="px-4 py-3">
-                            <span className={`font-semibold ${
-                              isSelected
-                                ? "dark:text-teal-300"
-                                : "text-gray-800 dark:text-white"
-                            }`} style={isSelected ? { color: PRIMARY_COLORS.teal } : {}}>
+                            <span
+                              className={`font-semibold ${
+                                isSelected
+                                  ? "dark:text-teal-300"
+                                  : "text-gray-800 dark:text-white"
+                              }`}
+                              style={
+                                isSelected ? { color: PRIMARY_COLORS.teal } : {}
+                              }
+                            >
                               {jabatan.nama_jabatan}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{jabatan.unit_kerja || "-"}</td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                            {jabatan.unit_kerja || "-"}
+                          </td>
                           <td className="px-4 py-3">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                              style={{ backgroundColor: BG_COLORS.teal.light, color: TEXT_ON_BG_COLORS.teal }}>
-                              {jabatan.jenis_jabatan?.replace("Jabatan Pimpinan Tinggi", "JPT").replace("Jabatan Fungsional", "JF") || "-"}
+                            <span
+                              className="inline-flex items-center px-2 py-0.5 rounded text-sm font-medium"
+                              style={{
+                                backgroundColor: BG_COLORS.teal.light,
+                                color: TEXT_ON_BG_COLORS.teal,
+                              }}
+                            >
+                              {jabatan.jenis_jabatan
+                                ?.replace("Jabatan Pimpinan Tinggi", "JPT")
+                                .replace("Jabatan Fungsional", "JF") || "-"}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{jabatan.kelas_jabatan || "-"}</td>
-                          <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{jabatan.kebutuhan_pegawai ?? "-"}</td>
-                          <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{jabatan.bezetting ?? "-"}</td>
+                          <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">
+                            {jabatan.kelas_jabatan || "-"}
+                          </td>
                           <td className="px-4 py-3 text-center">
                             {jabatan.pejabat && jabatan.pejabat.length > 0 ? (
                               <div className="text-sm text-gray-700 dark:text-gray-300">
                                 {jabatan.pejabat.map((p, pi) => (
-                                  <div key={pi} className="font-medium">{p.name}</div>
+                                  <div key={pi} className="font-medium">
+                                    {p.name}
+                                  </div>
                                 ))}
                               </div>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-                                style={{ backgroundColor: BG_COLORS.yellow.light, color: TEXT_ON_BG_COLORS.yellow }}>
-                                <i className="fas fa-exclamation-circle" aria-hidden="true"></i>
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-sm font-medium"
+                                style={{
+                                  backgroundColor: BG_COLORS.yellow.light,
+                                  color: TEXT_ON_BG_COLORS.yellow,
+                                }}
+                              >
+                                <i
+                                  className="fas fa-exclamation-circle"
+                                  aria-hidden="true"
+                                ></i>
                                 Kosong
                               </span>
                             )}
@@ -455,7 +518,10 @@ const Suksesi = () => {
                     disabled={currentPage === 1}
                     className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
                   >
-                    <i className="fas fa-angle-double-left w-4 h-4" aria-hidden="true" />
+                    <i
+                      className="fas fa-angle-double-left w-4 h-4"
+                      aria-hidden="true"
+                    />
                   </button>
 
                   {/* Previous page */}
@@ -464,7 +530,10 @@ const Suksesi = () => {
                     disabled={currentPage === 1}
                     className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
                   >
-                    <i className="fas fa-angle-left w-4 h-4" aria-hidden="true" />
+                    <i
+                      className="fas fa-angle-left w-4 h-4"
+                      aria-hidden="true"
+                    />
                   </button>
 
                   {/* Page numbers */}
@@ -472,14 +541,16 @@ const Suksesi = () => {
                     {getPageNumbers().map((page, index) => (
                       <button
                         key={index}
-                        onClick={() => typeof page === "number" && setCurrentPage(page)}
+                        onClick={() =>
+                          typeof page === "number" && setCurrentPage(page)
+                        }
                         disabled={page === "..."}
                         className={`min-w-[2.5rem] px-3 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm ${
                           page === currentPage
                             ? "bg-gradient-to-r from-teal-500 to-teal-500 text-white shadow-md scale-105 cursor-pointer"
                             : page === "..."
-                            ? "cursor-default text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none"
-                            : "text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 cursor-pointer"
+                              ? "cursor-default text-gray-500 dark:text-gray-400 bg-transparent border-0 shadow-none"
+                              : "text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 cursor-pointer"
                         }`}
                       >
                         {page}
@@ -489,11 +560,16 @@ const Suksesi = () => {
 
                   {/* Next page */}
                   <button
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
                     disabled={currentPage === totalPages}
                     className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
                   >
-                    <i className="fas fa-angle-right w-4 h-4" aria-hidden="true" />
+                    <i
+                      className="fas fa-angle-right w-4 h-4"
+                      aria-hidden="true"
+                    />
                   </button>
 
                   {/* Last page */}
@@ -502,7 +578,10 @@ const Suksesi = () => {
                     disabled={currentPage === totalPages}
                     className="p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-teal-500/10 dark:hover:bg-gray-600 hover:border-teal-500/50 dark:hover:border-teal-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer"
                   >
-                    <i className="fas fa-angle-double-right w-4 h-4" aria-hidden="true" />
+                    <i
+                      className="fas fa-angle-double-right w-4 h-4"
+                      aria-hidden="true"
+                    />
                   </button>
                 </div>
 
@@ -563,30 +642,14 @@ const Suksesi = () => {
                       {selectedJabatanData.jenis_jabatan}
                     </p>
                   </div>
+                </div>
+                <div className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Kelas Jabatan
                     </p>
                     <p className="text-md text-gray-700 dark:text-gray-200">
                       {selectedJabatanData.kelas_jabatan}
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Kebutuhan Pegawai
-                    </p>
-                    <p className="text-md text-gray-700 dark:text-gray-200">
-                      {selectedJabatanData.kebutuhan_pegawai}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Bezetting
-                    </p>
-                    <p className="text-md text-gray-700 dark:text-gray-200">
-                      {selectedJabatanData.bezetting}
                     </p>
                   </div>
                   <div>
@@ -599,9 +662,9 @@ const Suksesi = () => {
                         <div key={idx} className="mb-3">
                           <div className="text-md font-semibold text-gray-800 dark:text-white">
                             {pejabat.name}{" "}
-                            <span className="text-md text-gray-500">
-                              ({pejabat.nip})
-                            </span>
+                            <p className="text-md text-gray-500">
+                              {pejabat.nip}
+                            </p>
                           </div>
                           <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div>
@@ -650,7 +713,9 @@ const Suksesi = () => {
                           className="fas fa-info-circle"
                           aria-hidden="true"
                         ></i>
-                        <p className="text-md text-yellow-600 dark:text-yellow-400">Belum ada pejabat saat ini</p>
+                        <p className="text-md text-yellow-600 dark:text-yellow-400">
+                          Belum ada pejabat saat ini
+                        </p>
                       </div>
                     )}
                   </div>
@@ -762,7 +827,7 @@ const Suksesi = () => {
                         <div className="flex-grow">
                           {/* Avatar & Basic Info */}
                           <div className="flex items-start space-x-4 mb-4">
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 relative">
                               {pegawai.avatar ? (
                                 <img
                                   src={pegawai.avatar}
@@ -783,6 +848,16 @@ const Suksesi = () => {
                                     {pegawai.nama.charAt(0)}
                                   </span>
                                 </div>
+                              )}
+                              {pegawai.kotak_rank != null && (
+                                <span
+                                  className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-white text-sm font-semibold px-2 py-1 rounded-full shadow-sm border-2 border-white dark:border-gray-800 whitespace-nowrap"
+                                  style={{
+                                    backgroundColor: PRIMARY_COLORS.teal,
+                                  }}
+                                >
+                                  Kotak {pegawai.kotak_rank}
+                                </span>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -862,61 +937,53 @@ const Suksesi = () => {
                             </div>
                           </div>
                         </div>
-                        {/* Performance Metrics (2 kolom) + Nilai Talenta di bawahnya */}
+                        {/* Performance Metrics */}
                         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                           <div className="grid grid-cols-2 gap-3">
                             <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900 dark:to-teal-800 rounded-lg p-2 text-center">
-                              <div className="text-md text-teal-500 dark:text-teal-400 mt-1 font-medium">
+                              <div className="text-sm text-teal-500 dark:text-teal-400 mt-1 font-medium">
                                 Nilai Potensial
                               </div>
                               <div
                                 className="text-2xl font-bold dark:text-teal-500"
                                 style={{ color: PRIMARY_COLORS.teal }}
                               >
-                                {pegawai.nilai_potensial?.toFixed(2) || "0.0"}
+                                {pegawai.nilai_potensial?.toFixed(2) ?? "-"}
                               </div>
                             </div>
                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-2 text-center">
-                              <div className="text-md text-[#3085d6] dark:text-blue-400 mt-1 font-medium">
+                              <div className="text-sm text-[#3085d6] dark:text-blue-400 mt-1 font-medium">
                                 Nilai Kinerja
                               </div>
                               <div className="text-2xl font-bold text-[#3085d6] dark:text-blue-300">
-                                {pegawai.nilai_kinerja?.toFixed(2) || "0.0"}
+                                {pegawai.nilai_kinerja?.toFixed(2) ?? "-"}
                               </div>
                             </div>
-                          </div>
-
-                          {/* Nilai Talenta - tampil sebagai kotak metrik yang seragam di bawah dua metrik */}
-                          <div className="mt-3 flex justify-center">
-                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 rounded-lg p-2 text-center w-full md:w-1/2">
-                              <div className="text-md text-purple-600 dark:text-purple-400 mt-1 font-medium">
+                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 rounded-lg p-2 text-center">
+                              <div className="text-sm text-purple-600 dark:text-purple-400 mt-1 font-medium">
                                 Nilai Talenta
                               </div>
                               <div className="text-2xl font-bold text-purple-600 dark:text-purple-300">
-                                {(() => {
-                                  const k =
-                                    pegawai.kinerja_score ??
-                                    pegawai.nilai_kinerja ??
-                                    pegawai.kinerja ??
-                                    pegawai.nilaiKinerja ??
-                                    (pegawai.penilaian_summary &&
-                                      pegawai.penilaian_summary.kinerja) ??
-                                    0;
-                                  const p =
-                                    pegawai.potensial_score ??
-                                    pegawai.nilai_potensial ??
-                                    pegawai.potensial ??
-                                    pegawai.nilaiPotensial ??
-                                    (pegawai.penilaian_summary &&
-                                      pegawai.penilaian_summary.potensial) ??
-                                    0;
-                                  const talent =
-                                    (Number(k) || 0) * 0.5 +
-                                    (Number(p) || 0) * 0.5;
-                                  return isNaN(talent)
-                                    ? "-"
-                                    : talent.toFixed(2);
-                                })()}
+                                {pegawai.nilai_talenta?.toFixed(2) ?? "-"}
+                              </div>
+                            </div>
+                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900 dark:to-orange-800 rounded-lg p-2 text-center">
+                              <div className="text-sm text-orange-600 dark:text-orange-400 mt-1 font-medium">
+                                Nilai Komp. Teknis
+                              </div>
+                              <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">
+                                {pegawai.nilai_kompetensi_teknis?.toFixed(2) ??
+                                  "-"}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 rounded-lg p-2 text-center">
+                              <div className="text-sm text-green-700 dark:text-green-400 mt-1 font-medium">
+                                Nilai Akhir Talenta
+                              </div>
+                              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                                {pegawai.nilai_akhir_talenta?.toFixed(2) ?? "-"}
                               </div>
                             </div>
                           </div>
@@ -1029,7 +1096,7 @@ const Suksesi = () => {
                   <div className="pt-4 w-full">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-white/50 dark:bg-gray-750/50 rounded-lg p-3 border border-gray-300 dark:border-gray-600">
-                        <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                        <div className="text-sm text-gray-400 dark:text-gray-500 font-medium">
                           Nilai Kinerja
                         </div>
                         <div className="text-xl font-bold text-gray-300 dark:text-gray-600 mt-1">
@@ -1037,7 +1104,7 @@ const Suksesi = () => {
                         </div>
                       </div>
                       <div className="bg-white/50 dark:bg-gray-750/50 rounded-lg p-3 border border-gray-300 dark:border-gray-600">
-                        <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                        <div className="text-sm text-gray-400 dark:text-gray-500 font-medium">
                           Nilai Potensial
                         </div>
                         <div className="text-xl font-bold text-gray-300 dark:text-gray-600 mt-1">
