@@ -191,7 +191,12 @@ const Sidebar = () => {
       >
         {/* Header with Logo */}
         <div className="p-5 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
+          <NavLink
+            to="/"
+            onClick={() => setPendingPath("/")}
+            className="flex items-center justify-between mb-4 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            title="Dashboard"
+          >
             {sidebarExpanded ? (
               <div className="flex items-center space-x-3 overflow-hidden">
                 <img
@@ -209,9 +214,9 @@ const Sidebar = () => {
                 </div>
               </div>
             ) : (
-              <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
+              <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
             )}
-          </div>
+          </NavLink>
 
           {/* Toggle Button */}
           <button
@@ -320,7 +325,6 @@ const Sidebar = () => {
                   {user?.nama?.charAt(0)?.toUpperCase() || "?"}
                 </div>
               </div>
-              <div className="absolute bottom-0 right-1/2 translate-x-1/2 translate-y-1 w-3 h-3 bg-[#3085d6] rounded-full border-2 border-white"></div>
             </button>
           )}
         </div>
