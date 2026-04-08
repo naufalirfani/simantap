@@ -111,6 +111,7 @@ const PenilaianPegawai = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [uploadMode, setUploadMode] = useState("regular");
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPegawai, setSelectedPegawai] = useState(null);
   const [penilaianDetail, setPenilaianDetail] = useState(null);
@@ -419,6 +420,29 @@ const PenilaianPegawai = () => {
     }
   };
 
+  const ASESMEN_INDIKATOR_NAMES = [
+    "penilaian kompetensi manajerial dan sosial kultural",
+    "penilaian potensi talenta",
+  ];
+
+  const normalizedSubIndikators = Array.isArray(subIndikators)
+    ? subIndikators
+    : [];
+
+  const asesmenSubIndikators = normalizedSubIndikators.filter((sub) => {
+    const indikatorName = String(
+      (sub?.indikator ? sub?.indikator.indikator : ""),
+    ).toLowerCase();
+    return ASESMEN_INDIKATOR_NAMES.includes(indikatorName);
+  });
+
+  const regularSubIndikators = normalizedSubIndikators.filter((sub) => {
+    const indikatorName = String(
+      (sub?.indikator ? sub?.indikator.indikator : ""),
+    ).toLowerCase();
+    return !ASESMEN_INDIKATOR_NAMES.includes(indikatorName);
+  });
+
   const handleViewDetail = async (pegawai) => {
     setSelectedPegawai(pegawai);
     setShowDetailModal(true);
@@ -642,7 +666,10 @@ const PenilaianPegawai = () => {
       {/* Action Buttons */}
       <div className="mb-4 flex flex-col sm:flex-row gap-3 justify-end">
         <IconButton
-          onClick={() => setShowBulkUploadModal(true)}
+          onClick={() => {
+            setUploadMode("regular");
+            setShowBulkUploadModal(true);
+          }}
           variant="blue"
           size="lg"
           disabled={isUploading}
@@ -653,7 +680,24 @@ const PenilaianPegawai = () => {
           ) : (
             <i className="fas fa-file-import mr-2" />
           )}
-          Impor Data
+          Impor Data Penilaian
+        </IconButton>
+        <IconButton
+          onClick={() => {
+            setUploadMode("asesmen");
+            setShowBulkUploadModal(true);
+          }}
+          variant="blue"
+          size="lg"
+          disabled={isUploading}
+          title="Impor Data Asesmen"
+        >
+          {isUploading ? (
+            <i className="fas fa-spinner fa-spin mr-2" />
+          ) : (
+            <i className="fas fa-file-signature mr-2" />
+          )}
+          Impor Data Asesmen
         </IconButton>
         <IconButton
           onClick={handleSyncPenilaian}
@@ -689,8 +733,13 @@ const PenilaianPegawai = () => {
       <BulkUploadModal
         isOpen={showBulkUploadModal}
         onClose={() => setShowBulkUploadModal(false)}
-        subIndikators={subIndikators}
+        subIndikators={
+          uploadMode === "asesmen"
+            ? asesmenSubIndikators
+            : regularSubIndikators
+        }
         onUploadSuccess={handleBulkUpload}
+        uploadMode={uploadMode}
       />
 
       {/* Detail Penilaian Modal */}

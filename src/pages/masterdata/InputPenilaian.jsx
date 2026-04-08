@@ -115,6 +115,90 @@ const InputPenilaian = () => {
   const [existingPenilaian, setExistingPenilaian] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
 
+  const hasFilledValue = (value) =>
+    value !== null && value !== undefined && String(value).trim() !== "";
+
+  const applyDefaultPenilaianValues = (
+    currentData,
+    indikatorList,
+    instrumenList,
+  ) => {
+    const nextData = { ...(currentData || {}) };
+
+    const getSubInstrumens = (subindikatorId) =>
+      (instrumenList || [])
+        .filter(
+          (instr) =>
+            String(instr.subindikator_id) === String(subindikatorId),
+        )
+        .sort((a, b) =>
+          (a.instrumen || "").localeCompare(b.instrumen || ""),
+        );
+
+    for (const indikator of indikatorList || []) {
+      if (!indikator.sub_indikators) continue;
+
+      for (const subindikator of indikator.sub_indikators) {
+        if (!subindikator.isactive) continue;
+
+        const subInstrumens = getSubInstrumens(subindikator.id);
+        if (subInstrumens.length === 0) continue;
+
+        const sid = String(subindikator.id);
+        const existingKey = Object.prototype.hasOwnProperty.call(nextData, sid)
+          ? sid
+          : String(subindikator.id);
+
+        const entry = nextData[existingKey] || {};
+
+        const selectedInstrumen = hasFilledValue(entry.instrumen_id)
+          ? subInstrumens.find(
+              (instr) => String(instr.id) === String(entry.instrumen_id),
+            )
+          : null;
+
+        const defaultByFlag = subInstrumens.find(
+          (instr) =>
+            instr.is_default === true ||
+            instr.is_default === 1 ||
+            instr.default === true ||
+            instr.default === 1 ||
+            instr.isDefault === true,
+        );
+
+        const defaultByNilai = hasFilledValue(entry.nilai)
+          ? subInstrumens.find(
+              (instr) => Number(instr.skor) === Number(entry.nilai),
+            )
+          : null;
+
+        const fallbackInstrumen =
+          selectedInstrumen ||
+          defaultByFlag ||
+          defaultByNilai ||
+          subInstrumens[0] ||
+          null;
+
+        if (!fallbackInstrumen) continue;
+
+        const instrumenId = hasFilledValue(entry.instrumen_id)
+          ? String(entry.instrumen_id)
+          : String(fallbackInstrumen.id);
+        const nilai = hasFilledValue(entry.nilai)
+          ? entry.nilai
+          : fallbackInstrumen.skor;
+
+        nextData[existingKey] = {
+          ...entry,
+          instrumen_id: instrumenId,
+          nilai,
+        };
+      }
+    }
+
+    return nextData;
+  };
+
   useEffect(() => {
     document.title = `Input Penilaian | SIMANTAP`;
     loadData();
@@ -186,9 +270,9 @@ const InputPenilaian = () => {
               let hasil = 0;
               if (isMSK) {
                 const standar = getStandarFresh(sub.id) || 0;
-                hasil = standar > 0 ? (nilaiNum / standar) * 100 * (bobot / 100) : 0;
+                hasil = standar > 0 ? (((nilaiNum < standar) ? nilaiNum : standar)  / standar) * 100 * (bobot / 100) : 0;
               } else if (isPotensiTalenta) {
-                hasil = (nilaiNum / 5) * 100 * (bobot / 100);
+                hasil = (Math.min(nilaiNum, 5) / 5) * 100 * (bobot / 100);
               } else {
                 hasil = nilaiNum * (bobot / 100);
               }
@@ -263,6 +347,7 @@ const InputPenilaian = () => {
       freshData.instrumens = instrumenResult;
 
       // Try to load existing penilaian
+      let resolvedPenilaianData = {};
       try {
         const existingData = await fetchPenilaianByNip(nip);
         if (existingData) {
@@ -347,14 +432,21 @@ const InputPenilaian = () => {
               },
             );
           }
-          setPenilaianData(initialData);
-          freshData.penilaianData = initialData;
+          resolvedPenilaianData = initialData;
           freshData.existingPenilaian = existingData;
         }
       } catch (error) {
         // No existing penilaian, that's okay
         console.log("No existing penilaian found");
       }
+
+      const normalizedPenilaianData = applyDefaultPenilaianValues(
+        resolvedPenilaianData,
+        indikatorResult,
+        instrumenResult,
+      );
+      setPenilaianData(normalizedPenilaianData);
+      freshData.penilaianData = normalizedPenilaianData;
 
       // Load pegawai profile
       try {
@@ -420,9 +512,16 @@ const InputPenilaian = () => {
   };
 
   // Calculate result for a subindikator
-  const calculateResult = (subindikator, nilai, indikatorName) => {
+  const calculateResultNumeric = (
+    subindikator,
+    nilai,
+    indikatorName,
+    options = {},
+  ) => {
+    const { clampToStandar = false } = options;
     if (nilai === undefined || nilai === null || nilai === "" || isNaN(nilai))
-      return (0).toFixed(2);
+      return 0;
+
     const bobot = parseFloat(subindikator.bobot) || 0;
     const nilaiNum = parseFloat(nilai);
 
@@ -437,24 +536,57 @@ const InputPenilaian = () => {
     if (isMSK) {
       // For MSK: hasil = (skor / standar) * 100, then apply bobot percent
       const standar = getStandarForSub(subindikator.id) || 0;
-      if (standar === 0) return (0).toFixed(2);
-      const pct = (nilaiNum / standar) * 100;
+      if (standar === 0) return 0;
+      const effectiveNilai = clampToStandar
+        ? Math.min(nilaiNum, standar)
+        : nilaiNum;
+      const pct = (effectiveNilai / standar) * 100;
       const result = pct * (bobot / 100);
-      return result.toFixed(2);
+      return result;
     }
 
     if (isPotensiTalenta) {
       // For Potensi: hasil = (skor / standar) * 100, then apply bobot percent
       const standar = 5;
-      if (standar === 0) return (0).toFixed(2);
-      const pct = (nilaiNum / standar) * 100;
+      if (standar === 0) return 0;
+      const effectiveNilai = clampToStandar
+        ? Math.min(nilaiNum, standar)
+        : nilaiNum;
+      const pct = (effectiveNilai / standar) * 100;
       const result = pct * (bobot / 100);
-      return result.toFixed(2);
+      return result;
     }
 
     // For other indicators: bobot is stored as percent (e.g., 15 => 15%), so divide by 100
     const result = nilaiNum * (bobot / 100);
+    return result;
+  };
+
+  const calculateResult = (subindikator, nilai, indikatorName, clampToStandar = false) => {
+    const result = calculateResultNumeric(subindikator, nilai, indikatorName, {
+      clampToStandar: clampToStandar,
+    });
     return result.toFixed(2);
+  };
+
+  const calculateJPMResultNumeric = (subindikator, nilai, indikatorName) => {
+    if (nilai === undefined || nilai === null || nilai === "" || isNaN(nilai))
+      return 0;
+
+    const isMSK =
+      indikatorName?.toLowerCase() ===
+      "penilaian kompetensi manajerial dan sosial kultural";
+    const isPotensiTalenta =
+      indikatorName?.toLowerCase() === "penilaian potensi talenta";
+
+    if (!isMSK && !isPotensiTalenta) return 0;
+
+    const standar = isMSK ? getStandarForSub(subindikator.id) || 0 : 5;
+    if (standar === 0) return 0;
+
+    const nilaiNum = parseFloat(nilai);
+    const effectiveNilai = Math.min(nilaiNum, standar);
+    return (effectiveNilai / standar) * 100;
   };
 
   // Handle input change for subindikator
@@ -523,14 +655,14 @@ const InputPenilaian = () => {
         const hasInstrumens =
           getInstrumensForSubindikator(subindikator.id).length > 0;
 
-        if (!data || !data.nilai) {
+        if (!data || !hasFilledValue(data.nilai)) {
           return {
             valid: false,
             message: `Penilaian untuk "${subindikator.subindikator}" wajib diisi`,
           };
         }
 
-        if (hasInstrumens && !data.instrumen_id) {
+        if (hasInstrumens && !hasFilledValue(data.instrumen_id)) {
           return {
             valid: false,
             message: `Instrumen untuk "${subindikator.subindikator}" wajib dipilih`,
@@ -563,7 +695,7 @@ const InputPenilaian = () => {
           entry.nilai !== ""
         ) {
           const nilaiNum = parseFloat(entry.nilai);
-          const hasilStr = calculateResult(sub, nilaiNum, indikator.indikator);
+          const hasilStr = calculateResult(sub, nilaiNum, indikator.indikator, true);
           const hasilNum = parseFloat(hasilStr);
 
           if (!Number.isNaN(hasilNum)) {
@@ -636,12 +768,12 @@ const InputPenilaian = () => {
           ) {
             // Include both nilai and computed hasil for each subindikator
             const nilaiNum = parseFloat(entry.nilai);
-            const hasilStr = calculateResult(
+            const hasilNum = calculateResultNumeric(
               sub,
               nilaiNum,
               indikator.indikator,
+              { clampToStandar: true },
             );
-            const hasilNum = parseFloat(hasilStr);
             penilaianObj[sub.id] = {
               nilai: nilaiNum,
               hasil: Number.isNaN(hasilNum) ? 0 : hasilNum,
@@ -1119,6 +1251,33 @@ const InputPenilaian = () => {
 
               if (activeSubindikators.length === 0) return null;
 
+              const isMSKIndicatorForJPM =
+                indikator.indikator?.toLowerCase() ===
+                "penilaian kompetensi manajerial dan sosial kultural";
+              const isPotensiTalentaIndicatorForJPM =
+                indikator.indikator?.toLowerCase() ===
+                "penilaian potensi talenta";
+              const isJPMIndicator =
+                isMSKIndicatorForJPM ||
+                isPotensiTalentaIndicatorForJPM;
+
+              const totalJPM = isJPMIndicator
+                ? activeSubindikators.reduce((acc, sub) => {
+                    const entry = getPenilaianEntry(sub.id);
+                    const hasilNum = calculateJPMResultNumeric(
+                      sub,
+                      entry?.nilai,
+                      indikator.indikator,
+                    );
+                    return acc + (Number.isNaN(hasilNum) ? 0 : hasilNum);
+                  }, 0)
+                : 0;
+
+              const averageJPM =
+                isJPMIndicator && activeSubindikators.length > 0
+                  ? totalJPM / activeSubindikators.length
+                  : 0;
+
               return (
                 <div key={indikator.id}>
                   {/* Indikator Header */}
@@ -1405,9 +1564,20 @@ const InputPenilaian = () => {
                               </div>
                             )}
                           </div>
+
                         </div>
                       );
                     })}
+
+                    {isJPMIndicator && (
+                      <div className="mt-1 flex justify-end">
+                        <div className="px-3 py-2 rounded-lg border border-teal-200 bg-teal-50 dark:bg-teal-950/40 dark:border-teal-800">
+                          <span className="text-sm font-semibold text-teal-700 dark:text-teal-300">
+                            JPM: {averageJPM.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

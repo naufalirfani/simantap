@@ -302,11 +302,12 @@ export const fetchPegawai = async (params = {}) => {
 /**
  * Fetch single pegawai by NIP from main API
  */
-export const fetchPegawaiByNip = async (nip, with_penilaian = false) => {
+export const fetchPegawaiByNip = async (nip, with_penilaian = false, with_riwayat_asesmen = false) => {
   try {
     const base = API_BASE_URL || "http://192.168.0.111:8000";
     const params = new URLSearchParams();
     if (with_penilaian) params.append("with_penilaian", "true");
+    if (with_riwayat_asesmen) params.append("with_riwayat_asesmen", "true");
 
     const url = `${base}/api/pegawai/${nip}${
       params.toString() ? "?" + params.toString() : ""
@@ -863,6 +864,52 @@ export const bulkUploadPenilaian = async (payload) => {
     return result;
   } catch (error) {
     console.error("bulkUploadPenilaian error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch available assessment names
+ * Endpoint: VITE_API_BASE_URL/api/riwayat-asesmens/nama-asesmen
+ */
+export const fetchNamaAsesmenOptions = async () => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/riwayat-asesmens/nama-asesmen`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-TOKEN": encryptedToken,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const errResp = await response.json().catch(() => null);
+      throw new Error(errResp?.message || "Failed to fetch nama asesmen");
+    }
+
+    const result = await response.json().catch(() => null);
+    const list = Array.isArray(result)
+      ? result
+      : Array.isArray(result?.data)
+      ? result.data
+      : [];
+
+    return list
+      .map((item) => {
+        if (typeof item === "string") return item.trim();
+        return String(
+          item?.nama_asesmen || item?.nama || item?.name || item?.label || "",
+        ).trim();
+      })
+      .filter(Boolean);
+  } catch (error) {
+    console.error("fetchNamaAsesmenOptions error:", error);
     throw error;
   }
 };

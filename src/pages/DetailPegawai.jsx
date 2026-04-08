@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import { PRIMARY_COLORS } from "../config/colors";
 import Breadcrumb from "../components/Breadcrumb";
 import IconButton from "../components/IconButton";
+import SearchableSelect from "../components/SearchableSelect";
 import {
   fetchPegawaiByNip,
   fetchIndikators,
@@ -58,6 +59,7 @@ const DetailPegawai = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [showPersonalModal, setShowPersonalModal] = useState(false);
   const [showEmploymentModal, setShowEmploymentModal] = useState(false);
+  const [selectedRiwayatAsesmenId, setSelectedRiwayatAsesmenId] = useState("");
 
   // Track mobile viewport for responsive chart sizing
   useEffect(() => {
@@ -179,7 +181,7 @@ const DetailPegawai = () => {
   const fetchDetailPegawai = async () => {
     try {
       // Fetch pegawai data via apiService helper
-      const pegawai = await fetchPegawaiByNip(nip, true);
+      const pegawai = await fetchPegawaiByNip(nip, true, true);
       if (!pegawai) throw new Error("Data tidak tersedia");
       setPegawaiData(pegawai);
       setLoadingProfile(false);
@@ -232,9 +234,47 @@ const DetailPegawai = () => {
     }
   };
 
+  const getRiwayatAsesmenList = () => {
+    if (!Array.isArray(pegawaiData?.riwayat_asesmen)) return [];
+
+    return [...pegawaiData.riwayat_asesmen].sort((a, b) => {
+      const dateA = a?.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b?.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
+  };
+
+  const getSelectedRiwayatAsesmen = () => {
+    const list = getRiwayatAsesmenList();
+    if (list.length === 0) return null;
+
+    return (
+      list.find((item) => String(item.id) === String(selectedRiwayatAsesmenId)) ||
+      list[0]
+    );
+  };
+
+  useEffect(() => {
+    const list = getRiwayatAsesmenList();
+    if (list.length === 0) {
+      setSelectedRiwayatAsesmenId("");
+      return;
+    }
+
+    const isValidSelection = list.some(
+      (item) => String(item.id) === String(selectedRiwayatAsesmenId),
+    );
+    if (!isValidSelection) {
+      setSelectedRiwayatAsesmenId(String(list[0].id));
+    }
+  }, [pegawaiData?.riwayat_asesmen, selectedRiwayatAsesmenId]);
+
   // Process MSK data for radar chart
   const processCompetencyData = () => {
-    if (!pegawaiData?.penilaian) return null;
+    const selectedRiwayat = getSelectedRiwayatAsesmen();
+    const assessmentData =
+      selectedRiwayat?.data_asesmen || pegawaiData?.penilaian || null;
+    if (!assessmentData) return null;
 
     // Helper: get standar value for a subindikator id from standarMSK which
     // may be an object keyed by id or an array of entries { subindikator_id, standar }
@@ -292,9 +332,9 @@ const DetailPegawai = () => {
         const standardValues = [];
         const actualValues = [];
         keys.forEach((k) => {
-          if (pegawaiData.penilaian[k]) {
+          if (assessmentData[k]) {
             labels.push(k);
-            actualValues.push(pegawaiData.penilaian[k]?.nilai || 0);
+            actualValues.push(assessmentData[k]?.nilai || 0);
             standardValues.push(Number(standarMSK[k] || 0));
           }
         });
@@ -312,11 +352,11 @@ const DetailPegawai = () => {
     subs.forEach((s) => {
       const subId = s.id;
       // Only include if there's a penilaian entry for this subindikator
-      if (pegawaiData.penilaian && pegawaiData.penilaian[subId] !== undefined) {
+      if (assessmentData && assessmentData[subId] !== undefined) {
         labels.push(s.subindikator || s.nama || s.name || String(subId));
         const actual =
-          pegawaiData.penilaian[subId]?.nilai ??
-          pegawaiData.penilaian[subId]?.hasil ??
+          assessmentData[subId]?.nilai ??
+          assessmentData[subId]?.hasil ??
           0;
         actualValues.push(Number(actual) || 0);
         standardValues.push(getStandarForSub(subId) || 0);
@@ -330,7 +370,10 @@ const DetailPegawai = () => {
 
   // Process Potensi Talenta data for radar chart
   const processPotensiTalentaData = () => {
-    if (!pegawaiData?.penilaian) return null;
+    const selectedRiwayat = getSelectedRiwayatAsesmen();
+    const assessmentData =
+      selectedRiwayat?.data_asesmen || pegawaiData?.penilaian || null;
+    if (!assessmentData) return null;
 
     // Find the indikator entry for Potensi Talenta
     const potensiIndikator = indikators.find((it) => {
@@ -358,11 +401,11 @@ const DetailPegawai = () => {
     subs.forEach((s) => {
       const subId = s.id;
       // Only include if there's a penilaian entry for this subindikator
-      if (pegawaiData.penilaian && pegawaiData.penilaian[subId] !== undefined) {
+      if (assessmentData && assessmentData[subId] !== undefined) {
         labels.push(s.subindikator || s.nama || s.name || String(subId));
         const actual =
-          pegawaiData.penilaian[subId]?.nilai ??
-          pegawaiData.penilaian[subId]?.hasil ??
+          assessmentData[subId]?.nilai ??
+          assessmentData[subId]?.hasil ??
           0;
         actualValues.push(Number(actual) || 0);
       }
@@ -377,7 +420,9 @@ const DetailPegawai = () => {
 
   // Calculate indicator scores (sum of sub-indicators)
   const calculateIndicatorScores = () => {
-    if (!pegawaiData?.penilaian) return { potensial: [], kinerja: [] };
+    const assessmentData =
+      getSelectedRiwayatAsesmen()?.data_asesmen || pegawaiData?.penilaian || null;
+    if (!assessmentData) return { potensial: [], kinerja: [] };
 
     // Use fetched indikators to compute sums per indikator
     const potensialList = indikators
@@ -387,11 +432,11 @@ const DetailPegawai = () => {
           ? indikator.sub_indikators
           : [];
         const nilaiSum = subs.reduce((s, sub) => {
-          const v = pegawaiData.penilaian?.[sub.id]?.nilai;
+          const v = assessmentData?.[sub.id]?.nilai;
           return s + (parseFloat(v) || 0);
         }, 0);
         const hasilSum = subs.reduce((s, sub) => {
-          const v = pegawaiData.penilaian?.[sub.id]?.hasil;
+          const v = assessmentData?.[sub.id]?.hasil;
           return s + (parseFloat(v) || 0);
         }, 0);
         return {
@@ -409,11 +454,11 @@ const DetailPegawai = () => {
           ? indikator.sub_indikators
           : [];
         const nilaiSum = subs.reduce((s, sub) => {
-          const v = pegawaiData.penilaian?.[sub.id]?.nilai;
+          const v = assessmentData?.[sub.id]?.nilai;
           return s + (parseFloat(v) || 0);
         }, 0);
         const hasilSum = subs.reduce((s, sub) => {
-          const v = pegawaiData.penilaian?.[sub.id]?.hasil;
+          const v = assessmentData?.[sub.id]?.hasil;
           return s + (parseFloat(v) || 0);
         }, 0);
         return {
@@ -442,7 +487,9 @@ const DetailPegawai = () => {
   };
 
   const getSubValue = (subId) => {
-    const stored = pegawaiData.penilaian?.[subId];
+    const stored =
+      getSelectedRiwayatAsesmen()?.data_asesmen?.[subId] ??
+      pegawaiData?.penilaian?.[subId];
     if (stored === undefined || stored === null)
       return { nilai: null, hasil: null };
     if (typeof stored === "object") {
@@ -633,6 +680,12 @@ const DetailPegawai = () => {
   const satyalancanaAwards = jsonData?.tglSkCpns
     ? calculateSatyalancana(jsonData.tglSkCpns)
     : [];
+  const riwayatAsesmenList = getRiwayatAsesmenList();
+  const selectedRiwayatAsesmen = getSelectedRiwayatAsesmen();
+  const riwayatAsesmenOptions = riwayatAsesmenList.map((item) => ({
+    value: String(item.id),
+    label: `${item.nama_asesmen || "Nama asesmen"}${item.created_at ? ` • ${formatDateIndo(item.created_at)}` : ""}`,
+  }));
 
   // Chart configurations
   const radarChartData = activeChartData
@@ -682,12 +735,12 @@ const DetailPegawai = () => {
 
   // Calculate dynamic max value for radar chart
   const getRadarMaxValue = () => {
-    if (activeRadarTab === "msk" && competencyData?.standardValues) {
-      const maxStandard = Math.max(...competencyData.standardValues, 0);
-      return Math.ceil(maxStandard) + 1;
+    if (activeRadarTab === "msk" && competencyData?.actualValues) {
+      const maxActual = Math.max(...competencyData.actualValues, 0);
+      return Math.ceil(maxActual);
     }
     // For potensi talenta, use hardcoded 6
-    return 6;
+    return 5;
   };
 
   const radarOptions = {
@@ -1440,6 +1493,20 @@ const DetailPegawai = () => {
             </div>
           ) : (
             <>
+              {riwayatAsesmenList.length > 0 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Riwayat Asesmen
+                  </label>
+                  <SearchableSelect
+                    value={String(selectedRiwayatAsesmen?.id || "")}
+                    onChange={(value) => setSelectedRiwayatAsesmenId(value)}
+                    options={riwayatAsesmenOptions}
+                    placeholder="-- Pilih nama asesmen --"
+                  />
+                </div>
+              )}
+
               {/* Tab Navigation */}
               <div className="flex gap-2 mb-4 border-b border-gray-200 dark:border-gray-700">
                 {competencyData && (

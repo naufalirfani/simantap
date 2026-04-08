@@ -3,18 +3,27 @@ import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import Swal from "sweetalert2";
 import IconButton from "./IconButton";
+import SearchableSelect from "./SearchableSelect";
+import { fetchNamaAsesmenOptions } from "../services/apiService";
 
 const BulkUploadModal = ({
   isOpen,
   onClose,
   subIndikators,
   onUploadSuccess,
+  uploadMode = "regular",
 }) => {
   const [file, setFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
   const [headers, setHeaders] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState(1); // 1: Upload, 2: Preview
+  const isAsesmenMode = uploadMode === "asesmen";
+  const uploadLabel = isAsesmenMode ? "Data Asesmen" : "Data Penilaian";
+  const [asesmenOptions, setAsesmenOptions] = useState([]);
+  const [isLoadingAsesmenOptions, setIsLoadingAsesmenOptions] = useState(false);
+  const [selectedAsesmenName, setSelectedAsesmenName] = useState("");
+  const [manualAsesmenName, setManualAsesmenName] = useState("");
 
   useEffect(() => {
     // Reset state when modal closes
@@ -23,8 +32,34 @@ const BulkUploadModal = ({
       setPreviewData([]);
       setHeaders([]);
       setCurrentStep(1);
+      setAsesmenOptions([]);
+      setSelectedAsesmenName("");
+      setManualAsesmenName("");
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const loadNamaAsesmen = async () => {
+      if (!isOpen || !isAsesmenMode) return;
+      try {
+        setIsLoadingAsesmenOptions(true);
+        const names = await fetchNamaAsesmenOptions();
+        setAsesmenOptions(
+          names.map((name) => ({
+            value: name,
+            label: name,
+          })),
+        );
+      } catch (error) {
+        console.error("Failed to load nama asesmen options:", error);
+        setAsesmenOptions([]);
+      } finally {
+        setIsLoadingAsesmenOptions(false);
+      }
+    };
+
+    loadNamaAsesmen();
+  }, [isOpen, isAsesmenMode]);
 
   const handleDownloadTemplate = async () => {
     const headers = [
@@ -53,7 +88,7 @@ const BulkUploadModal = ({
 
     // Create example data row with empty values for subindikators
     const exampleRow = headers.map((h, i) =>
-      i === 0 ? "198001012000011001" : i === 1 ? "John Doe" : ""
+      i === 0 ? "198001012000011001" : ""
     );
 
     // Create workbook using exceljs
@@ -89,7 +124,9 @@ const BulkUploadModal = ({
       const a = document.createElement("a");
       a.href = url;
       const timestamp = new Date().toISOString().split("T")[0];
-      a.download = `template-penilaian-${timestamp}.xlsx`;
+      a.download = isAsesmenMode
+        ? `template-asesmen-${timestamp}.xlsx`
+        : `template-penilaian-${timestamp}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -284,11 +321,23 @@ const BulkUploadModal = ({
     }
 
     // Validate NIP column exists
-    if (!headers.includes("nip")) {
+    if (!headers.map(h => h.toLowerCase().trim()).includes("nip")) {
       Swal.fire({
         icon: "error",
         title: "Kolom NIP Tidak Ditemukan",
         text: 'File harus memiliki kolom "nip".',
+        confirmButtonColor: "#14B8A6",
+      });
+      return;
+    }
+
+    const finalNamaAsesmen =
+      manualAsesmenName.trim() || selectedAsesmenName.trim();
+    if (isAsesmenMode && !finalNamaAsesmen) {
+      Swal.fire({
+        icon: "warning",
+        title: "Nama Asesmen Wajib Diisi",
+        text: "Pilih nama asesmen dari dropdown atau isi manual.",
         confirmButtonColor: "#14B8A6",
       });
       return;
@@ -299,7 +348,7 @@ const BulkUploadModal = ({
       title: "Konfirmasi upload",
       html: `
         <div class="text-center">
-          <p class="mb-2">Anda akan mengupload <strong>${previewData.length}</strong> data penilaian.</p>
+          <p class="mb-2">Anda akan mengupload <strong>${previewData.length}</strong> ${uploadLabel.toLowerCase()}.</p>
           <p class="text-sm text-gray-600">Data yang sudah ada akan diperbarui.</p>
         </div>
       `,
@@ -319,6 +368,8 @@ const BulkUploadModal = ({
       const payload = {
         penilaians: previewData,
         headers: headers.filter((h) => h && String(h).trim() !== ""),
+        isAsesmen: isAsesmenMode,
+        ...(isAsesmenMode ? { nama_asesmen: finalNamaAsesmen } : {}),
       };
 
       const result = await onUploadSuccess(payload);
@@ -381,7 +432,7 @@ const BulkUploadModal = ({
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
-          text: `${previewData.length} data penilaian berhasil diunggah.`,
+          text: `${previewData.length} ${uploadLabel.toLowerCase()} berhasil diunggah.`,
           timer: 2000,
           showConfirmButton: false,
         });
@@ -433,7 +484,7 @@ const BulkUploadModal = ({
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                Impor Data Penilaian
+                Impor {uploadLabel}
               </h2>
               <p className="text-md text-gray-600 dark:text-gray-400 mt-1">
                 Ungggah berkas Excel atau CSV
@@ -673,6 +724,48 @@ const BulkUploadModal = ({
 
             {currentStep === 2 && (
               <div className="space-y-4">
+                {isAsesmenMode && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                      Nama Asesmen <span className="text-red-500">*</span>
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Pilih dari daftar
+                        </label>
+                        <SearchableSelect
+                          value={selectedAsesmenName}
+                          onChange={(value) => setSelectedAsesmenName(value)}
+                          options={asesmenOptions}
+                          placeholder={
+                            isLoadingAsesmenOptions
+                              ? "Memuat nama asesmen..."
+                              : "-- Pilih nama asesmen --"
+                          }
+                          disabled={isLoadingAsesmenOptions}
+                        />
+                      </div>
+                      <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+                        atau
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Input manual
+                        </label>
+                        <input
+                          type="text"
+                          value={manualAsesmenName}
+                          onChange={(e) => setManualAsesmenName(e.target.value)}
+                          placeholder="Masukkan nama asesmen jika tidak tersedia di dropdown"
+                          className="w-full px-3 py-2.5 border rounded-lg text-sm dark:text-white bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-teal-500"
+                          disabled={isProcessing}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Summary Card */}
                 <div
                   className="bg-white dark:bg-gray-800 rounded-lg p-4 border dark:border-gray-600"
