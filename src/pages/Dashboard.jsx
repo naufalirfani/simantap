@@ -1103,7 +1103,7 @@ const Dashboard = () => {
             className={`fas fa-sync-alt mr-2 ${isSyncingStatistik ? "animate-spin" : ""}`}
             aria-hidden="true"
           ></i>
-          {isSyncingStatistik ? "Sinkronisasi..." : "Sinkron Data"}
+          {isSyncingStatistik ? "Sinkronisasi..." : "Sinkronisasi Data"}
         </IconButton>
       </div>
 

@@ -23,6 +23,7 @@ const IconButton = ({
       "bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200",
     primary: `bg-teal-500 text-white hover:bg-teal-600 font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 transition-all duration-200`,
     blue: `bg-app-blue text-white hover:bg-app-blue-dark font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-app-blue-dark focus:ring-offset-2 transition-all duration-200`,
+    purple: `bg-purple-500 text-white hover:bg-purple-600 font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 transition-all duration-200`,
     danger: `bg-app-red text-white hover:bg-app-red-dark font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-app-red-dark focus:ring-offset-2 transition-all duration-200`,
     success: `bg-app-green text-white hover:bg-app-green-dark font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-app-green-dark focus:ring-offset-2 transition-all duration-200`,
     warn: `bg-app-orange text-white hover:bg-app-orange-dark font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-app-orange-dark focus:ring-offset-2 transition-all duration-200`,
@@ -53,6 +54,7 @@ IconButton.propTypes = {
   variant: PropTypes.oneOf([
     "default",
     "primary",
+    "purple",
     "danger",
     "success",
     "warn",

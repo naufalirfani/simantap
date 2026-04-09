@@ -1483,7 +1483,7 @@ const DetailPegawai = () => {
                       </div>
                       <IconButton
                         onClick={handleSyncPenilaian}
-                        variant="blue"
+                        variant="purple"
                         size="lg"
                         disabled={isSyncingPenilaian}
                         title="Sinkronisasi Penilaian"
