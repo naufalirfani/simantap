@@ -11,6 +11,8 @@ import {
   fetchIndikators,
   fetchStandarKompetensiMSK,
   fetchInstrumens,
+  syncPenilaian,
+  fetchSyncPenilaianStatus,
   downloadLampiranAsesmenById,
 } from "../services/apiService";
 import {
@@ -46,6 +48,94 @@ ChartJS.register(
 );
 ChartJS.defaults.font.family =
   'Poppins, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
+
+const pollSyncProgress = (nips = null) =>
+  new Promise((resolve) => {
+    let timerId = null;
+    let settled = false;
+
+    const finish = (completed, data) => {
+      if (settled) return;
+      settled = true;
+      clearInterval(timerId);
+      resolve({ completed, data });
+    };
+
+    const tick = async () => {
+      try {
+        const status = await fetchSyncPenilaianStatus(nips);
+        const total = status.session_total_nips ?? status.total ?? 0;
+        const synced = status.session_synced ?? 0;
+        const pending = status.session_pending ?? null;
+        const pct = total > 0 ? Math.round((synced / total) * 100) : 0;
+
+        const bar = document.getElementById("swal-sync-bar");
+        const stats = document.getElementById("swal-sync-stats");
+        const queue = document.getElementById("swal-sync-queue");
+        if (bar) bar.style.width = `${pct}%`;
+        if (stats)
+          stats.textContent = `${synced} dari ${total} pegawai terproses (${pct}%)`;
+        if (queue) {
+          const parts = [];
+          if (
+            status.queue_pending !== null &&
+            status.queue_pending !== undefined
+          ) {
+            parts.push(`Antrian tersisa: ${status.queue_pending}`);
+          }
+          if (
+            status.queue_completed !== null &&
+            status.queue_completed !== undefined
+          ) {
+            parts.push(`Batch selesai: ${status.queue_completed}`);
+          }
+          if (pending !== null) parts.push(`Pending sesi: ${pending}`);
+          queue.textContent = parts.join(" · ");
+        }
+        if (
+          status.queue_pending !== null &&
+          status.queue_pending !== undefined &&
+          status.queue_pending === 0 &&
+          status.session_pending !== null &&
+          status.session_pending !== undefined &&
+          status.session_pending === 0
+        ) {
+          finish(true, status);
+          Swal.close();
+        }
+      } catch (_) {
+        /* keep polling */
+      }
+    };
+
+    Swal.fire({
+      title: "Sinkronisasi Berjalan...",
+      html: `
+        <p style="font-size:14px;color:#4b5563;margin-bottom:12px;">
+          Job sinkronisasi penilaian sedang diproses di latar belakang.
+        </p>
+        <div style="background:#e5e7eb;border-radius:9999px;height:10px;overflow:hidden;margin-bottom:10px;">
+          <div id="swal-sync-bar" style="height:100%;background:#3b82f6;border-radius:9999px;width:0%;transition:width 0.4s;"></div>
+        </div>
+        <div id="swal-sync-stats" style="font-size:13px;font-weight:600;color:#374151;margin-bottom:4px;">Memuat status...</div>
+        <div id="swal-sync-queue" style="font-size:12px;color:#6b7280;"></div>
+      `,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      showCancelButton: true,
+      cancelButtonText: "Tutup (lanjutkan di latar)",
+      cancelButtonColor: "#6b7280",
+      didOpen: () => {
+        tick();
+        timerId = setInterval(tick, 2500);
+      },
+      willClose: () => {
+        finish(false, null);
+      },
+    });
+  });
+
 const DetailPegawai = () => {
   const { nip } = useParams();
   const navigate = useNavigate();
@@ -62,6 +152,7 @@ const DetailPegawai = () => {
   const [showEmploymentModal, setShowEmploymentModal] = useState(false);
   const [selectedRiwayatAsesmenId, setSelectedRiwayatAsesmenId] = useState("");
   const [downloadingLampiranId, setDownloadingLampiranId] = useState("");
+  const [isSyncingPenilaian, setIsSyncingPenilaian] = useState(false);
 
   // Track mobile viewport for responsive chart sizing
   useEffect(() => {
@@ -419,56 +510,115 @@ const DetailPegawai = () => {
 
   // Calculate indicator scores (sum of sub-indicators)
   const calculateIndicatorScores = () => {
-    const assessmentData =
-      getSelectedRiwayatAsesmen()?.data_asesmen ||
-      pegawaiData?.penilaian ||
-      null;
+    const assessmentData = pegawaiData?.penilaian || null;
     if (!assessmentData) return { potensial: [], kinerja: [] };
 
-    // Use fetched indikators to compute sums per indikator
-    const potensialList = indikators
-      .filter((it) => (it.penilaian || "").toLowerCase() === "potensial")
-      .map((indikator) => {
-        const subs = Array.isArray(indikator.sub_indikators)
-          ? indikator.sub_indikators
-          : [];
-        const nilaiSum = subs.reduce((s, sub) => {
-          const v = assessmentData?.[sub.id]?.nilai;
-          return s + (parseFloat(v) || 0);
-        }, 0);
-        const hasilSum = subs.reduce((s, sub) => {
-          const v = assessmentData?.[sub.id]?.hasil;
-          return s + (parseFloat(v) || 0);
-        }, 0);
+    const getSubEntry = (subId) => {
+      const direct = assessmentData?.[subId] ?? assessmentData?.[String(subId)];
+      if (direct !== undefined && direct !== null) {
+        if (typeof direct === "object") {
+          return {
+            nilai: direct.nilai ?? null,
+            hasil: direct.hasil ?? null,
+          };
+        }
         return {
-          name: indikator.indikator || indikator.penilaian || "-",
-          nilai: nilaiSum,
-          hasil: hasilSum,
-          bobot: indikator.bobot,
+          nilai: Number(direct),
+          hasil: null,
         };
-      });
+      }
 
-    const kinerjaList = indikators
-      .filter((it) => (it.penilaian || "").toLowerCase() === "kinerja")
-      .map((indikator) => {
-        const subs = Array.isArray(indikator.sub_indikators)
-          ? indikator.sub_indikators
-          : [];
-        const nilaiSum = subs.reduce((s, sub) => {
-          const v = assessmentData?.[sub.id]?.nilai;
-          return s + (parseFloat(v) || 0);
-        }, 0);
-        const hasilSum = subs.reduce((s, sub) => {
-          const v = assessmentData?.[sub.id]?.hasil;
-          return s + (parseFloat(v) || 0);
-        }, 0);
-        return {
-          name: indikator.indikator || indikator.penilaian || "-",
-          nilai: nilaiSum,
-          hasil: hasilSum,
-          bobot: indikator.bobot,
-        };
-      });
+      return {
+        nilai: null,
+        hasil: null,
+      };
+    };
+
+    const getStandarForSub = (subId) => {
+      if (!standarMSK) return 0;
+      if (Array.isArray(standarMSK)) {
+        const found = standarMSK.find(
+          (s) =>
+            s.subindikator_id === subId ||
+            String(s.subindikator_id) === String(subId),
+        );
+        return found && found.standar !== undefined && found.standar !== null
+          ? Number(found.standar) || 0
+          : 0;
+      }
+      if (typeof standarMSK === "object") {
+        return Number(standarMSK[subId] ?? standarMSK[String(subId)] ?? 0) || 0;
+      }
+      return 0;
+    };
+
+    const calculateHasilSub = (indikator, sub, nilaiRaw) => {
+      const nilaiNum = Number.parseFloat(nilaiRaw);
+      if (!Number.isFinite(nilaiNum)) return 0;
+
+      const bobot = Number.parseFloat(sub?.bobot) || 0;
+      const indikatorName = (indikator?.indikator || "").toLowerCase();
+      const isMSK =
+        indikatorName === "penilaian kompetensi manajerial dan sosial kultural";
+      const isPotensiTalenta = indikatorName === "penilaian potensi talenta";
+
+      if (isMSK) {
+        const standar = getStandarForSub(sub?.id);
+        if (!standar) return 0;
+        const effectiveNilai = Math.min(nilaiNum, standar);
+        return (effectiveNilai / standar) * 100 * (bobot / 100);
+      }
+
+      if (isPotensiTalenta) {
+        const standar = 5;
+        const effectiveNilai = Math.min(nilaiNum, standar);
+        return (effectiveNilai / standar) * 100 * (bobot / 100);
+      }
+
+      return nilaiNum * (bobot / 100);
+    };
+
+    const buildIndicatorList = (penilaianType) =>
+      indikators
+        .filter((it) => (it.penilaian || "").toLowerCase() === penilaianType)
+        .map((indikator) => {
+          const subs = Array.isArray(indikator.sub_indikators)
+            ? indikator.sub_indikators
+            : [];
+
+          const totals = subs.reduce(
+            (acc, sub) => {
+              const entry = getSubEntry(sub.id);
+              if (
+                entry.nilai === null ||
+                entry.nilai === undefined ||
+                entry.nilai === ""
+              ) {
+                return acc;
+              }
+
+              const nilaiNum = Number.parseFloat(entry.nilai);
+              if (!Number.isFinite(nilaiNum)) return acc;
+
+              const hasilNum = calculateHasilSub(indikator, sub, nilaiNum);
+              return {
+                nilai: acc.nilai + nilaiNum,
+                hasil: acc.hasil + (Number.isFinite(hasilNum) ? hasilNum : 0),
+              };
+            },
+            { nilai: 0, hasil: 0 },
+          );
+
+          return {
+            name: indikator.indikator || indikator.penilaian || "-",
+            nilai: totals.nilai,
+            hasil: totals.hasil,
+            bobot: indikator.bobot,
+          };
+        });
+
+    const potensialList = buildIndicatorList("potensial");
+    const kinerjaList = buildIndicatorList("kinerja");
 
     return { potensial: potensialList, kinerja: kinerjaList };
   };
@@ -803,6 +953,58 @@ const DetailPegawai = () => {
     }
   };
 
+  const handleSyncPenilaian = async () => {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Sinkronisasi Penilaian",
+      html: pegawaiData
+        ? `Sinkronisasi penilaian untuk <strong>${pegawaiData.nama || pegawaiData.name}</strong> (${nip})?`
+        : `Sinkronisasi penilaian untuk NIP <strong>${nip}</strong>?`,
+      showCancelButton: true,
+      confirmButtonText: "Ya, Sinkronisasi",
+      cancelButtonText: "Batal",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsSyncingPenilaian(true);
+      await syncPenilaian([nip]);
+      const { completed } = await pollSyncProgress([nip]);
+      await fetchDetailPegawai();
+
+      if (completed) {
+        Swal.fire({
+          icon: "success",
+          title: "Sukses",
+          text: "Sinkronisasi penilaian selesai",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Job Masih Berjalan",
+          text: "Sinkronisasi masih diproses di latar belakang. Data akan diperbarui setelah selesai.",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: error.message || "Sinkronisasi penilaian gagal",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+    } finally {
+      setIsSyncingPenilaian(false);
+    }
+  };
+
   const handleBack = () => {
     navigate("/daftar-talenta");
   };
@@ -1048,7 +1250,7 @@ const DetailPegawai = () => {
         const y2 = y.getPixelForValue(kotak.kinerjaRange.max);
 
         ctx.fillStyle = kotak.warna;
-        ctx.globalAlpha = 0.12;
+        ctx.globalAlpha = 0.15;
         ctx.fillRect(x1, y2, x2 - x1, y1 - y2);
       });
 
@@ -1279,6 +1481,20 @@ const DetailPegawai = () => {
                           Info Kepegawaian
                         </IconButton>
                       </div>
+                      <IconButton
+                        onClick={handleSyncPenilaian}
+                        variant="blue"
+                        size="lg"
+                        disabled={isSyncingPenilaian}
+                        title="Sinkronisasi Penilaian"
+                      >
+                        {isSyncingPenilaian ? (
+                          <i className="fas fa-spinner fa-spin mr-2"></i>
+                        ) : (
+                          <i className="fas fa-sync mr-2"></i>
+                        )}
+                        Sinkronisasi Data
+                      </IconButton>
                     </div>
                   </div>
 
@@ -1839,7 +2055,7 @@ const DetailPegawai = () => {
             </div>
           ) : (
             <>
-              <div className="flex items-center">
+              <div className="flex items-center overflow-x-auto">
                 {/* Y-axis label (outside chart) */}
                 <div className="flex items-center pr-3" style={{ width: 28 }}>
                   <div className="transform -rotate-90 origin-center text-md font-semibold text-gray-600 dark:text-gray-300">
@@ -1884,10 +2100,13 @@ const DetailPegawai = () => {
                     return (
                       <div key={q} className="flex items-start gap-2">
                         <div
-                          className="flex-shrink-0 w-4 h-4 rounded mt-0.5"
+                          className="flex-shrink-0 w-4 h-4 rounded mt-1"
                           style={{ backgroundColor: warna, opacity: 0.5 }}
                         ></div>
                         <div className="flex-1 min-w-0">
+                          <div className="text-gray-700 dark:text-gray-300 font-medium">
+                            Kotak {q}
+                          </div>
                           {kategori && (
                             <div className="text-sm text-gray-500 dark:text-gray-400">
                               {kategori}
@@ -1915,6 +2134,18 @@ const DetailPegawai = () => {
             ></i>
             Nilai Potensial per Indikator
           </h3>
+          <div className="mb-4 rounded-lg border border-yellow-100 dark:border-yellow-800/60 bg-yellow-50/70 dark:bg-yellow-900/20 px-3 py-2.5">
+            <p className="text-sm text-yellow-700 dark:text-yellow-300 leading-relaxed">
+              <i className="fas fa-info-circle mr-2"></i>
+              Untuk indikator{" "}
+              <strong>
+                Penilaian Kompetensi Manajerial dan Sosial Kultural
+              </strong>{" "}
+              serta <strong>Penilaian Potensi Talenta</strong>, jika nilai
+              subindikator melebihi standar maka nilai yang digunakan dalam
+              perhitungan bobot akan disesuaikan maksimal sebesar standarnya.
+            </p>
+          </div>
           {loadingIndicators ? (
             <div className="flex items-center justify-center py-10">
               <div className="text-center">
@@ -2850,7 +3081,9 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
   data.forEach((item, index) => {
     const rawNoSertipikat = String(item?.noSertipikat || "").trim();
     const normalizedNoSertipikat = rawNoSertipikat.replace(/\s+/g, "");
-    const hasNoSertipikat = Boolean(normalizedNoSertipikat && normalizedNoSertipikat !== "-");
+    const hasNoSertipikat = Boolean(
+      normalizedNoSertipikat && normalizedNoSertipikat !== "-",
+    );
     const dedupeKey = hasNoSertipikat
       ? `sertipikat:${normalizedNoSertipikat.toLowerCase()}`
       : `unique:${item?.id || "item"}-${index}`;

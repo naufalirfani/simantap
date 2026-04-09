@@ -28,11 +28,13 @@ import {
   fetchStatistik,
   fetchPegawaiList,
   fetchPetaJabatanTree,
+  syncStatistik,
 } from "../services/apiService";
 import {
   loadKotakConfig,
   computeQuadrantDynamic,
 } from "../services/kotakConfigService";
+import Swal from "sweetalert2";
 
 // Register Chart.js components
 ChartJS.register(
@@ -149,6 +151,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [statsError, setStatsError] = useState(null);
+  const [isSyncingStatistik, setIsSyncingStatistik] = useState(false);
 
   const employeeStats = {
     total: 1250,
@@ -160,25 +163,66 @@ const Dashboard = () => {
   // Fetch statistik dari API melalui service
   useEffect(() => {
     let mounted = true;
-    setLoadingStats(true);
-    setStatsError(null);
-    fetchStatistik()
-      .then((data) => {
+
+    const run = async () => {
+      setLoadingStats(true);
+      setStatsError(null);
+      try {
+        const data = await fetchStatistik();
         if (!mounted) return;
         setStats(data || null);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!mounted) return;
         setStatsError(err.message || "Fetch error");
-      })
-      .finally(() => {
+      } finally {
         if (mounted) setLoadingStats(false);
-      });
+      }
+    };
+
+    run();
 
     return () => {
       mounted = false;
     };
   }, []);
+
+  const handleSyncStatistik = async () => {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Sinkronisasi Statistik",
+      text: "Sinkronisasi akan mengambil data statistik terbaru dari layanan. Lanjutkan?",
+      showCancelButton: true,
+      confirmButtonText: "Ya",
+      cancelButtonText: "Batal",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsSyncingStatistik(true);
+      await syncStatistik();
+      await fetchStatistik().then((data) => setStats(data || null));
+      Swal.fire({
+        icon: "success",
+        title: "Sukses",
+        text: "Sinkronisasi statistik selesai",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.message || "Sinkronisasi statistik gagal",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+    } finally {
+      setIsSyncingStatistik(false);
+    }
+  };
 
   // Data komposisi gender (dari API jika ada)
   const genderData = stats
@@ -272,28 +316,28 @@ const Dashboard = () => {
           level: 4,
         },
         {
-          name: "Jabatan Fungsional Utama",
+          name: "Jabatan Fungsional Ahli Utama",
           count: stats.total_fungsional_utama || 0,
           filterKey: "fungsional_utama",
           key: "JF Ahli Utama",
           level: 2,
         },
         {
-          name: "Jabatan Fungsional Madya",
+          name: "Jabatan Fungsional Ahli Madya",
           count: stats.total_fungsional_madya || 0,
           filterKey: "fungsional_madya",
           key: "JF Ahli Madya",
           level: 3,
         },
         {
-          name: "Jabatan Fungsional Muda",
+          name: "Jabatan Fungsional Ahli Muda",
           count: stats.total_fungsional_muda || 0,
           filterKey: "fungsional_muda",
           key: "JF Ahli Muda",
           level: 4,
         },
         {
-          name: "Jabatan Fungsional Pertama",
+          name: "Jabatan Fungsional Ahli Pertama",
           count: stats.total_fungsional_pertama || 0,
           filterKey: "fungsional_pertama",
           key: "JF Ahli Pertama",
@@ -813,7 +857,7 @@ const Dashboard = () => {
         const y2 = y.getPixelForValue(kotak.kinerjaRange.max);
 
         ctx.fillStyle = kotak.warna;
-        ctx.globalAlpha = 0.12;
+        ctx.globalAlpha = 0.15;
         ctx.fillRect(x1, y2, x2 - x1, y1 - y2);
       });
 
@@ -1038,13 +1082,29 @@ const Dashboard = () => {
       <Breadcrumb />
 
       {/* Page Title */}
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
-          {t("dashboard")}
-        </h1>
-        <p className="mt-2 text-md md:text-base text-gray-600 dark:text-gray-300">
-          Ringkasan Data Pegawai dan Statistik
-        </p>
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
+            {t("dashboard")}
+          </h1>
+          <p className="mt-2 text-md md:text-base text-gray-600 dark:text-gray-300">
+            Ringkasan Data Pegawai dan Statistik
+          </p>
+        </div>
+        <IconButton
+          onClick={handleSyncStatistik}
+          variant="blue"
+          size="lg"
+          disabled={isSyncingStatistik || loadingStats}
+          className="w-full md:w-auto"
+          title="Sinkronisasi Statistik Pegawai"
+        >
+          <i
+            className={`fas fa-sync-alt mr-2 ${isSyncingStatistik ? "animate-spin" : ""}`}
+            aria-hidden="true"
+          ></i>
+          {isSyncingStatistik ? "Sinkronisasi..." : "Sinkron Data"}
+        </IconButton>
       </div>
 
       {/* Statistik Cards */}
@@ -1458,7 +1518,7 @@ const Dashboard = () => {
                     return (
                       <div key={q} className="flex items-start gap-2">
                         <div
-                          className="flex-shrink-0 w-4 h-4 rounded mt-0.5"
+                          className="flex-shrink-0 w-4 h-4 rounded mt-1"
                           style={{ backgroundColor: warna, opacity: 0.5 }}
                         ></div>
                         <div className="flex-1 min-w-0">

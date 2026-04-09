@@ -1224,6 +1224,32 @@ export const syncPegawai = async () => {
 };
 
 /**
+ * Trigger sync for statistik on the remote service
+ */
+export const syncStatistik = async () => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(`${API_BASE_URL}/api/statistik/sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    if (!response.ok) {
+      const errResp = await response.json().catch(() => null);
+      throw new Error(errResp?.message || "Failed to sync statistik");
+    }
+
+    return await response.json().catch(() => ({}));
+  } catch (error) {
+    console.error("Sync statistik error:", error);
+    throw error;
+  }
+};
+
+/**
  * Trigger sync for penilaian on the remote service
  */
 export const syncPenilaian = async (nips = null) => {

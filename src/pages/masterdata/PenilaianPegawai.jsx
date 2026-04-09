@@ -613,7 +613,7 @@ const PenilaianPegawai = () => {
           </div>
           <div className="flex gap-2 mt-1">
             {item.jenis_jabatan && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-teal-900 dark:text-teal-200 text-teal-600 bg-teal-100">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-teal-900 dark:text-teal-200 text-teal-600 bg-teal-100 whitespace-nowrap">
                 {item.jenis_jabatan}
               </span>
             )}

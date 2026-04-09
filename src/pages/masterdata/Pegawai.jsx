@@ -190,7 +190,7 @@ const Pegawai = () => {
           </div>
           <div className="flex gap-2 mt-1">
             {item.jenis_jabatan && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-blue-900 dark:text-blue-200" style={{ backgroundColor: BG_COLORS.blue.light, color: DARK_COLORS.blue }}>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-blue-900 dark:text-blue-200 whitespace-nowrap" style={{ backgroundColor: BG_COLORS.blue.light, color: DARK_COLORS.blue }}>
                 {item.jenis_jabatan}
               </span>
             )}
