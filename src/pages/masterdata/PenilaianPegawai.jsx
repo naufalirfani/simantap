@@ -11,6 +11,7 @@ import {
   bulkUploadPenilaian,
   fetchStatistik,
   fetchPenilaianByNip,
+  updateLampiranAsesmenByPegawaiAndNama,
 } from "../../services/apiService";
 import Swal from "sweetalert2";
 import ServerDataTable from "../../components/ServerDataTable";
@@ -18,6 +19,7 @@ import IconButton from "../../components/IconButton";
 import Breadcrumb from "../../components/Breadcrumb";
 import BulkUploadModal from "../../components/BulkUploadModal";
 import PenilaianDetailModal from "../../components/PenilaianDetailModal";
+import AsesmenAttachmentModal from "../../components/AsesmenAttachmentModal";
 import { PRIMARY_COLORS, BG_COLORS, DARK_COLORS } from "../../config/colors";
 
 // Poll sync job progress, resolves when queue is empty or user closes the dialog
@@ -116,6 +118,9 @@ const PenilaianPegawai = () => {
   const [selectedPegawai, setSelectedPegawai] = useState(null);
   const [penilaianDetail, setPenilaianDetail] = useState(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [showLampiranModal, setShowLampiranModal] = useState(false);
+  const [lampiranPegawai, setLampiranPegawai] = useState(null);
+  const [isSubmittingLampiran, setIsSubmittingLampiran] = useState(false);
 
   useEffect(() => {
     document.title = `Penilaian Pegawai | SIMANTAP`;
@@ -407,6 +412,10 @@ const PenilaianPegawai = () => {
     navigate(`/masterdata/penilaian-pegawai/input-penilaian/${nip}`);
   };
 
+  const handleViewProfil = (nip) => {
+    navigate(`/masterdata/penilaian-pegawai/${nip}/detail`);
+  };
+
   const handleBulkUpload = async (dataRows) => {
     setIsUploading(true);
     try {
@@ -417,6 +426,71 @@ const PenilaianPegawai = () => {
       throw error;
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleOpenLampiranModal = (pegawai) => {
+    setLampiranPegawai(pegawai);
+    setShowLampiranModal(true);
+  };
+
+  const handleSubmitLampiran = async ({ pegawaiId, namaAsesmen, file }) => {
+    if (!pegawaiId) {
+      Swal.fire({
+        icon: "error",
+        title: "Pegawai Tidak Valid",
+        text: "ID pegawai tidak ditemukan atau tidak valid.",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+      return;
+    }
+
+    if (!namaAsesmen?.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Nama Asesmen Wajib Diisi",
+        text: "Pilih nama asesmen dari dropdown atau isi manual.",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+      return;
+    }
+
+    if (!file) {
+      Swal.fire({
+        icon: "warning",
+        title: "File Wajib Dipilih",
+        text: "Silakan pilih file lampiran asesmen terlebih dahulu.",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+      return;
+    }
+
+    setIsSubmittingLampiran(true);
+    try {
+      await updateLampiranAsesmenByPegawaiAndNama({
+        pegawai_id: pegawaiId,
+        nama_asesmen: namaAsesmen.trim(),
+        file,
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Lampiran asesmen berhasil diupload.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      setShowLampiranModal(false);
+      setLampiranPegawai(null);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Upload Gagal",
+        text: error.message || "Terjadi kesalahan saat upload lampiran asesmen.",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+    } finally {
+      setIsSubmittingLampiran(false);
     }
   };
 
@@ -608,6 +682,15 @@ const PenilaianPegawai = () => {
         const isSyncingThis = syncingNips.has(item.nip);
         return (
           <div className="flex items-center justify-center gap-2">
+            <IconButton
+              onClick={() => handleOpenLampiranModal(item)}
+              variant="default"
+              size="lg"
+              title="Upload Lampiran Asesmen"
+            >
+              <i className="fas fa-paperclip mr-2" />
+              Lampiran
+            </IconButton>
             {hasPenilaian && (
               <IconButton
                 onClick={() => handleViewDetail(item)}
@@ -751,6 +834,19 @@ const PenilaianPegawai = () => {
         subIndikators={subIndikators}
         loading={isLoadingDetail}
         onEditPenilaian={handlePenilaian}
+        onViewProfil={handleViewProfil}
+      />
+
+      <AsesmenAttachmentModal
+        isOpen={showLampiranModal}
+        onClose={() => {
+          if (isSubmittingLampiran) return;
+          setShowLampiranModal(false);
+          setLampiranPegawai(null);
+        }}
+        pegawai={lampiranPegawai}
+        onSubmit={handleSubmitLampiran}
+        isSubmitting={isSubmittingLampiran}
       />
 
       {/* Data Table */}

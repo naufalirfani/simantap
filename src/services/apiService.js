@@ -915,6 +915,99 @@ export const fetchNamaAsesmenOptions = async () => {
 };
 
 /**
+ * Create or update lampiran asesmen by pegawai and nama asesmen
+ * Endpoint: VITE_API_BASE_URL/api/lampiran-asesmens/by-pegawai-and-nama
+ */
+export const updateLampiranAsesmenByPegawaiAndNama = async ({
+  pegawai_id,
+  nama_asesmen,
+  file,
+  file_path,
+}) => {
+  try {
+    const formData = new FormData();
+    formData.append("pegawai_id", pegawai_id);
+    formData.append("nama_asesmen", nama_asesmen);
+
+    if (file) {
+      formData.append("file", file);
+    }
+
+    if (file_path) {
+      formData.append("file_path", file_path);
+    }
+
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/lampiran-asesmens/by-pegawai-and-nama`,
+      {
+        method: "POST",
+        headers: {
+          "X-API-TOKEN": encryptedToken,
+        },
+        body: formData,
+      },
+    );
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(result?.message || "Failed to upload lampiran asesmen");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("updateLampiranAsesmenByPegawaiAndNama error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Download lampiran asesmen by id
+ * Endpoint: VITE_API_BASE_URL/api/lampiran-asesmens/{id}/download
+ */
+export const downloadLampiranAsesmenById = async (id) => {
+  try {
+    if (!id) {
+      throw new Error("ID lampiran asesmen tidak valid");
+    }
+
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/lampiran-asesmens/${id}/download`,
+      {
+        method: "GET",
+        headers: {
+          "X-API-TOKEN": encryptedToken,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const errResp = await response.json().catch(() => null);
+      throw new Error(errResp?.message || "Gagal mengunduh lampiran asesmen");
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get("content-disposition") || "";
+    const utf8NameMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const plainNameMatch = disposition.match(/filename="?([^";]+)"?/i);
+    const rawFilename = utf8NameMatch?.[1] || plainNameMatch?.[1] || "";
+    const filename = rawFilename ? decodeURIComponent(rawFilename) : "";
+
+    return { blob, filename };
+  } catch (error) {
+    console.error("downloadLampiranAsesmenById error:", error);
+    throw error;
+  }
+};
+
+/**
  * Fetch standar kompetensi MSK
  * Endpoint: VITE_API_BASE_URL/api/standar-kompetensi-msk
  */

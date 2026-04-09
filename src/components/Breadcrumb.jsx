@@ -104,7 +104,11 @@ const generateBreadcrumbItems = (pathname, t) => {
       // Check if next path segment is numeric (like NIP)
       // If yes, include it in the path for this breadcrumb item
       let itemPath = currentPath;
-      if (index < paths.length - 1 && /^\d+$/.test(paths[index + 1])) {
+      if (
+        path !== "penilaian-pegawai" &&
+        index < paths.length - 1 &&
+        /^\d+$/.test(paths[index + 1])
+      ) {
         itemPath += `/${paths[index + 1]}`;
       }
       

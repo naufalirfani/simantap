@@ -11,6 +11,7 @@ import {
   fetchIndikators,
   fetchStandarKompetensiMSK,
   fetchInstrumens,
+  downloadLampiranAsesmenById,
 } from "../services/apiService";
 import {
   loadKotakConfig,
@@ -60,6 +61,7 @@ const DetailPegawai = () => {
   const [showPersonalModal, setShowPersonalModal] = useState(false);
   const [showEmploymentModal, setShowEmploymentModal] = useState(false);
   const [selectedRiwayatAsesmenId, setSelectedRiwayatAsesmenId] = useState("");
+  const [downloadingLampiranId, setDownloadingLampiranId] = useState("");
 
   // Track mobile viewport for responsive chart sizing
   useEffect(() => {
@@ -249,8 +251,9 @@ const DetailPegawai = () => {
     if (list.length === 0) return null;
 
     return (
-      list.find((item) => String(item.id) === String(selectedRiwayatAsesmenId)) ||
-      list[0]
+      list.find(
+        (item) => String(item.id) === String(selectedRiwayatAsesmenId),
+      ) || list[0]
     );
   };
 
@@ -355,9 +358,7 @@ const DetailPegawai = () => {
       if (assessmentData && assessmentData[subId] !== undefined) {
         labels.push(s.subindikator || s.nama || s.name || String(subId));
         const actual =
-          assessmentData[subId]?.nilai ??
-          assessmentData[subId]?.hasil ??
-          0;
+          assessmentData[subId]?.nilai ?? assessmentData[subId]?.hasil ?? 0;
         actualValues.push(Number(actual) || 0);
         standardValues.push(getStandarForSub(subId) || 0);
       }
@@ -404,9 +405,7 @@ const DetailPegawai = () => {
       if (assessmentData && assessmentData[subId] !== undefined) {
         labels.push(s.subindikator || s.nama || s.name || String(subId));
         const actual =
-          assessmentData[subId]?.nilai ??
-          assessmentData[subId]?.hasil ??
-          0;
+          assessmentData[subId]?.nilai ?? assessmentData[subId]?.hasil ?? 0;
         actualValues.push(Number(actual) || 0);
       }
     });
@@ -421,7 +420,9 @@ const DetailPegawai = () => {
   // Calculate indicator scores (sum of sub-indicators)
   const calculateIndicatorScores = () => {
     const assessmentData =
-      getSelectedRiwayatAsesmen()?.data_asesmen || pegawaiData?.penilaian || null;
+      getSelectedRiwayatAsesmen()?.data_asesmen ||
+      pegawaiData?.penilaian ||
+      null;
     if (!assessmentData) return { potensial: [], kinerja: [] };
 
     // Use fetched indikators to compute sums per indikator
@@ -531,20 +532,26 @@ const DetailPegawai = () => {
   // Helper function to get standar for a specific subindikator
   const getStandarForSubIndikator = (subIndikatorId) => {
     if (!standarMSK) return 5;
-    
+
     // If standarMSK is an array, find by subindikator_id
     if (Array.isArray(standarMSK)) {
       const standar = standarMSK.find(
-        (s) => s.subindikator_id === subIndikatorId || String(s.subindikator_id) === String(subIndikatorId)
+        (s) =>
+          s.subindikator_id === subIndikatorId ||
+          String(s.subindikator_id) === String(subIndikatorId),
       );
       return standar?.standar || 5;
     }
-    
+
     // If it's an object, try keyed access
     if (typeof standarMSK === "object") {
-      return Number(standarMSK[subIndikatorId] ?? standarMSK[String(subIndikatorId)] ?? 5) || 5;
+      return (
+        Number(
+          standarMSK[subIndikatorId] ?? standarMSK[String(subIndikatorId)] ?? 5,
+        ) || 5
+      );
     }
-    
+
     return 5;
   };
 
@@ -552,7 +559,9 @@ const DetailPegawai = () => {
   const getKompetensiCategory = (nilai, subIndikatorId) => {
     if (nilai === null || nilai === undefined) return null;
     const standar = getStandarForSubIndikator(subIndikatorId);
-    return parseFloat(nilai) >= standar ? "Memenuhi Standar" : "Di Bawah Standar";
+    return parseFloat(nilai) >= standar
+      ? "Memenuhi Standar"
+      : "Di Bawah Standar";
   };
 
   // Helper function to categorize potensi (max value 5)
@@ -655,6 +664,145 @@ const DetailPegawai = () => {
     return `${dNum} ${monthNames[mNum - 1]} ${yNum}`;
   };
 
+  const formatDateTimeIndo = (dateStr) => {
+    if (!dateStr) return "-";
+    const dt = new Date(dateStr);
+    if (Number.isNaN(dt.getTime())) return dateStr;
+
+    return dt.toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatFileSize = (size) => {
+    const bytes = Number(size);
+    if (!Number.isFinite(bytes) || bytes <= 0) return "-";
+
+    const units = ["B", "KB", "MB", "GB"];
+    let value = bytes;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex += 1;
+    }
+
+    const formatted = unitIndex === 0 ? value.toFixed(0) : value.toFixed(2);
+    return `${formatted} ${units[unitIndex]}`;
+  };
+
+  const getLampiranAsesmenList = (riwayat, globalLampiranList = []) => {
+    if (!riwayat || typeof riwayat !== "object") return [];
+
+    const possibleCollections = [
+      riwayat?.lampiran_asesmen,
+      riwayat?.lampiran_asesmens,
+      riwayat?.lampiranAsesmen,
+      riwayat?.lampiranAsesmenList,
+      riwayat?.attachments,
+    ];
+
+    const items = possibleCollections.flatMap((collection) => {
+      if (Array.isArray(collection)) return collection;
+      if (collection && typeof collection === "object") return [collection];
+      return [];
+    });
+
+    const selectedNamaAsesmen = String(riwayat?.nama_asesmen || "")
+      .trim()
+      .toLowerCase();
+    const selectedRiwayatId = String(riwayat?.id || "");
+
+    if (Array.isArray(globalLampiranList) && globalLampiranList.length > 0) {
+      const matchedGlobal = globalLampiranList.filter((item) => {
+        if (!item || typeof item !== "object") return false;
+
+        const itemRiwayatId = String(
+          item.riwayat_asesmen_id || item.asesmen_id || "",
+        );
+        if (selectedRiwayatId && itemRiwayatId === selectedRiwayatId) {
+          return true;
+        }
+
+        const itemNamaAsesmen = String(item.nama_asesmen || "")
+          .trim()
+          .toLowerCase();
+        return Boolean(
+          selectedNamaAsesmen && itemNamaAsesmen === selectedNamaAsesmen,
+        );
+      });
+
+      items.push(...matchedGlobal);
+    }
+
+    if (riwayat.file_path || riwayat.original_filename || riwayat.file_type) {
+      items.unshift(riwayat);
+    }
+
+    const unique = new Map();
+    items.forEach((item, index) => {
+      if (!item || typeof item !== "object") return;
+      const key = String(
+        item.id ||
+          item.file_path ||
+          item.original_filename ||
+          `lampiran-${index}`,
+      );
+      if (!unique.has(key)) {
+        unique.set(key, item);
+      }
+    });
+
+    return Array.from(unique.values()).sort((a, b) => {
+      const dateA = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
+      const dateB = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
+      return dateB - dateA;
+    });
+  };
+
+  const handleDownloadLampiran = async (lampiran) => {
+    if (!lampiran?.id) {
+      Swal.fire({
+        icon: "warning",
+        title: "Lampiran Tidak Valid",
+        text: "ID lampiran tidak ditemukan sehingga file belum bisa diunduh.",
+      });
+      return;
+    }
+
+    try {
+      setDownloadingLampiranId(String(lampiran.id));
+      const { blob, filename } = await downloadLampiranAsesmenById(lampiran.id);
+      const finalFilename =
+        lampiran.original_filename ||
+        filename ||
+        `lampiran-asesmen-${lampiran.id}.${
+          lampiran.file_type === "application/pdf" ? "pdf" : "bin"
+        }`;
+
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = finalFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Unduh Gagal",
+        text: error.message || "Terjadi kesalahan saat mengunduh lampiran.",
+      });
+    } finally {
+      setDownloadingLampiranId("");
+    }
+  };
+
   const handleBack = () => {
     navigate("/daftar-talenta");
   };
@@ -682,9 +830,15 @@ const DetailPegawai = () => {
     : [];
   const riwayatAsesmenList = getRiwayatAsesmenList();
   const selectedRiwayatAsesmen = getSelectedRiwayatAsesmen();
+  const lampiranAsesmenList = getLampiranAsesmenList(
+    selectedRiwayatAsesmen,
+    Array.isArray(pegawaiData?.lampiran_asesmen)
+      ? pegawaiData.lampiran_asesmen
+      : [],
+  );
   const riwayatAsesmenOptions = riwayatAsesmenList.map((item) => ({
     value: String(item.id),
-    label: `${item.nama_asesmen || "Nama asesmen"}${item.created_at ? ` • ${formatDateIndo(item.created_at)}` : ""}`,
+    label: `${item.nama_asesmen || "Nama asesmen"}`,
   }));
 
   // Chart configurations
@@ -735,10 +889,10 @@ const DetailPegawai = () => {
 
   // Calculate dynamic max value for radar chart
   const getRadarMaxValue = () => {
-    if (activeRadarTab === "msk" && competencyData?.actualValues) {
-      const maxActual = Math.max(...competencyData.actualValues, 0);
-      return Math.ceil(maxActual);
-    }
+    // if (activeRadarTab === "msk" && competencyData?.actualValues) {
+    //   const maxActual = Math.max(...competencyData.actualValues, 0);
+    //   return Math.ceil(maxActual);
+    // }
     // For potensi talenta, use hardcoded 6
     return 5;
   };
@@ -1253,7 +1407,7 @@ const DetailPegawai = () => {
                       {mskSubs.map((sub) => {
                         const subValue = getSubValue(sub.id);
                         const nilai = subValue.nilai ?? subValue.hasil;
-                        
+
                         // Show loading badge if standarMSK is not yet available
                         if (!standarMSK) {
                           return (
@@ -1262,7 +1416,10 @@ const DetailPegawai = () => {
                               className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 animate-pulse"
                             >
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                {sub.subindikator}: <span className="text-gray-400 dark:text-gray-500">Memuat...</span>
+                                {sub.subindikator}:{" "}
+                                <span className="text-gray-400 dark:text-gray-500">
+                                  Memuat...
+                                </span>
                               </span>
                             </div>
                           );
@@ -1278,7 +1435,10 @@ const DetailPegawai = () => {
                               className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
                             >
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                {sub.subindikator}: <span className="text-gray-400 dark:text-gray-500">Belum dinilai</span>
+                                {sub.subindikator}:{" "}
+                                <span className="text-gray-400 dark:text-gray-500">
+                                  Belum dinilai
+                                </span>
                               </span>
                             </div>
                           );
@@ -1296,7 +1456,8 @@ const DetailPegawai = () => {
                             title={`${category}: ${parseFloat(nilai).toFixed(2)} / ${standar}`}
                           >
                             <span className="text-sm font-medium text-white">
-                              {sub.subindikator}: {parseFloat(nilai).toFixed(2)}/{standar}
+                              {sub.subindikator}: {parseFloat(nilai).toFixed(2)}
+                              /{standar}
                             </span>
                           </div>
                         );
@@ -1316,7 +1477,8 @@ const DetailPegawai = () => {
                 });
 
                 const potensiSubs =
-                  potensiIndikator && Array.isArray(potensiIndikator.sub_indikators)
+                  potensiIndikator &&
+                  Array.isArray(potensiIndikator.sub_indikators)
                     ? potensiIndikator.sub_indikators.filter((s) => s.isactive)
                     : [];
 
@@ -1341,7 +1503,10 @@ const DetailPegawai = () => {
                               className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
                             >
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                {sub.subindikator}: <span className="text-gray-400 dark:text-gray-500">Belum dinilai</span>
+                                {sub.subindikator}:{" "}
+                                <span className="text-gray-400 dark:text-gray-500">
+                                  Belum dinilai
+                                </span>
                               </span>
                             </div>
                           );
@@ -1363,7 +1528,8 @@ const DetailPegawai = () => {
                             title={`${category}: ${parseFloat(nilai).toFixed(2)} / 5`}
                           >
                             <span className="text-sm font-medium text-white">
-                              {sub.subindikator}: {parseFloat(nilai).toFixed(2)}/5
+                              {sub.subindikator}: {parseFloat(nilai).toFixed(2)}
+                              /5
                             </span>
                           </div>
                         );
@@ -1386,7 +1552,8 @@ const DetailPegawai = () => {
 
                 // Check if there's any subindikator with actual nilai
                 const hasAnyNilai = tambahanIndikators.some((indikator) => {
-                  const subs = indikator?.sub_indikators?.filter((s) => s.isactive) || [];
+                  const subs =
+                    indikator?.sub_indikators?.filter((s) => s.isactive) || [];
                   return subs.some((sub) => {
                     const subValue = getSubValue(sub.id);
                     const nilai = subValue.nilai ?? subValue.hasil;
@@ -1448,7 +1615,8 @@ const DetailPegawai = () => {
                                     title={`${category}: ${parseFloat(nilai).toFixed(2)} / 100`}
                                   >
                                     <span className="text-sm font-medium text-white">
-                                      {sub.subindikator}: {parseFloat(nilai).toFixed(2)}/100
+                                      {sub.subindikator}:{" "}
+                                      {parseFloat(nilai).toFixed(2)}/100
                                     </span>
                                   </div>
                                 );
@@ -1504,6 +1672,53 @@ const DetailPegawai = () => {
                     options={riwayatAsesmenOptions}
                     placeholder="-- Pilih nama asesmen --"
                   />
+                </div>
+              )}
+
+              {lampiranAsesmenList.length > 0 && (
+                <div className="mb-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-cyan-50 via-white to-blue-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 p-4 md:p-5 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-teal-500/10 dark:bg-teal-400/20 flex items-center justify-center">
+                        <i className="fas fa-paperclip text-teal-600 dark:text-teal-300"></i>
+                      </div>
+                      <h4 className="text-sm md:text-base font-semibold text-gray-800 dark:text-gray-100">
+                        Laporan Individu
+                      </h4>
+                    </div>
+                    {lampiranAsesmenList.map((lampiran) => {
+                      const isDownloading =
+                        String(downloadingLampiranId) ===
+                        String(lampiran?.id || "");
+                      const hasId = Boolean(lampiran?.id);
+                      const extension =
+                        lampiran?.file_type === "application/pdf"
+                          ? "PDF"
+                          : "FILE";
+
+                      return (
+                        <IconButton
+                          onClick={() => handleDownloadLampiran(lampiran)}
+                          disabled={!hasId || isDownloading}
+                          variant="blue"
+                          size="lg"
+                          title="Download Lampiran"
+                        >
+                          {isDownloading ? (
+                            <>
+                              <i className="fas fa-spinner fa-spin mr-2"></i>
+                              Mengunduh...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-download mr-2"></i>
+                              Download
+                            </>
+                          )}
+                        </IconButton>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -1725,8 +1940,15 @@ const DetailPegawai = () => {
                     (ind.name || "").toLowerCase(),
                 );
                 const subs = indikatorObj?.sub_indikators || [];
-                const indName = (indikatorObj?.indikator || ind.name || "").toLowerCase();
-                const isMSKInd = indName.includes("kompetensi manajerial") || indName.includes("msk") || indName.includes("sosial kultural");
+                const indName = (
+                  indikatorObj?.indikator ||
+                  ind.name ||
+                  ""
+                ).toLowerCase();
+                const isMSKInd =
+                  indName.includes("kompetensi manajerial") ||
+                  indName.includes("msk") ||
+                  indName.includes("sosial kultural");
                 const isPotensiTalentaInd = indName.includes("potensi talenta");
                 return (
                   <div
@@ -1879,8 +2101,15 @@ const DetailPegawai = () => {
                     (ind.name || "").toLowerCase(),
                 );
                 const subs = indikatorObj?.sub_indikators || [];
-                const indName = (indikatorObj?.indikator || ind.name || "").toLowerCase();
-                const isMSKInd = indName.includes("kompetensi manajerial") || indName.includes("msk") || indName.includes("sosial kultural");
+                const indName = (
+                  indikatorObj?.indikator ||
+                  ind.name ||
+                  ""
+                ).toLowerCase();
+                const isMSKInd =
+                  indName.includes("kompetensi manajerial") ||
+                  indName.includes("msk") ||
+                  indName.includes("sosial kultural");
                 const isPotensiTalentaInd = indName.includes("potensi talenta");
                 return (
                   <div
@@ -2019,7 +2248,10 @@ const DetailPegawai = () => {
       {/* Riwayat Pegawai */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4" style={{ backgroundColor: PRIMARY_COLORS.teal }}>
+        <div
+          className="px-6 py-4"
+          style={{ backgroundColor: PRIMARY_COLORS.teal }}
+        >
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             <i className="fas fa-history"></i>
             Riwayat Pegawai
@@ -2045,7 +2277,11 @@ const DetailPegawai = () => {
                   ? "border-teal-500 bg-white dark:bg-gray-800 dark:text-teal-400"
                   : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/60"
               }`}
-              style={activeRiwayatTab === tab.key ? { color: PRIMARY_COLORS.teal } : {}}
+              style={
+                activeRiwayatTab === tab.key
+                  ? { color: PRIMARY_COLORS.teal }
+                  : {}
+              }
             >
               <i className={`fas fa-${tab.icon} text-sm`}></i>
               <span>{tab.label}</span>
@@ -2059,28 +2295,45 @@ const DetailPegawai = () => {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-300">Memuat data riwayat...</p>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Memuat data riwayat...
+                </p>
               </div>
             </div>
           ) : (
             <>
               {activeRiwayatTab === "jabatan" && (
-                <RiwayatJabatanPanel data={pegawaiData?.riwayat_jabatan} formatDateIndo={formatDateIndo} />
+                <RiwayatJabatanPanel
+                  data={pegawaiData?.riwayat_jabatan}
+                  formatDateIndo={formatDateIndo}
+                />
               )}
               {activeRiwayatTab === "skp" && (
                 <RiwayatSKPPanel data={pegawaiData?.riwayat_skp} />
               )}
               {activeRiwayatTab === "pengembangan" && (
-                <RiwayatPengembanganPanel data={pegawaiData?.riwayat_pengembangan_kompetensi} formatDateIndo={formatDateIndo} />
+                <RiwayatPengembanganPanel
+                  data={pegawaiData?.riwayat_pengembangan_kompetensi}
+                  formatDateIndo={formatDateIndo}
+                />
               )}
               {activeRiwayatTab === "diklat" && (
-                <RiwayatDiklatPanel data={pegawaiData?.riwayat_diklat} formatDateIndo={formatDateIndo} />
+                <RiwayatDiklatPanel
+                  data={pegawaiData?.riwayat_diklat}
+                  formatDateIndo={formatDateIndo}
+                />
               )}
               {activeRiwayatTab === "sertifikasi" && (
-                <RiwayatSertifikasiPanel data={pegawaiData?.riwayat_sertifikasi} formatDateIndo={formatDateIndo} />
+                <RiwayatSertifikasiPanel
+                  data={pegawaiData?.riwayat_sertifikasi}
+                  formatDateIndo={formatDateIndo}
+                />
               )}
               {activeRiwayatTab === "pendidikan" && (
-                <RiwayatPendidikanPanel data={pegawaiData?.riwayat_pendidikan} formatDateIndo={formatDateIndo} />
+                <RiwayatPendidikanPanel
+                  data={pegawaiData?.riwayat_pendidikan}
+                  formatDateIndo={formatDateIndo}
+                />
               )}
               {activeRiwayatTab === "penghargaan" && (
                 <PenghargaanPanel awards={satyalancanaAwards} />
@@ -2377,21 +2630,52 @@ const EmptyState = ({ icon, message }) => (
 
 const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
   if (!data || data.length === 0)
-    return <EmptyState icon="briefcase" message="Tidak ada data riwayat jabatan" />;
+    return (
+      <EmptyState icon="briefcase" message="Tidak ada data riwayat jabatan" />
+    );
 
   const eselonMeta = (eselon) => {
-    if (!eselon) return { dot: "border-gray-400 bg-gray-200", badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" };
+    if (!eselon)
+      return {
+        dot: "border-gray-400 bg-gray-200",
+        badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
+      };
     const e = eselon.toUpperCase();
-    if (e.startsWith("I.") || e === "I")   return { dot: "border-purple-500 bg-purple-200 dark:bg-purple-900/40", badge: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300" };
-    if (e.startsWith("II.") || e === "II") return { dot: "border-[#3085d6] bg-blue-200 dark:bg-blue-900/40", badge: "bg-blue-100 text-[#3085d6] dark:bg-blue-900/30 dark:text-blue-300" };
-    if (e.startsWith("III."))              return { dot: "border-teal-500 bg-teal-200 dark:bg-teal-900/40", badge: "bg-teal-100 text-teal-500 dark:bg-teal-900/30 dark:text-teal-400" };
-    if (e.startsWith("IV."))               return { dot: "border-orange-400 bg-orange-200 dark:bg-orange-900/40", badge: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300" };
-    return { dot: "border-gray-400 bg-gray-200", badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" };
+    if (e.startsWith("I.") || e === "I")
+      return {
+        dot: "border-purple-500 bg-purple-200 dark:bg-purple-900/40",
+        badge:
+          "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300",
+      };
+    if (e.startsWith("II.") || e === "II")
+      return {
+        dot: "border-[#3085d6] bg-blue-200 dark:bg-blue-900/40",
+        badge:
+          "bg-blue-100 text-[#3085d6] dark:bg-blue-900/30 dark:text-blue-300",
+      };
+    if (e.startsWith("III."))
+      return {
+        dot: "border-teal-500 bg-teal-200 dark:bg-teal-900/40",
+        badge:
+          "bg-teal-100 text-teal-500 dark:bg-teal-900/30 dark:text-teal-400",
+      };
+    if (e.startsWith("IV."))
+      return {
+        dot: "border-orange-400 bg-orange-200 dark:bg-orange-900/40",
+        badge:
+          "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300",
+      };
+    return {
+      dot: "border-gray-400 bg-gray-200",
+      badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
+    };
   };
 
   return (
     <div className="relative">
-      <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">{data.length} entri jabatan</p>
+      <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
+        {data.length} entri jabatan
+      </p>
       <div className="space-y-1">
         {data.map((item, idx) => {
           const meta = eselonMeta(item.eselon);
@@ -2399,8 +2683,12 @@ const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
             <div key={item.id} className="flex gap-4">
               {/* Timeline line + dot */}
               <div className="flex flex-col items-center pt-1.5">
-                <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${meta.dot}`}></div>
-                {idx < data.length - 1 && <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-700 mt-1 min-h-[20px]"></div>}
+                <div
+                  className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${meta.dot}`}
+                ></div>
+                {idx < data.length - 1 && (
+                  <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-700 mt-1 min-h-[20px]"></div>
+                )}
               </div>
               {/* Card */}
               <div className="flex-1 pb-3">
@@ -2410,7 +2698,9 @@ const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
                       {item.namaJabatan}
                     </h4>
                     {item.eselon && (
-                      <span className={`text-sm font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${meta.badge}`}>
+                      <span
+                        className={`text-sm font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${meta.badge}`}
+                      >
                         Eselon {item.eselon}
                       </span>
                     )}
@@ -2427,13 +2717,22 @@ const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
                   )}
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
                     {item.tmtJabatan && (
-                      <span><i className="fas fa-calendar-check mr-1"></i>TMT: {formatDateIndo(item.tmtJabatan)}</span>
+                      <span>
+                        <i className="fas fa-calendar-check mr-1"></i>TMT:{" "}
+                        {formatDateIndo(item.tmtJabatan)}
+                      </span>
                     )}
                     {item.nomorSk && (
-                      <span><i className="fas fa-file-alt mr-1"></i>SK: {item.nomorSk}</span>
+                      <span>
+                        <i className="fas fa-file-alt mr-1"></i>SK:{" "}
+                        {item.nomorSk}
+                      </span>
                     )}
                     {item.tanggalSk && (
-                      <span><i className="fas fa-calendar mr-1"></i>{formatDateIndo(item.tanggalSk)}</span>
+                      <span>
+                        <i className="fas fa-calendar mr-1"></i>
+                        {formatDateIndo(item.tanggalSk)}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -2448,12 +2747,15 @@ const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
 
 const RiwayatSKPPanel = ({ data }) => {
   if (!data || data.length === 0)
-    return <EmptyState icon="chart-line" message="Tidak ada data riwayat SKP" />;
+    return (
+      <EmptyState icon="chart-line" message="Tidak ada data riwayat SKP" />
+    );
 
   const sorted = [...data].sort((a, b) => Number(b.tahun) - Number(a.tahun));
 
   const kuadranColor = (k) => {
-    if (!k) return "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
+    if (!k)
+      return "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
     const v = k.toUpperCase();
     if (v.includes("SANGAT BAIK") || v.includes("ISTIMEWA"))
       return "bg-teal-100 text-teal-500 dark:bg-teal-900/30 dark:text-teal-400";
@@ -2467,8 +2769,10 @@ const RiwayatSKPPanel = ({ data }) => {
   const hasilColor = (h) => {
     if (!h) return "text-gray-500 dark:text-gray-400";
     const v = h.toUpperCase();
-    if (v.includes("DIATAS") || v.includes("ATAS")) return "text-teal-500 dark:text-teal-400 font-semibold";
-    if (v.includes("SESUAI")) return "text-[#3085d6] dark:text-blue-400 font-semibold";
+    if (v.includes("DIATAS") || v.includes("ATAS"))
+      return "text-teal-500 dark:text-teal-400 font-semibold";
+    if (v.includes("SESUAI"))
+      return "text-[#3085d6] dark:text-blue-400 font-semibold";
     return "text-orange-600 dark:text-orange-400 font-semibold";
   };
 
@@ -2480,26 +2784,40 @@ const RiwayatSKPPanel = ({ data }) => {
           className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
         >
           <div className="flex items-center justify-between mb-4">
-            <span className="text-3xl font-extrabold text-gray-800 dark:text-white">{item.tahun}</span>
-            <span className={`text-md font-semibold px-2.5 py-1 rounded-full ${kuadranColor(item.kuadranKinerja)}`}>
+            <span className="text-3xl font-extrabold text-gray-800 dark:text-white">
+              {item.tahun}
+            </span>
+            <span
+              className={`text-md font-semibold px-2.5 py-1 rounded-full ${kuadranColor(item.kuadranKinerja)}`}
+            >
               {item.kuadranKinerja}
             </span>
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
-              <span className="text-gray-400 dark:text-gray-500 w-28 flex-shrink-0">Hasil Kinerja</span>
-              <span className={hasilColor(item.hasilKinerja)}>{item.hasilKinerja}</span>
+              <span className="text-gray-400 dark:text-gray-500 w-28 flex-shrink-0">
+                Hasil Kinerja
+              </span>
+              <span className={hasilColor(item.hasilKinerja)}>
+                {item.hasilKinerja}
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-400 dark:text-gray-500 w-28 flex-shrink-0">Perilaku Kerja</span>
-              <span className={hasilColor(item.perilakuKerja)}>{item.perilakuKerja}</span>
+              <span className="text-gray-400 dark:text-gray-500 w-28 flex-shrink-0">
+                Perilaku Kerja
+              </span>
+              <span className={hasilColor(item.perilakuKerja)}>
+                {item.perilakuKerja}
+              </span>
             </div>
             <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-600">
               <p className="text-gray-600 dark:text-gray-400">
                 <i className="fas fa-user-tie mr-1 opacity-60"></i>
                 {item.namaPenilai}
               </p>
-              <p className="text-gray-400 dark:text-gray-500 mt-0.5">{item.penilaiJabatanNm}</p>
+              <p className="text-gray-400 dark:text-gray-500 mt-0.5">
+                {item.penilaiJabatanNm}
+              </p>
             </div>
           </div>
         </div>
@@ -2510,9 +2828,42 @@ const RiwayatSKPPanel = ({ data }) => {
 
 const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
   if (!data || data.length === 0)
-    return <EmptyState icon="book-open" message="Tidak ada data riwayat pengembangan kompetensi" />;
+    return (
+      <EmptyState
+        icon="book-open"
+        message="Tidak ada data riwayat pengembangan kompetensi"
+      />
+    );
 
-  const sorted = [...data].sort((a, b) => {
+  const getUpdatedTime = (item) => {
+    const rawDate =
+      item?.updatedAt ||
+      item?.updated_at ||
+      item?.createdAt ||
+      item?.created_at ||
+      null;
+    const ts = rawDate ? new Date(rawDate).getTime() : 0;
+    return Number.isFinite(ts) ? ts : 0;
+  };
+
+  const uniqueMap = new Map();
+  data.forEach((item, index) => {
+    const rawNoSertipikat = String(item?.noSertipikat || "").trim();
+    const normalizedNoSertipikat = rawNoSertipikat.replace(/\s+/g, "");
+    const hasNoSertipikat = Boolean(normalizedNoSertipikat && normalizedNoSertipikat !== "-");
+    const dedupeKey = hasNoSertipikat
+      ? `sertipikat:${normalizedNoSertipikat.toLowerCase()}`
+      : `unique:${item?.id || "item"}-${index}`;
+
+    const existing = uniqueMap.get(dedupeKey);
+    if (!existing || getUpdatedTime(item) > getUpdatedTime(existing)) {
+      uniqueMap.set(dedupeKey, item);
+    }
+  });
+
+  const sorted = [...uniqueMap.values()].sort((a, b) => {
+    const updatedDiff = getUpdatedTime(b) - getUpdatedTime(a);
+    if (updatedDiff !== 0) return updatedDiff;
     const ya = parseInt(a.tahunKursus) || 0;
     const yb = parseInt(b.tahunKursus) || 0;
     return yb - ya;
@@ -2521,7 +2872,8 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
   const totalJam = sorted.reduce((s, i) => s + (parseInt(i.jumlahJam) || 0), 0);
 
   const jenisColor = (j) => {
-    if (!j) return "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400";
+    if (!j)
+      return "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400";
     const v = j.toUpperCase();
     if (v.includes("SEMINAR") || v.includes("WORKSHOP"))
       return "bg-blue-100 text-[#3085d6] dark:bg-blue-900/30 dark:text-blue-300";
@@ -2535,12 +2887,20 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
       {/* Summary */}
       <div className="grid grid-cols-2 gap-4 mb-5">
         <div className="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-4 text-center">
-          <div className="text-3xl font-extrabold text-teal-500 dark:text-teal-400">{sorted.length}</div>
-          <div className="text-sm text-teal-500 dark:text-teal-400 mt-0.5">Total Pelatihan</div>
+          <div className="text-3xl font-extrabold text-teal-500 dark:text-teal-400">
+            {sorted.length}
+          </div>
+          <div className="text-sm text-teal-500 dark:text-teal-400 mt-0.5">
+            Total Pelatihan
+          </div>
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
-          <div className="text-3xl font-extrabold text-[#3085d6] dark:text-blue-400">{totalJam}</div>
-          <div className="text-sm text-[#3085d6] dark:text-blue-400 mt-0.5">Total JP</div>
+          <div className="text-3xl font-extrabold text-[#3085d6] dark:text-blue-400">
+            {totalJam}
+          </div>
+          <div className="text-sm text-[#3085d6] dark:text-blue-400 mt-0.5">
+            Total JP
+          </div>
         </div>
       </div>
       <div className="space-y-3">
@@ -2551,8 +2911,12 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
           >
             {/* JP circle */}
             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-teal-100 dark:bg-teal-900/40 flex flex-col items-center justify-center">
-              <span className="text-sm font-bold text-teal-500 dark:text-teal-400 leading-none">{item.jumlahJam || 0}</span>
-              <span className="text-[9px] text-teal-500 dark:text-teal-400">JP</span>
+              <span className="text-sm font-bold text-teal-500 dark:text-teal-400 leading-none">
+                {item.jumlahJam || 0}
+              </span>
+              <span className="text-[9px] text-teal-500 dark:text-teal-400">
+                JP
+              </span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start gap-2 mb-1.5">
@@ -2560,27 +2924,38 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
                   {item.namaKursus}
                 </h4>
                 {item.jenisKursusSertifikat && (
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${jenisColor(item.jenisKursusSertifikat)}`}>
+                  <span
+                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${jenisColor(item.jenisKursusSertifikat)}`}
+                  >
                     {item.jenisKursusSertifikat}
                   </span>
                 )}
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
                 {item.institusiPenyelenggara && (
-                  <span><i className="fas fa-building mr-1 opacity-60"></i>{item.institusiPenyelenggara}</span>
+                  <span>
+                    <i className="fas fa-building mr-1 opacity-60"></i>
+                    {item.institusiPenyelenggara}
+                  </span>
                 )}
                 {item.tanggalKursus && (
                   <span>
                     <i className="fas fa-calendar mr-1 opacity-60"></i>
                     {formatDateIndo(item.tanggalKursus)}
-                    {item.tanggalSelesaiKursus && item.tanggalSelesaiKursus !== item.tanggalKursus
+                    {item.tanggalSelesaiKursus &&
+                    item.tanggalSelesaiKursus !== item.tanggalKursus
                       ? ` – ${formatDateIndo(item.tanggalSelesaiKursus)}`
                       : ""}
                   </span>
                 )}
-                {item.noSertipikat && item.noSertipikat !== "-" && item.noSertipikat.trim() !== "" && (
-                  <span><i className="fas fa-certificate mr-1 opacity-60"></i>{item.noSertipikat}</span>
-                )}
+                {item.noSertipikat &&
+                  item.noSertipikat !== "-" &&
+                  item.noSertipikat.trim() !== "" && (
+                    <span>
+                      <i className="fas fa-certificate mr-1 opacity-60"></i>
+                      {item.noSertipikat}
+                    </span>
+                  )}
               </div>
             </div>
           </div>
@@ -2592,9 +2967,44 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
 
 const RiwayatDiklatPanel = ({ data, formatDateIndo }) => {
   if (!data || data.length === 0)
-    return <EmptyState icon="graduation-cap" message="Tidak ada data riwayat diklat" />;
+    return (
+      <EmptyState
+        icon="graduation-cap"
+        message="Tidak ada data riwayat diklat"
+      />
+    );
 
-  const sorted = [...data].sort((a, b) => Number(b.tahun) - Number(a.tahun));
+  const getUpdatedTime = (item) => {
+    const rawDate =
+      item?.updatedAt ||
+      item?.updated_at ||
+      item?.createdAt ||
+      item?.created_at ||
+      null;
+    const ts = rawDate ? new Date(rawDate).getTime() : 0;
+    return Number.isFinite(ts) ? ts : 0;
+  };
+
+  const uniqueMap = new Map();
+  data.forEach((item, index) => {
+    const rawNomor = String(item?.nomor || "").trim();
+    const normalizedNomor = rawNomor.replace(/\s+/g, "");
+    const hasNomor = Boolean(normalizedNomor && normalizedNomor !== "-");
+    const dedupeKey = hasNomor
+      ? `nomor:${normalizedNomor.toLowerCase()}`
+      : `unique:${item?.id || "item"}-${index}`;
+
+    const existing = uniqueMap.get(dedupeKey);
+    if (!existing || getUpdatedTime(item) > getUpdatedTime(existing)) {
+      uniqueMap.set(dedupeKey, item);
+    }
+  });
+
+  const sorted = [...uniqueMap.values()].sort((a, b) => {
+    const updatedDiff = getUpdatedTime(b) - getUpdatedTime(a);
+    if (updatedDiff !== 0) return updatedDiff;
+    return Number(b.tahun) - Number(a.tahun);
+  });
 
   return (
     <div className="space-y-4">
@@ -2620,20 +3030,31 @@ const RiwayatDiklatPanel = ({ data, formatDateIndo }) => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-gray-500 dark:text-gray-400">
             {item.institusiPenyelenggara && (
-              <span><i className="fas fa-building mr-1 opacity-60"></i>{item.institusiPenyelenggara}</span>
+              <span>
+                <i className="fas fa-building mr-1 opacity-60"></i>
+                {item.institusiPenyelenggara}
+              </span>
             )}
             {item.jumlahJam && (
-              <span><i className="fas fa-clock mr-1 opacity-60"></i>{item.jumlahJam} JP</span>
+              <span>
+                <i className="fas fa-clock mr-1 opacity-60"></i>
+                {item.jumlahJam} JP
+              </span>
             )}
             {item.tanggal && (
               <span>
                 <i className="fas fa-calendar-alt mr-1 opacity-60"></i>
                 {formatDateIndo(item.tanggal)}
-                {item.tanggalSelesai ? ` s/d ${formatDateIndo(item.tanggalSelesai)}` : ""}
+                {item.tanggalSelesai
+                  ? ` s/d ${formatDateIndo(item.tanggalSelesai)}`
+                  : ""}
               </span>
             )}
             {item.nomor && (
-              <span><i className="fas fa-file-alt mr-1 opacity-60"></i>No: {item.nomor}</span>
+              <span>
+                <i className="fas fa-file-alt mr-1 opacity-60"></i>No:{" "}
+                {item.nomor}
+              </span>
             )}
           </div>
         </div>
@@ -2644,7 +3065,12 @@ const RiwayatDiklatPanel = ({ data, formatDateIndo }) => {
 
 const RiwayatSertifikasiPanel = ({ data, formatDateIndo }) => {
   if (!data || data.length === 0)
-    return <EmptyState icon="certificate" message="Tidak ada data riwayat sertifikasi" />;
+    return (
+      <EmptyState
+        icon="certificate"
+        message="Tidak ada data riwayat sertifikasi"
+      />
+    );
 
   return (
     <div className="space-y-4">
@@ -2658,32 +3084,48 @@ const RiwayatSertifikasiPanel = ({ data, formatDateIndo }) => {
               <i className="fas fa-certificate text-amber-600 dark:text-amber-400"></i>
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-md font-semibold text-gray-900 dark:text-white leading-tight">{item.namaSertifikasi}</h4>
-              <span className="text-sm text-amber-600 dark:text-amber-400">{item.jenisSertifikasiNama}</span>
+              <h4 className="text-md font-semibold text-gray-900 dark:text-white leading-tight">
+                {item.namaSertifikasi}
+              </h4>
+              <span className="text-sm text-amber-600 dark:text-amber-400">
+                {item.jenisSertifikasiNama}
+              </span>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-gray-600 dark:text-gray-400">
             {item.lembagaSertifikasiNama && (
-              <span><i className="fas fa-landmark mr-1 opacity-60"></i>{item.lembagaSertifikasiNama}</span>
+              <span>
+                <i className="fas fa-landmark mr-1 opacity-60"></i>
+                {item.lembagaSertifikasiNama}
+              </span>
             )}
             {item.noSertifikat && (
-              <span><i className="fas fa-hashtag mr-1 opacity-60"></i>No: {item.noSertifikat}</span>
+              <span>
+                <i className="fas fa-hashtag mr-1 opacity-60"></i>No:{" "}
+                {item.noSertifikat}
+              </span>
             )}
             {item.tanggalSertifikat && (
-              <span><i className="fas fa-calendar-check mr-1 opacity-60"></i>{formatDateIndo(item.tanggalSertifikat)}</span>
+              <span>
+                <i className="fas fa-calendar-check mr-1 opacity-60"></i>
+                {formatDateIndo(item.tanggalSertifikat)}
+              </span>
             )}
             {item.masaBerlakuSertMulai && (
               <span>
                 <i className="fas fa-hourglass-half mr-1 opacity-60"></i>
                 Berlaku: {formatDateIndo(item.masaBerlakuSertMulai)}
-                {item.masaBerlakuSertSelesai ? ` s/d ${formatDateIndo(item.masaBerlakuSertSelesai)}` : ""}
+                {item.masaBerlakuSertSelesai
+                  ? ` s/d ${formatDateIndo(item.masaBerlakuSertSelesai)}`
+                  : ""}
               </span>
             )}
           </div>
           {item.rumpunJabatanNama && (
             <div className="mt-3 pt-3 border-t border-amber-100 dark:border-amber-900/30">
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                <i className="fas fa-tag mr-1 opacity-60"></i>Rumpun: {item.rumpunJabatanNama}
+                <i className="fas fa-tag mr-1 opacity-60"></i>Rumpun:{" "}
+                {item.rumpunJabatanNama}
               </span>
             </div>
           )}
@@ -2695,63 +3137,130 @@ const RiwayatSertifikasiPanel = ({ data, formatDateIndo }) => {
 
 const RiwayatPendidikanPanel = ({ data, formatDateIndo }) => {
   if (!data || data.length === 0)
-    return <EmptyState icon="university" message="Tidak ada data riwayat pendidikan" />;
+    return (
+      <EmptyState
+        icon="university"
+        message="Tidak ada data riwayat pendidikan"
+      />
+    );
 
-  const sorted = [...data].sort((a, b) => Number(b.tkPendidikanId || 0) - Number(a.tkPendidikanId || 0));
+  const sorted = [...data].sort(
+    (a, b) => Number(b.tkPendidikanId || 0) - Number(a.tkPendidikanId || 0),
+  );
 
   const levelMeta = (level) => {
-    if (!level) return { bg: "bg-gray-100 dark:bg-gray-700", text: "text-gray-600 dark:text-gray-400", border: "border-gray-200 dark:border-gray-600", icon: "school" };
+    if (!level)
+      return {
+        bg: "bg-gray-100 dark:bg-gray-700",
+        text: "text-gray-600 dark:text-gray-400",
+        border: "border-gray-200 dark:border-gray-600",
+        icon: "school",
+      };
     const l = level.toUpperCase();
     if (l.includes("S-3") || l.includes("DOKTOR"))
-      return { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-500 dark:text-purple-300", border: "border-purple-200 dark:border-purple-700", icon: "user-graduate" };
+      return {
+        bg: "bg-purple-100 dark:bg-purple-900/30",
+        text: "text-purple-500 dark:text-purple-300",
+        border: "border-purple-200 dark:border-purple-700",
+        icon: "user-graduate",
+      };
     if (l.includes("S-2") || l.includes("MAGISTER"))
-      return { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-[#3085d6] dark:text-blue-300", border: "border-blue-200 dark:border-blue-700", icon: "graduation-cap" };
+      return {
+        bg: "bg-blue-100 dark:bg-blue-900/30",
+        text: "text-[#3085d6] dark:text-blue-300",
+        border: "border-blue-200 dark:border-blue-700",
+        icon: "graduation-cap",
+      };
     if (l.includes("S-1") || l.includes("D-IV"))
-      return { bg: "bg-teal-100 dark:bg-teal-900/30", text: "text-teal-500 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700", icon: "graduation-cap" };
+      return {
+        bg: "bg-teal-100 dark:bg-teal-900/30",
+        text: "text-teal-500 dark:text-teal-300",
+        border: "border-teal-200 dark:border-teal-700",
+        icon: "graduation-cap",
+      };
     if (l.includes("D-"))
-      return { bg: "bg-indigo-100 dark:bg-indigo-900/30", text: "text-indigo-600 dark:text-indigo-300", border: "border-indigo-200 dark:border-indigo-700", icon: "certificate" };
+      return {
+        bg: "bg-indigo-100 dark:bg-indigo-900/30",
+        text: "text-indigo-600 dark:text-indigo-300",
+        border: "border-indigo-200 dark:border-indigo-700",
+        icon: "certificate",
+      };
     if (l.includes("SMA") || l.includes("SLTA"))
-      return { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-600 dark:text-green-300", border: "border-green-200 dark:border-green-700", icon: "school" };
+      return {
+        bg: "bg-green-100 dark:bg-green-900/30",
+        text: "text-green-600 dark:text-green-300",
+        border: "border-green-200 dark:border-green-700",
+        icon: "school",
+      };
     if (l.includes("SMP") || l.includes("SLTP"))
-      return { bg: "bg-lime-100 dark:bg-lime-900/30", text: "text-lime-600 dark:text-lime-300", border: "border-lime-200 dark:border-lime-700", icon: "school" };
-    return { bg: "bg-gray-100 dark:bg-gray-700", text: "text-gray-600 dark:text-gray-400", border: "border-gray-200 dark:border-gray-600", icon: "school" };
+      return {
+        bg: "bg-lime-100 dark:bg-lime-900/30",
+        text: "text-lime-600 dark:text-lime-300",
+        border: "border-lime-200 dark:border-lime-700",
+        icon: "school",
+      };
+    return {
+      bg: "bg-gray-100 dark:bg-gray-700",
+      text: "text-gray-600 dark:text-gray-400",
+      border: "border-gray-200 dark:border-gray-600",
+      icon: "school",
+    };
   };
 
   return (
     <div className="space-y-4">
       {sorted.map((item) => {
         const meta = levelMeta(item.tkPendidikanNama);
-        const gelar = [item.gelarDepan, item.gelarBelakang].filter(Boolean).join(" / ");
+        const gelar = [item.gelarDepan, item.gelarBelakang]
+          .filter(Boolean)
+          .join(" / ");
         return (
           <div
             key={item.id}
             className={`rounded-xl p-5 border ${meta.bg} ${meta.border} hover:shadow-md transition-shadow`}
           >
             <div className="flex gap-3 mb-3">
-              <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-white/60 dark:bg-gray-900/30 flex items-center justify-center`}>
+              <div
+                className={`flex-shrink-0 w-10 h-10 rounded-full bg-white/60 dark:bg-gray-900/30 flex items-center justify-center`}
+              >
                 <i className={`fas fa-${meta.icon} ${meta.text} text-lg`}></i>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                  <span className={`text-sm font-bold uppercase tracking-wide ${meta.text}`}>{item.tkPendidikanNama}</span>
+                  <span
+                    className={`text-sm font-bold uppercase tracking-wide ${meta.text}`}
+                  >
+                    {item.tkPendidikanNama}
+                  </span>
                   {item.tahunLulus && (
                     <span className="text-sm px-2 py-0.5 rounded-full bg-white/70 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 font-medium">
                       Lulus {item.tahunLulus}
                     </span>
                   )}
                 </div>
-                <p className="text-md font-semibold text-gray-900 dark:text-white leading-tight">{item.pendidikanNama}</p>
+                <p className="text-md font-semibold text-gray-900 dark:text-white leading-tight">
+                  {item.pendidikanNama}
+                </p>
               </div>
             </div>
             <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               {item.namaSekolah && (
-                <p><i className="fas fa-university mr-1 opacity-60"></i>{item.namaSekolah}</p>
+                <p>
+                  <i className="fas fa-university mr-1 opacity-60"></i>
+                  {item.namaSekolah}
+                </p>
               )}
               {item.nomorIjasah && (
-                <p><i className="fas fa-file-alt mr-1 opacity-60"></i>No. Ijazah: {item.nomorIjasah}</p>
+                <p>
+                  <i className="fas fa-file-alt mr-1 opacity-60"></i>No. Ijazah:{" "}
+                  {item.nomorIjasah}
+                </p>
               )}
               {gelar && (
-                <p><i className="fas fa-user-graduate mr-1 opacity-60"></i>Gelar: {gelar}</p>
+                <p>
+                  <i className="fas fa-user-graduate mr-1 opacity-60"></i>Gelar:{" "}
+                  {gelar}
+                </p>
               )}
             </div>
           </div>
@@ -2763,12 +3272,32 @@ const RiwayatPendidikanPanel = ({ data, formatDateIndo }) => {
 
 const PenghargaanPanel = ({ awards }) => {
   if (!awards || awards.length === 0)
-    return <EmptyState icon="trophy" message="Belum memenuhi syarat penghargaan Satyalancana" />;
+    return (
+      <EmptyState
+        icon="trophy"
+        message="Belum memenuhi syarat penghargaan Satyalancana"
+      />
+    );
 
   const colorMap = {
-    gold:   { bg: "bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/20 dark:to-amber-900/20", text: "text-yellow-600 dark:text-yellow-300", border: "border-yellow-300 dark:border-yellow-700", icon: "bg-yellow-200 dark:bg-yellow-800/40 text-yellow-700 dark:text-yellow-300" },
-    silver: { bg: "bg-gradient-to-r from-gray-100 to-slate-100 dark:from-gray-700/40 dark:to-slate-700/40", text: "text-gray-700 dark:text-gray-300", border: "border-gray-300 dark:border-gray-600", icon: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" },
-    bronze: { bg: "bg-gradient-to-r from-orange-100 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/10", text: "text-orange-600 dark:text-orange-300", border: "border-orange-300 dark:border-orange-700", icon: "bg-orange-200 dark:bg-orange-800/40 text-orange-700 dark:text-orange-300" },
+    gold: {
+      bg: "bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/20 dark:to-amber-900/20",
+      text: "text-yellow-600 dark:text-yellow-300",
+      border: "border-yellow-300 dark:border-yellow-700",
+      icon: "bg-yellow-200 dark:bg-yellow-800/40 text-yellow-700 dark:text-yellow-300",
+    },
+    silver: {
+      bg: "bg-gradient-to-r from-gray-100 to-slate-100 dark:from-gray-700/40 dark:to-slate-700/40",
+      text: "text-gray-700 dark:text-gray-300",
+      border: "border-gray-300 dark:border-gray-600",
+      icon: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
+    },
+    bronze: {
+      bg: "bg-gradient-to-r from-orange-100 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/10",
+      text: "text-orange-600 dark:text-orange-300",
+      border: "border-orange-300 dark:border-orange-700",
+      icon: "bg-orange-200 dark:bg-orange-800/40 text-orange-700 dark:text-orange-300",
+    },
   };
 
   return (
@@ -2779,13 +3308,22 @@ const PenghargaanPanel = ({ awards }) => {
         else if (award.name && award.name.includes("XX")) key = "silver";
         const c = colorMap[key];
         return (
-          <div key={idx} className={`flex items-center gap-4 p-5 rounded-xl border ${c.bg} ${c.border} hover:shadow-md transition-shadow`}>
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 ${c.icon}`}>
+          <div
+            key={idx}
+            className={`flex items-center gap-4 p-5 rounded-xl border ${c.bg} ${c.border} hover:shadow-md transition-shadow`}
+          >
+            <div
+              className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 ${c.icon}`}
+            >
               <i className="fas fa-medal text-2xl"></i>
             </div>
             <div>
-              <h4 className={`font-bold text-sm leading-tight ${c.text}`}>{award.name}</h4>
-              <p className={`text-sm mt-0.5 opacity-80 ${c.text}`}>{award.years} tahun masa kerja</p>
+              <h4 className={`font-bold text-sm leading-tight ${c.text}`}>
+                {award.name}
+              </h4>
+              <p className={`text-sm mt-0.5 opacity-80 ${c.text}`}>
+                {award.years} tahun masa kerja
+              </p>
             </div>
           </div>
         );

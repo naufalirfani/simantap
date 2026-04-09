@@ -11,6 +11,7 @@ function PenilaianDetailModal({
   subIndikators,
   loading = false,
   onEditPenilaian,
+  onViewProfil,
 }) {
   // Close on Escape key
   useEffect(() => {
@@ -134,13 +135,29 @@ function PenilaianDetailModal({
               </div>
             </div>
 
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110 cursor-pointer"
-              aria-label="Close"
-            >
-              <i className="fas fa-times text-xl text-gray-600 dark:text-gray-300"></i>
-            </button>
+            <div className="flex items-center gap-2">
+              {onViewProfil && (
+                <IconButton
+                  onClick={() => {
+                    onViewProfil(pegawai?.nip);
+                    onClose();
+                  }}
+                  variant="blue"
+                  size="lg"
+                  title="Lihat Profil Pegawai"
+                >
+                  <i className="fas fa-eye"></i>
+                  <span className="hidden sm:inline ml-2">Lihat Profil</span>
+                </IconButton>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110 cursor-pointer"
+                aria-label="Close"
+              >
+                <i className="fas fa-times text-xl text-gray-600 dark:text-gray-300"></i>
+              </button>
+            </div>
           </div>
 
           {/* Employee Info Section */}
@@ -459,6 +476,7 @@ PenilaianDetailModal.propTypes = {
   ),
   loading: PropTypes.bool,
   onEditPenilaian: PropTypes.func,
+  onViewProfil: PropTypes.func,
 };
 
 export default PenilaianDetailModal;

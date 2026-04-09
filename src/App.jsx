@@ -68,6 +68,7 @@ const RoleBasedRoutes = () => {
                         <Route path="/masterdata/instrumen" element={<Instrumen />} />
                         <Route path="/masterdata/kotak-interval" element={<KotakInterval />} />
                         <Route path="/masterdata/penilaian-pegawai" element={<PenilaianPegawai />} />
+                        <Route path="/masterdata/penilaian-pegawai/:nip/detail" element={<DetailPegawai />} />
                         <Route path="/masterdata/penilaian-pegawai/input-penilaian/:nip" element={<InputPenilaian />} />
                         <Route path="/masterdata/penilaian-pegawai/input-penilaian/:nip/detail" element={<DetailPegawai />} />
                         <Route path="/masterdata/jabatan/:jabatanId/syarat-suksesi" element={<SyaratSuksesi />} />

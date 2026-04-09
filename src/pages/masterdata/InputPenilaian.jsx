@@ -897,10 +897,10 @@ const InputPenilaian = () => {
                 )
               }
               className="cursor-pointer px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-semibold"
-              title="Lihat Detail Pegawai"
+              title="Lihat Profil Pegawai"
             >
               <i className="fas fa-eye"></i>
-              <span className="hidden sm:inline">Lihat Detail</span>
+              <span className="hidden sm:inline">Lihat Profil</span>
             </button>
           </div>
         </div>
