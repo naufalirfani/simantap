@@ -49,7 +49,10 @@ function EmployeeListModal({
 
       {/* Modal with slide-up + scale animation */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="w-full max-w-5xl max-h-full bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto">
+        <div
+          className="modal-resizable w-full max-w-5xl max-h-full bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto"
+          style={{ "--modal-default-width": "64rem" }}
+        >
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 rounded-t-2xl bg-white dark:bg-gray-800 sticky top-0 z-10">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">

@@ -523,6 +523,13 @@ const Dashboard = () => {
               })
             : filtered;
 
+          // Sort by potensial + kinerja total (highest first)
+          searched.sort((a, b) => {
+            const sumA = (a.potensial ?? 0) + (a.kinerja ?? 0);
+            const sumB = (b.potensial ?? 0) + (b.kinerja ?? 0);
+            return sumB - sumA; // descending order
+          });
+
           const total = searched.length;
           const last_page = Math.max(1, Math.ceil(total / per_page));
           const current_page = Math.min(Math.max(1, page), last_page);

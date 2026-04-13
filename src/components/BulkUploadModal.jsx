@@ -479,7 +479,10 @@ const BulkUploadModal = ({
 
       {/* Modal with slide-up + scale animation */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="w-full max-w-6xl bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-hidden shadow-2xl">
+        <div
+          className="modal-resizable w-full max-w-6xl bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-hidden shadow-2xl"
+          style={{ "--modal-default-width": "72rem", "--modal-min-height": "360px" }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <div>

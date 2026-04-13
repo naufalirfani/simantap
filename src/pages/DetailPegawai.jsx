@@ -2615,7 +2615,10 @@ const PersonalInfoModal = ({
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="w-full max-w-3xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto shadow-2xl">
+        <div
+          className="modal-resizable w-full max-w-3xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto shadow-2xl"
+          style={{ "--modal-default-width": "48rem", "--modal-min-height": "260px" }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10">
             <div>
@@ -2723,7 +2726,10 @@ const EmploymentInfoModal = ({
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="w-full max-w-3xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto shadow-2xl">
+        <div
+          className="modal-resizable w-full max-w-3xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto shadow-2xl"
+          style={{ "--modal-default-width": "48rem", "--modal-min-height": "260px" }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10">
             <div>

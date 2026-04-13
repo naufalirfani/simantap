@@ -1063,8 +1063,10 @@ const Indikator = () => {
           {/* Modal with slide-up + scale animation */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-lg pointer-events-auto"
+              className="modal-resizable overflow-auto bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-lg pointer-events-auto"
               style={{
+                "--modal-default-width": "32rem",
+                "--modal-min-height": "260px",
                 animation: "modalSlideUp 0.3s ease-out",
               }}
               onClick={(e) => e.stopPropagation()}
@@ -1241,8 +1243,12 @@ const Indikator = () => {
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl pointer-events-auto"
-              style={{ animation: "modalSlideUp 0.3s ease-out" }}
+              className="modal-resizable bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl pointer-events-auto"
+              style={{
+                "--modal-default-width": "42rem",
+                "--modal-min-height": "320px",
+                animation: "modalSlideUp 0.3s ease-out",
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <form onSubmit={handleSubmitBulk}>
@@ -1451,8 +1457,10 @@ const Indikator = () => {
           {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-5xl max-h-[80vh] flex flex-col min-h-0 pointer-events-auto"
+              className="modal-resizable bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-5xl max-h-[80vh] flex flex-col min-h-0 pointer-events-auto"
               style={{
+                "--modal-default-width": "64rem",
+                "--modal-min-height": "360px",
                 animation: "modalSlideUp 0.3s ease-out",
               }}
               onClick={(e) => e.stopPropagation()}
@@ -1792,8 +1800,10 @@ const Indikator = () => {
           {/* Modal */}
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none">
             <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-lg pointer-events-auto"
+              className="modal-resizable overflow-auto bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-lg pointer-events-auto"
               style={{
+                "--modal-default-width": "32rem",
+                "--modal-min-height": "260px",
                 animation: "modalSlideUp 0.3s ease-out",
               }}
               onClick={(e) => e.stopPropagation()}
@@ -1966,8 +1976,10 @@ const Indikator = () => {
           {/* Modal */}
           <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 pointer-events-none">
             <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col min-h-0 pointer-events-auto"
+              className="modal-resizable bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col min-h-0 pointer-events-auto"
               style={{
+                "--modal-default-width": "48rem",
+                "--modal-min-height": "320px",
                 animation: "modalSlideUp 0.3s ease-out",
               }}
               onClick={(e) => e.stopPropagation()}

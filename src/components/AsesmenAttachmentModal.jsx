@@ -94,7 +94,10 @@ const AsesmenAttachmentModal = ({
       />
 
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-hidden shadow-2xl">
+        <div
+          className="modal-resizable w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-hidden shadow-2xl"
+          style={{ "--modal-default-width": "42rem", "--modal-min-height": "260px" }}
+        >
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">

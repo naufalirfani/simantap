@@ -92,8 +92,10 @@ function PenilaianDetailModal({
       {/* Modal with slide-up + scale animation */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="w-full max-w-5xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-hidden flex flex-col"
+          className="modal-resizable w-full max-w-5xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-hidden flex flex-col"
           style={{
+            "--modal-default-width": "64rem",
+            "--modal-min-height": "320px",
             animation: "modalSlideUp 0.3s ease-out",
           }}
         >

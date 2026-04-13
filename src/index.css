@@ -72,3 +72,13 @@ body {
   background: linear-gradient(180deg, #64748b 0%, #475569 100%);
   border-color: #334155;
 }
+
+/* Reusable drag-resize behavior for modal containers */
+.modal-resizable {
+  width: min(90vw, var(--modal-default-width, 64rem));
+  min-width: var(--modal-min-width, 320px);
+  min-height: var(--modal-min-height, 220px);
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  resize: both;
+}
