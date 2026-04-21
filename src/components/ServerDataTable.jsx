@@ -202,10 +202,7 @@ const ServerDataTable = ({
                   size="lg"
                   className="flex items-center gap-2 px-4 py-2.5 text-sm"
                 >
-                  <i
-                    className="fas fa-download text-lg"
-                    aria-hidden="true"
-                  />
+                  <i className="fas fa-download text-lg" aria-hidden="true" />
                   <span>{exporting ? t("exporting") : t("exportData")}</span>
                 </IconButton>
               )}
@@ -286,7 +283,10 @@ const ServerDataTable = ({
                   size="lg"
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-lg transition-colors"
                 >
-                  <i className="fas fa-sync-alt text-lg mr-2" aria-hidden="true"></i>
+                  <i
+                    className="fas fa-sync-alt text-lg mr-2"
+                    aria-hidden="true"
+                  ></i>
                   {t("resetFilter")}
                 </IconButton>
               </div>
@@ -382,6 +382,23 @@ const ServerDataTable = ({
       {!loading && meta.last_page > 0 && (
         <div className="px-3 py-4 bg-gradient-to-r from-white to-white dark:from-gray-800 dark:to-gray-800 border-t border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Results info */}
+            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {t("showing")}{" "}
+              <span className="font-bold text-gray-900 dark:text-gray-100">
+                {startIndex + 1}
+              </span>{" "}
+              {t("to")}{" "}
+              <span className="font-bold text-gray-900 dark:text-gray-100">
+                {Math.min(startIndex + meta.per_page, meta.total)}
+              </span>{" "}
+              {t("of")}{" "}
+              <span className="font-bold text-gray-900 dark:text-gray-100">
+                {meta.total}
+              </span>{" "}
+              {t("entries")}
+            </div>
+
             {/* Pagination buttons */}
             <div className="flex items-center gap-2">
               {/* First page */}
@@ -445,23 +462,6 @@ const ServerDataTable = ({
                   aria-hidden="true"
                 />
               </button>
-            </div>
-
-            {/* Results info */}
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {t("showing")}{" "}
-              <span className="font-bold text-gray-900 dark:text-gray-100">
-                {startIndex + 1}
-              </span>{" "}
-              {t("to")}{" "}
-              <span className="font-bold text-gray-900 dark:text-gray-100">
-                {Math.min(startIndex + meta.per_page, meta.total)}
-              </span>{" "}
-              {t("of")}{" "}
-              <span className="font-bold text-gray-900 dark:text-gray-100">
-                {meta.total}
-              </span>{" "}
-              {t("entries")}
             </div>
           </div>
         </div>

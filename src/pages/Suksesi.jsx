@@ -510,6 +510,23 @@ const Suksesi = () => {
           {!loading && filteredJabatan.length > 0 && (
             <div className="px-3 py-4 bg-gradient-to-r from-white to-white dark:from-gray-800 dark:to-gray-800 border-t border-gray-200 dark:border-gray-700 mt-2 -mx-6 -mb-6 rounded-b-xl">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Results info */}
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Menampilkan{" "}
+                  <span className="font-bold text-gray-900 dark:text-gray-100">
+                    {(currentPage - 1) * PAGE_SIZE + 1}
+                  </span>{" "}
+                  sampai{" "}
+                  <span className="font-bold text-gray-900 dark:text-gray-100">
+                    {Math.min(currentPage * PAGE_SIZE, filteredJabatan.length)}
+                  </span>{" "}
+                  dari{" "}
+                  <span className="font-bold text-gray-900 dark:text-gray-100">
+                    {filteredJabatan.length}
+                  </span>{" "}
+                  jabatan
+                </div>
+
                 {/* Pagination buttons */}
                 <div className="flex items-center gap-2">
                   {/* First page */}
@@ -583,23 +600,6 @@ const Suksesi = () => {
                       aria-hidden="true"
                     />
                   </button>
-                </div>
-
-                {/* Results info */}
-                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Menampilkan{" "}
-                  <span className="font-bold text-gray-900 dark:text-gray-100">
-                    {(currentPage - 1) * PAGE_SIZE + 1}
-                  </span>{" "}
-                  sampai{" "}
-                  <span className="font-bold text-gray-900 dark:text-gray-100">
-                    {Math.min(currentPage * PAGE_SIZE, filteredJabatan.length)}
-                  </span>{" "}
-                  dari{" "}
-                  <span className="font-bold text-gray-900 dark:text-gray-100">
-                    {filteredJabatan.length}
-                  </span>{" "}
-                  jabatan
                 </div>
               </div>
             </div>
