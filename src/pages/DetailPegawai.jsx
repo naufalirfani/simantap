@@ -240,6 +240,16 @@ const DetailPegawai = () => {
   };
 
   useEffect(() => {
+    if (
+      user?.nip &&
+      !isAdmin &&
+      nip &&
+      String(user.nip) !== String(nip)
+    ) {
+      navigate(`/detail-pegawai/${user.nip}`, { replace: true });
+      return;
+    }
+
     document.title = `Detail Pegawai | SIMANTAP`;
     fetchDetailPegawai();
     // Ensure Poppins font is available for chart tooltips and labels
@@ -271,7 +281,7 @@ const DetailPegawai = () => {
         fontLink.parentNode.removeChild(fontLink);
       }
     };
-  }, [nip]);
+  }, [nip, user?.nip, isAdmin, navigate]);
 
   const fetchDetailPegawai = async () => {
     try {
