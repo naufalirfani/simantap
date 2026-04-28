@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSettings } from "../context/SettingsContext";
+import { useAuth } from "../context/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { PRIMARY_COLORS } from "../config/colors";
@@ -140,6 +141,7 @@ const DetailPegawai = () => {
   const { nip } = useParams();
   const navigate = useNavigate();
   const { t } = useSettings();
+  const { user } = useAuth();
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingCompetency, setLoadingCompetency] = useState(true);
   const [loadingIndicators, setLoadingIndicators] = useState(true);
@@ -628,6 +630,7 @@ const DetailPegawai = () => {
   const [expandedKinerja, setExpandedKinerja] = useState({});
   const [activeRadarTab, setActiveRadarTab] = useState("msk"); // 'msk' or 'potensi'
   const [activeRiwayatTab, setActiveRiwayatTab] = useState("jabatan");
+  const isAdmin = user?.role === 'Super Admin' || user?.role === 'Admin';
 
   const togglePotensial = (name) => {
     setExpandedPotensial((p) => ({ ...p, [name]: !p[name] }));
@@ -1360,7 +1363,7 @@ const DetailPegawai = () => {
   return (
     <div className="mx-auto p-4 md:p-6 lg:p-8">
       {/* Breadcrumb */}
-      <Breadcrumb />
+      {isAdmin && <Breadcrumb />}
 
       {/* Page Title */}
       <div className="mb-6">
