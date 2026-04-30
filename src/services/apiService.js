@@ -1,9 +1,5 @@
 import CryptoJS from 'crypto-js';
 
-const ANJAB_API_BASE_URL = import.meta.env.VITE_ANJAB_API_BASE_URL;
-const API_EMAIL = import.meta.env.VITE_ANJAB_API_EMAIL;
-const API_PASSWORD = import.meta.env.VITE_ANJAB_API_PASSWORD;
-
 // CMB API Configuration
 const CMB_API_BASE_URL = import.meta.env.VITE_API_CMB_URL;
 const CMB_API_TOKEN = import.meta.env.VITE_API_TOKEN;
@@ -54,62 +50,6 @@ export async function encryptTokenForHeader(token, opts = {}) {
     return token;
   }
 }
-
-// Store token in memory (could be moved to context or localStorage)
-let authToken = null;
-
-/**
- * Login to get access token
- */
-export const login = async () => {
-  try {
-    const response = await fetch(`${ANJAB_API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: API_EMAIL,
-        password: API_PASSWORD,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Login failed");
-    }
-
-    const data = await response.json();
-    authToken = data.access_token;
-
-    // Store token expiry time
-    const expiryTime = Date.now() + data.expires_in * 1000;
-    localStorage.setItem("anjab_token", authToken);
-    localStorage.setItem("anjab_token_expiry", expiryTime.toString());
-
-    return data;
-  } catch (error) {
-    console.error("Login error:", error);
-    throw error;
-  }
-};
-
-/**
- * Get valid token (login if needed)
- */
-const getValidToken = async () => {
-  const storedToken = localStorage.getItem("anjab_token");
-  const expiryTime = localStorage.getItem("anjab_token_expiry");
-
-  // Check if token exists and is not expired
-  if (storedToken && expiryTime && Date.now() < parseInt(expiryTime)) {
-    authToken = storedToken;
-    return authToken;
-  }
-
-  // Token expired or doesn't exist, login again
-  await login();
-  return authToken;
-};
 
 /**
  * Fetch peta jabatan data

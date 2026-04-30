@@ -14,6 +14,7 @@ export const useAuth = () => {
 const API_BASE_URL = import.meta.env.VITE_API_CMB_URL;
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 const NUSA_URL = import.meta.env.VITE_NUSA_URL;
+const ADMIN_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -182,6 +183,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const buildAdminUser = (adminData, fallbackEmail) => {
+    const email = adminData?.email || fallbackEmail || "";
+    const role = adminData?.type === "admin" ? "Admin" : (adminData?.type || "Admin");
+
+    return {
+      email,
+      name: email || "Admin",
+      nama: email || "Admin",
+      role,
+      type: adminData?.type || "admin",
+      token: adminData?.token || "",
+    };
+  };
+
   const login = async (token, nip) => {
     try {
       const userData = await fetchUserData(nip);
@@ -197,13 +212,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     // Check localStorage for admin auth BEFORE clearing
     const isAdminAuth = localStorage.getItem("admin_auth") === "true";
+    const adminToken = localStorage.getItem("admin_token");
 
-    // Set temporary flag in sessionStorage for admin logout redirect
-    if (isAdminAuth) {
-      sessionStorage.setItem("admin_logout_redirect", "true");
+    if (isAdminAuth && ADMIN_API_BASE_URL) {
+      try {
+        await fetch(`${ADMIN_API_BASE_URL}/api/admin/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            ...(API_TOKEN ? { "X-API-TOKEN": API_TOKEN } : {}),
+            ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+          },
+        });
+      } catch (error) {
+        console.error("Admin logout error:", error);
+      }
     }
 
     setUser(null);
@@ -212,7 +239,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("userProfile");
     localStorage.removeItem("sso_token");
     localStorage.removeItem("admin_auth");
+    localStorage.removeItem("admin_token");
     localStorage.removeItem("lastActivity");
+    sessionStorage.removeItem("admin_logout_redirect");
 
     // Redirect admin to /admin, others to NUSA
     if (isAdminAuth) {
@@ -224,28 +253,37 @@ export const AuthProvider = ({ children }) => {
 
   const adminLogin = async (email, password) => {
     try {
-      // Admin credentials from environment variables
-      const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
-      const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
-
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        const adminUser = {
-          nip: ADMIN_EMAIL,
-          nama: "Super Admin",
-          email: ADMIN_EMAIL,
-          role: "Super Admin",
-        };
-
-        setUser(adminUser);
-        setIsAuthenticated(true);
-        localStorage.setItem("user", JSON.stringify(adminUser));
-        localStorage.setItem("admin_auth", "true");
-        localStorage.setItem("lastActivity", Date.now().toString());
-        sessionStorage.setItem("admin_logout_redirect", "true");
-        return true;
+      if (!ADMIN_API_BASE_URL) {
+        throw new Error("Admin API base URL is not configured");
       }
 
-      return false;
+      const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(API_TOKEN ? { "X-API-TOKEN": API_TOKEN } : {}),
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success || !result?.data?.token) {
+        console.error("Admin login failed:", result?.message || response.statusText);
+        return false;
+      }
+
+      const adminUser = buildAdminUser(result.data, email);
+
+      setUser(adminUser);
+      setIsAuthenticated(true);
+      localStorage.setItem("user", JSON.stringify(adminUser));
+      localStorage.setItem("admin_auth", "true");
+      localStorage.setItem("admin_token", result.data.token);
+      localStorage.setItem("lastActivity", Date.now().toString());
+      sessionStorage.removeItem("admin_logout_redirect");
+      return true;
     } catch (error) {
       console.error("Admin login error:", error);
       return false;
