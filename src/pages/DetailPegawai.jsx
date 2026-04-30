@@ -142,6 +142,7 @@ const DetailPegawai = () => {
   const navigate = useNavigate();
   const { t } = useSettings();
   const { user } = useAuth();
+  const isAdmin = user?.role === 'Super Admin' || user?.role === 'Admin';
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingCompetency, setLoadingCompetency] = useState(true);
   const [loadingIndicators, setLoadingIndicators] = useState(true);
@@ -640,7 +641,6 @@ const DetailPegawai = () => {
   const [expandedKinerja, setExpandedKinerja] = useState({});
   const [activeRadarTab, setActiveRadarTab] = useState("msk"); // 'msk' or 'potensi'
   const [activeRiwayatTab, setActiveRiwayatTab] = useState("jabatan");
-  const isAdmin = user?.role === 'Super Admin' || user?.role === 'Admin';
 
   const togglePotensial = (name) => {
     setExpandedPotensial((p) => ({ ...p, [name]: !p[name] }));
