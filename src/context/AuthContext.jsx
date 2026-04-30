@@ -257,6 +257,10 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Admin API base URL is not configured");
       }
 
+      // Encrypt email and password
+      const encryptedEmail = await encryptTokenForHeader(email, { salt: email });
+      const encryptedPassword = await encryptTokenForHeader(password, { salt: password });
+
       const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/login`, {
         method: "POST",
         headers: {
@@ -264,7 +268,7 @@ export const AuthProvider = ({ children }) => {
           Accept: "application/json",
           ...(API_TOKEN ? { "X-API-TOKEN": API_TOKEN } : {}),
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: encryptedEmail, password: encryptedPassword }),
       });
 
       const result = await response.json().catch(() => null);
