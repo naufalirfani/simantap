@@ -22,8 +22,17 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     
     if (isAdminLogoutRedirect) {
       // Clear the flag and redirect to admin login
+      sessionStorage.removeItem('self_logout');
       sessionStorage.removeItem('admin_logout_redirect');
       window.location.href = '/admin';
+      return null;
+    }
+    
+    // If the user intentionally logged out themselves, don't add app/redirect params
+    const isSelfLogout = sessionStorage.getItem('self_logout') === 'true';
+    if (isSelfLogout) {
+      sessionStorage.removeItem('self_logout');
+      window.location.href = import.meta.env.VITE_NUSA_URL;
       return null;
     }
     

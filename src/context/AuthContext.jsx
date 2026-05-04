@@ -92,6 +92,7 @@ export const AuthProvider = ({ children }) => {
             const adminUser = buildAdminUser(payload, payload.email);
             setUser(adminUser);
             setIsAuthenticated(true);
+              sessionStorage.removeItem('self_logout');
           } else {
             clearAuthStorage();
           }
@@ -102,6 +103,7 @@ export const AuthProvider = ({ children }) => {
           if (data && data.status === true && data.user) {
             setUser(data.user);
             setIsAuthenticated(true);
+            sessionStorage.removeItem('self_logout');
           } else {
             clearAuthStorage();
             window.location.href = `${NUSA_URL}/dashboard`;
@@ -200,6 +202,7 @@ export const AuthProvider = ({ children }) => {
       const safeUser = sanitizeUser(userData);
       setUser(safeUser);
       setIsAuthenticated(true);
+      sessionStorage.removeItem('self_logout');
       // Persist only SSO token (not user data) per policy
       writeAuthStorageItem(AUTH_STORAGE_KEYS.ssoToken, token, LEGACY_AUTH_STORAGE_KEYS.ssoToken);
       return true;
@@ -212,6 +215,13 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     const isAdminAuth = isAdminUser(user);
     const adminToken = readAuthStorageItem(AUTH_STORAGE_KEYS.adminToken, LEGACY_AUTH_STORAGE_KEYS.adminToken);
+
+    // Mark that this logout was initiated by the user (self-logout)
+    try {
+      sessionStorage.setItem('self_logout', 'true');
+    } catch (e) {
+      // ignore storage errors
+    }
 
     if (isAdminAuth && ADMIN_API_BASE_URL) {
       try {
@@ -233,7 +243,6 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     clearAuthStorage();
-    sessionStorage.removeItem("admin_logout_redirect");
 
     // Redirect admin to /admin, others to NUSA
     if (isAdminAuth) {
