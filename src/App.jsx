@@ -24,6 +24,7 @@ import SyaratSuksesi from './pages/masterdata/SyaratSuksesi';
 import Settings from './pages/Settings';
 import SSOLogin from './pages/SSOLogin';
 import AdminLogin from './pages/AdminLogin';
+import NotFound from './pages/NotFound';
 
 // Component to handle role-based routing
 const RoleBasedRoutes = () => {
@@ -75,6 +76,8 @@ const RoleBasedRoutes = () => {
                         <Route path="/pengaturan" element={<Settings />} />
                         <Route path="/masterdata/standar-kompetensi-msk" element={<StandarKompetensiMSK />} />
                         <Route path="/detail-pegawai/:nip" element={<DetailPegawai />} />
+                        {/* Catch-all route for unknown paths */}
+                        <Route path="*" element={<NotFound />} />
                       </Routes>
                     </main>
                   </div>
