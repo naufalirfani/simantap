@@ -27,10 +27,10 @@ const SSOLogin = () => {
           return;
         }
 
-        // Verify token with NIP
-        const isValid = await verifyToken(token);
+        // Verify token via SSO API
+        const verifyData = await verifyToken(token);
 
-        if (!isValid) {
+        if (!verifyData || verifyData.status !== true) {
           setStatus('failed');
           return;
         }
@@ -39,6 +39,9 @@ const SSOLogin = () => {
         const loginSuccess = await login(token, nip);
 
         if (loginSuccess) {
+          // Store SSO token in sessionStorage for persistence across page loads
+          sessionStorage.setItem('auth_sso_token', token);
+          
           setStatus('success');
           // Get redirect parameter from URL query params
           const searchParams = new URLSearchParams(location.search);

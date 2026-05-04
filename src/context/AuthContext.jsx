@@ -16,125 +16,100 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 const NUSA_URL = import.meta.env.VITE_NUSA_URL;
 const ADMIN_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const AUTH_STORAGE_KEYS = {
+  adminToken: "auth_admin_token",
+  ssoToken: "auth_sso_token",
+};
+
+const LEGACY_AUTH_STORAGE_KEYS = {
+  user: "user",
+  userProfile: "userProfile",
+  ssoToken: "sso_token",
+  adminAuth: "admin_auth",
+  adminToken: "admin_token",
+};
+
+const isAdminUser = (userData) =>
+  userData?.role === "Super Admin" || userData?.role === "Admin";
+
+const sanitizeUser = (userData) => {
+  if (!userData) return null;
+  const { token, ...safeUser } = userData;
+  return safeUser;
+};
+
+const readAuthStorageItem = (key, legacyKey = key) => {
+  const sessionValue = sessionStorage.getItem(key);
+  if (sessionValue !== null) return sessionValue;
+
+  const legacyValue = localStorage.getItem(legacyKey);
+  if (legacyValue !== null) {
+    // migrate only admin token from legacy storage
+    if (key === AUTH_STORAGE_KEYS.adminToken) {
+      sessionStorage.setItem(key, legacyValue);
+    }
+    localStorage.removeItem(legacyKey);
+    return legacyValue;
+  }
+
+  return null;
+};
+
+const writeAuthStorageItem = (key, value, legacyKey = key) => {
+  // only persist admin token and SSO token per new policy
+  if (key === AUTH_STORAGE_KEYS.adminToken || key === AUTH_STORAGE_KEYS.ssoToken) {
+    sessionStorage.setItem(key, value);
+    localStorage.removeItem(legacyKey);
+  }
+};
+
+const clearAuthStorage = () => {
+  // remove admin token and legacy keys
+  sessionStorage.removeItem(AUTH_STORAGE_KEYS.adminToken);
+  sessionStorage.removeItem(AUTH_STORAGE_KEYS.ssoToken);
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Session timeout: 1 hour (in milliseconds)
-  const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour
+  // Note: Per new policy we do not persist user/SSO data or lastActivity.
+  // Only admin token is persisted in sessionStorage; session expiry is driven by token verification with the server.
 
-  // Update last activity time
-  const updateLastActivity = () => {
-    if (isAuthenticated) {
-      localStorage.setItem("lastActivity", Date.now().toString());
-    }
-  };
-
-  // Check if session has expired
-  const checkSessionExpiry = () => {
-    const lastActivity = localStorage.getItem("lastActivity");
-    if (!lastActivity || !isAuthenticated) return;
-
-    const timeSinceLastActivity = Date.now() - parseInt(lastActivity);
-
-    if (timeSinceLastActivity > SESSION_TIMEOUT) {
-      console.log("Session expired due to inactivity");
-      logout();
-    }
-  };
-
-  // Track user activity for session timeout
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    // Update last activity on mount
-    updateLastActivity();
-
-    // Activity event handlers
-    const activityEvents = ["mousedown", "keydown", "scroll", "touchstart"];
-
-    activityEvents.forEach((event) => {
-      window.addEventListener(event, updateLastActivity);
-    });
-
-    // Check session expiry every minute
-    const intervalId = setInterval(checkSessionExpiry, 60000);
-
-    return () => {
-      activityEvents.forEach((event) => {
-        window.removeEventListener(event, updateLastActivity);
-      });
-      clearInterval(intervalId);
-    };
-  }, [isAuthenticated]);
-
-  // Check if user is already logged in and verify token
+  // Check if admin or SSO token exists and verify
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const storedUser = localStorage.getItem("user");
-        const storedToken = localStorage.getItem("sso_token");
-        const isAdminAuth = localStorage.getItem("admin_auth");
-        const lastActivity = localStorage.getItem("lastActivity");
+        const storedAdminToken = readAuthStorageItem(AUTH_STORAGE_KEYS.adminToken, LEGACY_AUTH_STORAGE_KEYS.adminToken);
+        const storedSSOToken = readAuthStorageItem(AUTH_STORAGE_KEYS.ssoToken, LEGACY_AUTH_STORAGE_KEYS.ssoToken);
 
-        // Check for admin authentication first
-        if (isAdminAuth === "true" && storedUser) {
-          // Check session expiry for admin
-          if (lastActivity) {
-            const timeSinceLastActivity = Date.now() - parseInt(lastActivity);
-            if (timeSinceLastActivity > SESSION_TIMEOUT) {
-              console.log("Admin session expired due to inactivity");
-              localStorage.removeItem("user");
-              localStorage.removeItem("admin_auth");
-              localStorage.removeItem("lastActivity");
-              setLoading(false);
-              return;
-            }
-          }
-          setUser(JSON.parse(storedUser));
-          setIsAuthenticated(true);
-          setLoading(false);
-          return;
-        }
-
-        if (storedUser && storedToken) {
-          // Check session expiry for SSO users
-          if (lastActivity) {
-            const timeSinceLastActivity = Date.now() - parseInt(lastActivity);
-            if (timeSinceLastActivity > SESSION_TIMEOUT) {
-              console.log("SSO session expired due to inactivity");
-              localStorage.removeItem("user");
-              localStorage.removeItem("sso_token");
-              localStorage.removeItem("lastActivity");
-              window.location.href = `${NUSA_URL}/dashboard`;
-              return;
-            }
-          }
-
-          // Verify token on every page load/reload
-          const isValid = await verifyToken(storedToken);
-
-          if (isValid) {
-            setUser(JSON.parse(storedUser));
+        // Check admin token first
+        if (storedAdminToken) {
+          const data = await verifyAdminToken(storedAdminToken);
+          if (data && data.success && data.data && data.data.payload) {
+            const payload = data.data.payload;
+            const adminUser = buildAdminUser(payload, payload.email);
+            setUser(adminUser);
             setIsAuthenticated(true);
           } else {
-            // Token expired or invalid, clear and redirect
-            console.log("Token expired or invalid, redirecting to NUSA");
-            localStorage.removeItem("user");
-            localStorage.removeItem("sso_token");
-            localStorage.removeItem("lastActivity");
-            setUser(null);
-            setIsAuthenticated(false);
+            clearAuthStorage();
+          }
+        }
+        // Check SSO token
+        else if (storedSSOToken) {
+          const data = await verifyToken(storedSSOToken);
+          if (data && data.status === true && data.user) {
+            setUser(data.user);
+            setIsAuthenticated(true);
+          } else {
+            clearAuthStorage();
             window.location.href = `${NUSA_URL}/dashboard`;
-            return;
           }
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        localStorage.removeItem("user");
-        localStorage.removeItem("sso_token");
-        localStorage.removeItem("lastActivity");
+        clearAuthStorage();
       } finally {
         setLoading(false);
       }
@@ -145,7 +120,7 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = async (token) => {
     try {
-      console.log("Verifying token...");
+      console.log("Verifying SSO token...");
       const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
         salt: API_TOKEN,
       });
@@ -155,11 +130,34 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      const data = await response.json();
-      return data.status === true;
+      const data = await response.json().catch(() => null);
+      return data;
     } catch (error) {
       console.error("Token verification error:", error);
-      return false;
+      return null;
+    }
+  };
+
+  // Verify admin JWT using ADMIN API and return server response
+  const verifyAdminToken = async (adminToken) => {
+    try {
+      if (!ADMIN_API_BASE_URL) return null;
+      const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+      const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/verify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(encryptedToken ? { "X-API-TOKEN": encryptedToken } : {}),
+          ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json().catch(() => null);
+      return data;
+    } catch (error) {
+      console.error("Admin token verification error:", error);
+      return null;
     }
   };
 
@@ -193,18 +191,17 @@ export const AuthProvider = ({ children }) => {
       nama: email || "Admin",
       role,
       type: adminData?.type || "admin",
-      token: adminData?.token || "",
     };
   };
 
   const login = async (token, nip) => {
     try {
       const userData = await fetchUserData(nip);
-      setUser(userData);
+      const safeUser = sanitizeUser(userData);
+      setUser(safeUser);
       setIsAuthenticated(true);
-      localStorage.setItem("user", JSON.stringify(userData));
-      localStorage.setItem("sso_token", token);
-      localStorage.setItem("lastActivity", Date.now().toString());
+      // Persist only SSO token (not user data) per policy
+      writeAuthStorageItem(AUTH_STORAGE_KEYS.ssoToken, token, LEGACY_AUTH_STORAGE_KEYS.ssoToken);
       return true;
     } catch (error) {
       console.error("Login error:", error);
@@ -213,18 +210,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // Check localStorage for admin auth BEFORE clearing
-    const isAdminAuth = localStorage.getItem("admin_auth") === "true";
-    const adminToken = localStorage.getItem("admin_token");
+    const isAdminAuth = isAdminUser(user);
+    const adminToken = readAuthStorageItem(AUTH_STORAGE_KEYS.adminToken, LEGACY_AUTH_STORAGE_KEYS.adminToken);
 
     if (isAdminAuth && ADMIN_API_BASE_URL) {
       try {
+        const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
         await fetch(`${ADMIN_API_BASE_URL}/api/admin/logout`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
-            ...(API_TOKEN ? { "X-API-TOKEN": API_TOKEN } : {}),
+            ...(encryptedToken ? { "X-API-TOKEN": encryptedToken } : {}),
             ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
           },
         });
@@ -235,12 +232,7 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem("user");
-    localStorage.removeItem("userProfile");
-    localStorage.removeItem("sso_token");
-    localStorage.removeItem("admin_auth");
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("lastActivity");
+    clearAuthStorage();
     sessionStorage.removeItem("admin_logout_redirect");
 
     // Redirect admin to /admin, others to NUSA
@@ -261,12 +253,13 @@ export const AuthProvider = ({ children }) => {
       const encryptedEmail = await encryptTokenForHeader(email, { salt: email });
       const encryptedPassword = await encryptTokenForHeader(password, { salt: password });
 
+      const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
       const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          ...(API_TOKEN ? { "X-API-TOKEN": API_TOKEN } : {}),
+          ...(encryptedToken ? { "X-API-TOKEN": encryptedToken } : {}),
         },
         body: JSON.stringify({ email: encryptedEmail, password: encryptedPassword }),
       });
@@ -282,10 +275,8 @@ export const AuthProvider = ({ children }) => {
 
       setUser(adminUser);
       setIsAuthenticated(true);
-      localStorage.setItem("user", JSON.stringify(adminUser));
-      localStorage.setItem("admin_auth", "true");
-      localStorage.setItem("admin_token", result.data.token);
-      localStorage.setItem("lastActivity", Date.now().toString());
+      // Persist only admin token
+      writeAuthStorageItem(AUTH_STORAGE_KEYS.adminToken, result.data.token, LEGACY_AUTH_STORAGE_KEYS.adminToken);
       sessionStorage.removeItem("admin_logout_redirect");
       return true;
     } catch (error) {
