@@ -141,7 +141,7 @@ const DetailPegawai = () => {
   const { nip } = useParams();
   const navigate = useNavigate();
   const { t } = useSettings();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const isAdmin = user?.role === 'Super Admin' || user?.role === 'Admin';
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingCompetency, setLoadingCompetency] = useState(true);
@@ -1376,29 +1376,13 @@ const DetailPegawai = () => {
       {isAdmin && <Breadcrumb />}
 
       {/* Page Title */}
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
-            Detail Pegawai
-          </h1>
-          <p className="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-300">
-            Informasi lengkap profil dan penilaian pegawai
-          </p>
-        </div>
-
-        {!isAdmin && (
-          <div className="flex md:justify-end">
-            <IconButton
-              onClick={logout}
-              variant="danger"
-              title="Keluar"
-              size="lg"
-            >
-              <i className="fas fa-right-from-bracket mr-2" />
-              Keluar
-            </IconButton>
-          </div>
-        )}
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
+          Detail Pegawai
+        </h1>
+        <p className="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-300">
+          Informasi lengkap profil dan penilaian pegawai
+        </p>
       </div>
 
       {/* Back Button */}

@@ -91,7 +91,7 @@ const Dashboard = () => {
     // Inject small scoped CSS to suppress focus outline on Recharts SVG elements
     const styleEl = document.createElement("style");
     styleEl.setAttribute("data-dashboard-focus-fix", "true");
-    styleEl.textContent = `
+    styleEl.innerHTML = `
       /* Remove focus outline / ring produced when clicking SVG scatter points */
       .recharts-wrapper .recharts-scatter-symbol:focus,
       .recharts-wrapper .recharts-scatter-symbol:focus-visible,
