@@ -1440,3 +1440,343 @@ export const updateSyaratSuksesi = async (id, data) => {
     throw error;
   }
 };
+
+/**
+ * Create pengajuan penilaian (assessment submission)
+ * Endpoint: VITE_API_BASE_URL/api/pengajuan-penilaians
+ */
+export const createPengajuanPenilaian = async ({
+  pegawai_id,
+  subindikator_id,
+  instrumen_id,
+  tanggal_sk,
+  file,
+  catatan,
+}) => {
+  try {
+    const formData = new FormData();
+    formData.append("pegawai_id", pegawai_id);
+    formData.append("subindikator_id", subindikator_id);
+    formData.append("instrumen_id", instrumen_id);
+    formData.append("status", "Diajukan");
+    formData.append("tanggal_sk", tanggal_sk);
+    
+    if (file) {
+      formData.append("file", file);
+    }
+    
+    if (catatan) {
+      formData.append("catatan", catatan);
+    }
+
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/pengajuan-penilaians`,
+      {
+        method: "POST",
+        headers: {
+          "X-API-TOKEN": encryptedToken,
+        },
+        body: formData,
+      },
+    );
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok) {
+      const statusValidationMessage = result?.errors?.status?.[0];
+      throw new Error(
+        statusValidationMessage ||
+          result?.message ||
+          "Gagal mengajukan penilaian",
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("createPengajuanPenilaian error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch pengajuan penilaian history by pegawai_id
+ * Endpoint: VITE_API_BASE_URL/api/pengajuan-penilaians?pegawai_id={pegawai_id}&status={status}
+ */
+export const fetchPengajuanPenilaianByPegawai = async (pegawai_id, params = {}) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+
+    const queryParams = new URLSearchParams();
+    queryParams.append("pegawai_id", pegawai_id);
+
+    if (params.status) {
+      queryParams.append("status", params.status);
+    }
+
+    if (params.with_join) {
+      queryParams.append("with_join", params.with_join);
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/pengajuan-penilaians?${queryParams.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-TOKEN": encryptedToken,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Gagal mengambil data pengajuan penilaian");
+    }
+
+    const result = await response.json();
+    if (result && result.success === false) {
+      throw new Error(result.message || "Gagal mengambil data pengajuan penilaian");
+    }
+
+    if (Array.isArray(result?.data)) {
+      return result.data;
+    }
+
+    if (Array.isArray(result?.data?.data)) {
+      return result.data.data;
+    }
+
+    return [];
+  } catch (error) {
+    console.error("fetchPengajuanPenilaianByPegawai error:", error);
+    throw error;
+  }
+};
+
+const toAbsoluteApiUrl = (url) => {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url) || /^blob:/i.test(url) || /^data:/i.test(url)) {
+    return url;
+  }
+  if (!API_BASE_URL) return url;
+
+  try {
+    return new URL(url, API_BASE_URL).href;
+  } catch (error) {
+    return url;
+  }
+};
+
+const normalizePengajuanListResponse = (result, fallbackPerPage = 10) => {
+  if (Array.isArray(result?.data)) {
+    return {
+      data: result.data,
+      meta: {
+        current_page: 1,
+        last_page: 1,
+        per_page: fallbackPerPage,
+        total: result.data.length,
+      },
+    };
+  }
+
+  const paginated = result?.data || {};
+  const rows = Array.isArray(paginated?.data) ? paginated.data : [];
+  return {
+    data: rows,
+    meta: {
+      current_page: paginated.current_page || 1,
+      last_page: paginated.last_page || 1,
+      per_page: paginated.per_page || fallbackPerPage,
+      total: paginated.total || rows.length,
+    },
+  };
+};
+
+/**
+ * Fetch pengajuan penilaian list for admin with filters, search and pagination.
+ */
+export const fetchPengajuanPenilaianList = async (params = {}) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append("page", params.page);
+    if (params.per_page) queryParams.append("per_page", params.per_page);
+    if (params.status) queryParams.append("status", params.status);
+    if (params.pegawai_id) queryParams.append("pegawai_id", params.pegawai_id);
+    if (params.subindikator_id) {
+      queryParams.append("subindikator_id", params.subindikator_id);
+    }
+    if (params.instrumen_id) queryParams.append("instrumen_id", params.instrumen_id);
+    if (params.with_join !== undefined) queryParams.append("with_join", String(params.with_join));
+    if (params.with_pagination !== undefined) {
+      queryParams.append("with_pagination", String(params.with_pagination));
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/pengajuan-penilaians${queryParams.toString() ? `?${queryParams.toString()}` : ""}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-TOKEN": encryptedToken,
+        },
+      },
+    );
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result || result.success === false) {
+      throw new Error(result?.message || "Gagal mengambil daftar pengajuan penilaian");
+    }
+
+    return normalizePengajuanListResponse(result, Number(params.per_page) || 10);
+  } catch (error) {
+    console.error("fetchPengajuanPenilaianList error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch pengajuan penilaian detail by id.
+ */
+export const fetchPengajuanPenilaianDetail = async (id) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/pengajuan-penilaians/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result || result.success === false) {
+      throw new Error(result?.message || "Gagal mengambil detail pengajuan");
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error("fetchPengajuanPenilaianDetail error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Approve pengajuan penilaian by id.
+ */
+export const approvePengajuanPenilaian = async (id, payload = {}) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/pengajuan-penilaians/${id}/approve`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result || result.success === false) {
+      throw new Error(result?.message || "Gagal menyetujui pengajuan");
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error("approvePengajuanPenilaian error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Reject pengajuan penilaian by id.
+ */
+export const rejectPengajuanPenilaian = async (id, payload) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/pengajuan-penilaians/${id}/reject`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result || result.success === false) {
+      throw new Error(result?.message || "Gagal menolak pengajuan");
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error("rejectPengajuanPenilaian error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Download attachment by using API token and save to local disk via browser.
+ */
+export const downloadPengajuanPenilaianFile = async (pengajuan) => {
+  const fallbackDownloadUrl = pengajuan?.id
+    ? `${API_BASE_URL}/api/pengajuan-penilaians/${pengajuan.id}/download`
+    : "";
+  const downloadUrl = toAbsoluteApiUrl(pengajuan?.download_url || fallbackDownloadUrl);
+  if (!downloadUrl) {
+    throw new Error("URL download tidak tersedia");
+  }
+
+  const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+    salt: API_TOKEN,
+  });
+
+  const response = await fetch(downloadUrl, {
+    method: "GET",
+    headers: {
+      "X-API-TOKEN": encryptedToken,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Gagal mengunduh berkas");
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download =
+    pengajuan?.original_filename ||
+    pengajuan?.bukti_dukung?.split("/").pop() ||
+    `pengajuan-${pengajuan?.id || "berkas"}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+};
+
+export const getPengajuanPenilaianPreviewUrl = (pengajuan) =>
+  toAbsoluteApiUrl(
+    pengajuan?.preview_url ||
+      (pengajuan?.id
+        ? `${API_BASE_URL}/api/pengajuan-penilaians/${pengajuan.id}/preview`
+        : ""),
+  );

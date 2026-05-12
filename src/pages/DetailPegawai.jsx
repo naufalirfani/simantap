@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSettings } from "../context/SettingsContext";
 import { useAuth } from "../context/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { PRIMARY_COLORS } from "../config/colors";
 import Breadcrumb from "../components/Breadcrumb";
+import DetailPegawaiTutorial from "../components/DetailPegawaiTutorial";
 import IconButton from "../components/IconButton";
 import SearchableSelect from "../components/SearchableSelect";
+import PengajuanPenilaianModal from "../components/PengajuanPenilaianModal";
+import PengajuanPenilaianHistory from "../components/PengajuanPenilaianHistory";
 import {
   fetchPegawaiByNip,
   fetchIndikators,
@@ -142,7 +145,8 @@ const DetailPegawai = () => {
   const navigate = useNavigate();
   const { t } = useSettings();
   const { user, logout } = useAuth();
-  const isAdmin = user?.role === 'Super Admin' || user?.role === 'Admin';
+  const tutorialStorageKey = "detail-pegawai-pengajuan-tutorial-ignored";
+  const isAdmin = user?.role === "Super Admin" || user?.role === "Admin";
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingCompetency, setLoadingCompetency] = useState(true);
   const [loadingIndicators, setLoadingIndicators] = useState(true);
@@ -156,6 +160,65 @@ const DetailPegawai = () => {
   const [selectedRiwayatAsesmenId, setSelectedRiwayatAsesmenId] = useState("");
   const [downloadingLampiranId, setDownloadingLampiranId] = useState("");
   const [isSyncingPenilaian, setIsSyncingPenilaian] = useState(false);
+  const [showPengajuanPotensialModal, setShowPengajuanPotensialModal] =
+    useState(false);
+  const [showPengajuanKinerjaModal, setShowPengajuanKinerjaModal] =
+    useState(false);
+  const [pengajuanRefreshTrigger, setPengajuanRefreshTrigger] = useState(0);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const pengajuanButtonRef = useRef(null);
+  const pengajuanModalRef = useRef(null);
+  const pengajuanHistoryRef = useRef(null);
+  const syncButtonRef = useRef(null);
+
+  const tutorialSteps = useMemo(
+    () => [
+      {
+        title: "Mulai dari pengajuan penilaian",
+        description: (
+          <>
+            Klik tombol <strong>Ajukan Penilaian</strong> pada bagian Potensial
+            atau Kinerja untuk membuka form pengajuan.
+          </>
+        ),
+        note: "Hanya dapat mengajukan penilaian Penugasan Dalam Jabatan Nondefinitif dan Penugasan dalam Tim Kerja",
+        targetRef: pengajuanButtonRef,
+      },
+      {
+        title: "Isi form lalu kirim pengajuan",
+        description: (
+          <>
+            Lengkapi data <strong>subindikator</strong>, <strong>instrumen</strong>, <strong>tanggal SK</strong>, dan <strong>bukti dukung</strong>, lalu
+            klik <strong>Ajukan Penilaian</strong> agar statusnya tercatat.
+          </>
+        ),
+        note: "Setelah submit, data pengajuan akan muncul di riwayat pengajuan penilaian dan menunggu proses validasi oleh admin.",
+        targetRef: pengajuanModalRef,
+      },
+      {
+        title: "Pantau progress di riwayat pengajuan",
+        description: (
+          <>
+          Periksa bagian <strong>Riwayat Pengajuan Penilaian</strong> untuk melihat status Diajukan, Diterima, atau Ditolak.
+          </>
+        ),
+        note: "Anda dapat melihat detail setiap pengajuan dan statusnya di sini.",
+        targetRef: pengajuanHistoryRef,
+      },
+      {
+        title: "Sinkronkan data setelah pengajuan diterima",
+        description: (
+          <>
+            Jika pengajuan sudah diterima, klik <strong>Sinkronisasi Data</strong> agar nilai talenta Anda diperbarui.
+          </>
+        ),
+        note: "Sinkronisasi data akan memperbarui nilai talenta Anda dengan informasi terbaru dari pengajuan yang telah diterima.",
+        targetRef: syncButtonRef,
+      },
+    ],
+    [],
+  );
 
   // Track mobile viewport for responsive chart sizing
   useEffect(() => {
@@ -241,12 +304,7 @@ const DetailPegawai = () => {
   };
 
   useEffect(() => {
-    if (
-      user?.nip &&
-      !isAdmin &&
-      nip &&
-      String(user.nip) !== String(nip)
-    ) {
+    if (user?.nip && !isAdmin && nip && String(user.nip) !== String(nip)) {
       navigate(`/detail-pegawai/${user.nip}`, { replace: true });
       return;
     }
@@ -283,6 +341,70 @@ const DetailPegawai = () => {
       }
     };
   }, [nip, user?.nip, isAdmin, navigate]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isDataReady =
+      Boolean(pegawaiData) &&
+      !loadingProfile &&
+      !loadingIndicators &&
+      !loadingCompetency;
+
+    if (!isDataReady) {
+      setShowTutorial(false);
+      return;
+    }
+
+    const isIgnored =
+      window.localStorage.getItem(tutorialStorageKey) === "true";
+    if (!isIgnored) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+      return;
+    }
+
+    setShowTutorial(false);
+  }, [
+    pegawaiData,
+    loadingProfile,
+    loadingIndicators,
+    loadingCompetency,
+    tutorialStorageKey,
+  ]);
+
+  const handleIgnoreTutorial = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(tutorialStorageKey, "true");
+    }
+    setShowTutorial(false);
+  };
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false);
+  };
+
+  const handlePreviousTutorial = () => {
+    setTutorialStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const handleNextTutorial = () => {
+    setTutorialStep((prev) => Math.min(prev + 1, tutorialSteps.length - 1));
+  };
+
+  useEffect(() => {
+    if (!showTutorial) {
+      setShowPengajuanPotensialModal(false);
+      return;
+    }
+
+    if (tutorialStep === 1) {
+      setShowPengajuanPotensialModal(true);
+      return;
+    }
+
+    setShowPengajuanPotensialModal(false);
+  }, [showTutorial, tutorialStep]);
 
   const fetchDetailPegawai = async () => {
     try {
@@ -1510,20 +1632,22 @@ const DetailPegawai = () => {
                           Info Kepegawaian
                         </IconButton>
                       </div>
-                      <IconButton
-                        onClick={handleSyncPenilaian}
-                        variant="purple"
-                        size="lg"
-                        disabled={isSyncingPenilaian}
-                        title="Sinkronisasi Penilaian"
-                      >
-                        {isSyncingPenilaian ? (
-                          <i className="fas fa-spinner fa-spin mr-2"></i>
-                        ) : (
-                          <i className="fas fa-sync mr-2"></i>
-                        )}
-                        Sinkronisasi Data
-                      </IconButton>
+                      <div ref={syncButtonRef} className="inline-block">
+                        <IconButton
+                          onClick={handleSyncPenilaian}
+                          variant="purple"
+                          size="lg"
+                          disabled={isSyncingPenilaian}
+                          title="Sinkronisasi Penilaian"
+                        >
+                          {isSyncingPenilaian ? (
+                            <i className="fas fa-spinner fa-spin mr-2"></i>
+                          ) : (
+                            <i className="fas fa-sync mr-2"></i>
+                          )}
+                          Sinkronisasi Data
+                        </IconButton>
+                      </div>
                     </div>
                   </div>
 
@@ -2163,6 +2287,19 @@ const DetailPegawai = () => {
             ></i>
             Nilai Potensial per Indikator
           </h3>
+          <div className="mb-4">
+            <div ref={pengajuanButtonRef} className="inline-block">
+              <IconButton
+                onClick={() => setShowPengajuanPotensialModal(true)}
+                variant="primary"
+                size="lg"
+                title="Ajukan Penilaian Potensial"
+              >
+                <i className="fas fa-paper-plane mr-2"></i>
+                Ajukan Penilaian
+              </IconButton>
+            </div>
+          </div>
           <div className="mb-4 rounded-lg border border-yellow-100 dark:border-yellow-800/60 bg-yellow-50/70 dark:bg-yellow-900/20 px-3 py-2.5">
             <p className="text-sm text-yellow-700 dark:text-yellow-300 leading-relaxed">
               <i className="fas fa-info-circle mr-2"></i>
@@ -2333,9 +2470,20 @@ const DetailPegawai = () => {
         {/* Kinerja Indicators */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <i className="fas fa-chart-line text-blue-600"></i>
+            <i className="fas fa-chart-line text-[#3085d6]"></i>
             Nilai Kinerja per Indikator
           </h3>
+          <div className="mb-4">
+            <IconButton
+              onClick={() => setShowPengajuanKinerjaModal(true)}
+              variant="primary"
+              size="lg"
+              title="Ajukan Penilaian Kinerja"
+            >
+              <i className="fas fa-paper-plane mr-2"></i>
+              Ajukan Penilaian
+            </IconButton>
+          </div>
           {loadingIndicators ? (
             <div className="flex items-center justify-center py-10">
               <div className="text-center">
@@ -2383,7 +2531,7 @@ const DetailPegawai = () => {
                     >
                       <div className="flex items-center gap-3">
                         <i
-                          className={`fas fa-chevron-right text-blue-600 transform transition-transform duration-200 ${
+                          className={`fas fa-chevron-right text-[#3085d6] transform transition-transform duration-200 ${
                             isOpen ? "rotate-90" : ""
                           }`}
                         ></i>
@@ -2398,7 +2546,7 @@ const DetailPegawai = () => {
                           </div>
                         )}
                         <div className="text-right">
-                          <div className="text-md font-bold text-blue-600 dark:text-blue-400">
+                          <div className="text-md font-bold text-[#3085d6] dark:text-[#60a5fa]">
                             {(Number(ind.hasil) || 0).toFixed(2)}
                           </div>
                         </div>
@@ -2443,7 +2591,7 @@ const DetailPegawai = () => {
                                       : "-"}
                                     {hasInstrumens && (
                                       <div className="group relative inline-block">
-                                        <i className="fas fa-info-circle cursor-help text-blue-600"></i>
+                                        <i className="fas fa-info-circle cursor-help text-[#3085d6]"></i>
                                         <div
                                           className={`invisible text-md text-left group-hover:visible absolute right-0 ${isFirstSub ? "top-full mt-2" : "bottom-full mb-2"} w-96 p-2 bg-white dark:bg-gray-100 text-gray-800 dark:text-gray-900 rounded shadow-lg border border-gray-200 z-50`}
                                         >
@@ -2458,7 +2606,7 @@ const DetailPegawai = () => {
                                       </div>
                                     )}
                                   </div>
-                                  <div className="text-md font-medium text-blue-600 dark:text-blue-400">
+                                  <div className="text-md font-medium text-[#3085d6] dark:text-[#60a5fa]">
                                     {val.hasil !== null
                                       ? Number(val.hasil).toFixed(2)
                                       : "-"}
@@ -2504,6 +2652,50 @@ const DetailPegawai = () => {
           formatDateIndo={formatDateIndo}
         />
       )}
+
+      {/* Pengajuan Penilaian History */}
+      {pegawaiData && (
+        <div className="mb-6" ref={pengajuanHistoryRef}>
+          <PengajuanPenilaianHistory
+            pegawaiId={pegawaiData.id}
+            refreshTrigger={pengajuanRefreshTrigger}
+          />
+        </div>
+      )}
+
+      {/* Pengajuan Penilaian Modals */}
+      <PengajuanPenilaianModal
+        isOpen={showPengajuanPotensialModal}
+        onClose={() => setShowPengajuanPotensialModal(false)}
+        pegawaiId={pegawaiData?.id}
+        tipeNilai="potensial"
+        tutorialHighlightRef={pengajuanModalRef}
+        onSubmitSuccess={() => {
+          setShowPengajuanPotensialModal(false);
+          setPengajuanRefreshTrigger((prev) => prev + 1);
+        }}
+      />
+
+      <PengajuanPenilaianModal
+        isOpen={showPengajuanKinerjaModal}
+        onClose={() => setShowPengajuanKinerjaModal(false)}
+        pegawaiId={pegawaiData?.id}
+        tipeNilai="kinerja"
+        onSubmitSuccess={() => {
+          setShowPengajuanKinerjaModal(false);
+          setPengajuanRefreshTrigger((prev) => prev + 1);
+        }}
+      />
+
+      <DetailPegawaiTutorial
+        isOpen={showTutorial}
+        steps={tutorialSteps}
+        currentStep={tutorialStep}
+        onPrevious={handlePreviousTutorial}
+        onNext={handleNextTutorial}
+        onIgnore={handleIgnoreTutorial}
+        onClose={handleCloseTutorial}
+      />
 
       {/* Riwayat Pegawai */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
@@ -2646,7 +2838,10 @@ const PersonalInfoModal = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
           className="modal-resizable w-full max-w-3xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto shadow-2xl"
-          style={{ "--modal-default-width": "48rem", "--modal-min-height": "260px" }}
+          style={{
+            "--modal-default-width": "48rem",
+            "--modal-min-height": "260px",
+          }}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10">
@@ -2757,7 +2952,10 @@ const EmploymentInfoModal = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
           className="modal-resizable w-full max-w-3xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto shadow-2xl"
-          style={{ "--modal-default-width": "48rem", "--modal-min-height": "260px" }}
+          style={{
+            "--modal-default-width": "48rem",
+            "--modal-min-height": "260px",
+          }}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10">

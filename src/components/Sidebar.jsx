@@ -2,6 +2,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useSettings } from "../context/SettingsContext";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useRef } from "react";
+import { fetchPengajuanPenilaianList } from "../services/apiService";
 import logo from "../assets/logo.png";
 
 const Sidebar = () => {
@@ -14,6 +15,7 @@ const Sidebar = () => {
   const navRef = useRef(null);
   const [navScrollable, setNavScrollable] = useState(false);
   const [pendingPath, setPendingPath] = useState(null);
+  const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = user?.role === "Super Admin" || user?.role === "Admin";
@@ -71,12 +73,44 @@ const Sidebar = () => {
     };
   }, [sidebarExpanded, isMobile, masterdataOpen, pengembanganOpen]);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      setPendingApprovalCount(0);
+      return;
+    }
+
+    const loadPendingApprovalCount = async () => {
+      try {
+        const result = await fetchPengajuanPenilaianList({
+          status: "Diajukan",
+          with_pagination: false,
+        });
+        setPendingApprovalCount(result?.meta?.total || 0);
+      } catch (error) {
+        console.error("loadPendingApprovalCount error:", error);
+      }
+    };
+
+    loadPendingApprovalCount();
+    const timer = window.setInterval(loadPendingApprovalCount, 60000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [isAdmin, location.pathname]);
+
   const menuItems = [
     { path: "/", label: t("dashboard"), icon: "fas fa-chart-line" },
     {
       path: "/daftar-talenta",
       label: t("daftarTalenta"),
       icon: "fas fa-users",
+    },
+    {
+      path: "/approval-pengajuan-penilaian",
+      label: "Approval Pengajuan",
+      icon: "fas fa-user-check",
+      badge: pendingApprovalCount,
     },
     { path: "/suksesi", label: t("suksesi"), icon: "fas fa-arrow-trend-up" },
     {
@@ -490,12 +524,26 @@ const Sidebar = () => {
                             className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
                           ></i>
                           {sidebarExpanded && (
-                            <span className="ml-3">{item.label}</span>
+                            <span className="ml-3 flex-1">{item.label}</span>
+                          )}
+                          {sidebarExpanded && item.badge > 0 && (
+                            <span
+                              className={`ml-2 inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full px-1 text-xs font-bold ${
+                                "bg-red-600 text-white"
+                              }`}
+                            >
+                              {item.badge > 99 ? "99+" : item.badge}
+                            </span>
                           )}
                           {/* Tooltip for minimized mode */}
                           {!sidebarExpanded && (
                             <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
                               {item.label}
+                            </span>
+                          )}
+                          {!sidebarExpanded && item.badge > 0 && (
+                            <span className="absolute -right-1 -top-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                              {item.badge > 99 ? "99+" : item.badge}
                             </span>
                           )}
                         </div>

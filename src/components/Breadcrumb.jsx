@@ -57,6 +57,7 @@ const generateBreadcrumbItems = (pathname, t) => {
     // Map path segments to readable labels
     const labelMap = {
       "daftar-talenta": "Daftar Talenta",
+      "approval-pengajuan-penilaian": "Approval Pengajuan Penilaian",
       "detail": "Detail Pegawai",
       "suksesi": "Suksesi",
       "pengembangan": "Pengembangan",
@@ -79,6 +80,7 @@ const generateBreadcrumbItems = (pathname, t) => {
 
     const iconMap = {
       "daftar-talenta": "fas fa-users",
+      "approval-pengajuan-penilaian": "fas fa-user-check",
       "detail": "fas fa-user",
       "suksesi": "fas fa-arrow-trend-up",
       "pengembangan": "fas fa-graduation-cap",

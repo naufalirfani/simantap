@@ -5,6 +5,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import DaftarTalenta from './pages/DaftarTalenta';
+import ApprovalPengajuanPenilaian from './pages/ApprovalPengajuanPenilaian';
+import ApprovalPengajuanPenilaianDetail from './pages/ApprovalPengajuanPenilaianDetail';
 import DetailPegawai from './pages/DetailPegawai';
 import Suksesi from './pages/Suksesi';
 import Pengembangan from './pages/Pengembangan';
@@ -54,6 +56,8 @@ const RoleBasedRoutes = () => {
         <Routes>
           <Route path="/" element={<Dashboard />} />
                         <Route path="/daftar-talenta" element={<DaftarTalenta />} />
+                        <Route path="/approval-pengajuan-penilaian" element={<ApprovalPengajuanPenilaian />} />
+                        <Route path="/approval-pengajuan-penilaian/:id" element={<ApprovalPengajuanPenilaianDetail />} />
                         <Route path="/daftar-talenta/detail/:nip" element={<DetailPegawai />} />
                         <Route path="/suksesi" element={<Suksesi />} />
                         <Route path="/suksesi/detail/:nip" element={<DetailPegawai />} />
