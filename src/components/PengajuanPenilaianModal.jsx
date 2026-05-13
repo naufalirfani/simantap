@@ -321,8 +321,10 @@ const PengajuanPenilaianModal = ({
                 <input
                   type="date"
                   value={tanggalSK}
+                  onClick={(e) => e.currentTarget.showPicker?.()}
+                  onFocus={(e) => e.currentTarget.showPicker?.()}
                   onChange={(e) => setTanggalSK(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full cursor-pointer px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
 

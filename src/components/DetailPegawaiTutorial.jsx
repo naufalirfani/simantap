@@ -19,9 +19,17 @@ const DetailPegawaiTutorial = ({
   onClose,
 }) => {
   const [layout, setLayout] = useState(null);
+  const [hasAcknowledgedNotice, setHasAcknowledgedNotice] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setHasAcknowledgedNotice(false);
+      setLayout(null);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !hasAcknowledgedNotice) return;
 
     const current = steps[currentStep];
     const target = current?.targetRef?.current;
@@ -29,10 +37,10 @@ const DetailPegawaiTutorial = ({
     if (target?.scrollIntoView) {
       target.scrollIntoView({ block: "center", behavior: "smooth" });
     }
-  }, [currentStep, isOpen, steps]);
+  }, [currentStep, hasAcknowledgedNotice, isOpen, steps]);
 
   useEffect(() => {
-    if (!isOpen) return undefined;
+    if (!isOpen || !hasAcknowledgedNotice) return undefined;
 
     const updateLayout = () => {
       const current = steps[currentStep];
@@ -130,13 +138,74 @@ const DetailPegawaiTutorial = ({
       window.removeEventListener("resize", updateLayout);
       window.removeEventListener("scroll", updateLayout, true);
     };
-  }, [currentStep, isOpen, steps]);
+  }, [currentStep, hasAcknowledgedNotice, isOpen, steps]);
 
   if (!isOpen || !steps.length) return null;
 
   const step = steps[currentStep] || steps[0];
   const canGoPrevious = currentStep > 0;
   const isLastStep = currentStep >= steps.length - 1;
+
+  const handleAcknowledgeNotice = () => {
+    setHasAcknowledgedNotice(true);
+  };
+
+  if (!hasAcknowledgedNotice) {
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm">
+        <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-white p-6 shadow-2xl dark:border-gray-700 dark:bg-gray-800 sm:p-8">
+          <div className="mb-4 inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-200">
+            Pemberitahuan
+          </div>
+
+          <h4 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Pengajuan penilaian Pelaksana Tugas, Pelaksana Harian, dan Tim Kerja
+          </h4>
+
+          <p className="mt-3 text-md leading-7 text-gray-600 dark:text-gray-300">
+            Untuk penilaian <strong>Penugasan Dalam Jabatan Nondefinitif</strong> dan <strong>Penugasan dalam Tim Kerja</strong>, mohon upload bukti
+            dukung pernah memiliki pengalaman sebagai <strong>Pelaksana
+            Tugas</strong> atau <strong>Pelaksana Harian</strong>, serta bukti
+            dukung pernah ikut serta dalam <strong>Tim Kerja</strong>.
+          </p>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/20">
+              <div className="text-sm font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-200">
+                Langkah 1
+              </div>
+              <p className="mt-2 text-sm leading-6 text-gray-700 dark:text-gray-200">
+                Pastikan seluruh bukti dukung sudah disiapkan sebelum mengajukan
+                penilaian.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900/50 dark:bg-sky-900/20">
+              <div className="text-sm font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-200">
+                Langkah 2
+              </div>
+              <p className="mt-2 text-sm leading-6 text-gray-700 dark:text-gray-200">
+                Isi form dengan subindikator, instrumen, tanggal SK, dan bukti
+                dukung, lalu klik <strong>Ajukan Penilaian</strong> agar data
+                tersimpan.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <IconButton
+              onClick={handleAcknowledgeNotice}
+              variant="blue"
+              size="lg"
+              className="min-w-[160px]"
+            >
+              Ok, Saya Mengerti
+            </IconButton>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[60]">
