@@ -165,9 +165,12 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserData = async (nip) => {
     try {
+      const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+        salt: API_TOKEN,
+      });
       const response = await fetch(`${API_BASE_URL}/api/pegawai/${nip}`, {
         headers: {
-          "X-API-Token": API_TOKEN,
+          "X-API-Token": encryptedToken,
         },
       });
 
