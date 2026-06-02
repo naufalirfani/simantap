@@ -475,6 +475,7 @@ export const fetchPegawaiList = async ({
   per_page = 20,
   q = "",
   with_penilaian = false,
+  with_riwayat_asesmen,
   with_pagination = true,
 } = {}) => {
   try {
@@ -483,6 +484,9 @@ export const fetchPegawaiList = async ({
     if (filter) params.append("jenis_jabatan", filter);
     if (kuadran) params.append("kuadran", kuadran);
     if (with_penilaian) params.append("with_penilaian", "true");
+    if (with_riwayat_asesmen !== undefined && with_riwayat_asesmen !== null && with_riwayat_asesmen !== "") {
+      params.append("sudah_asesmen", String(with_riwayat_asesmen));
+    }
     if (!with_pagination) params.append("with_pagination", "false");
     if (page) params.append("page", page);
     if (per_page) params.append("per_page", per_page);

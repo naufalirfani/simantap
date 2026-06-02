@@ -160,15 +160,27 @@ const Pengembangan = () => {
         return name.includes("potensi talenta");
       });
 
-      const kompetensiSubs =
+      let kompetensiSubs =
         kompetensiIndikator && Array.isArray(kompetensiIndikator.sub_indikators)
           ? kompetensiIndikator.sub_indikators.filter((s) => s.isactive)
           : [];
 
-      const potensiSubs =
+      let potensiSubs =
         potensiIndikator && Array.isArray(potensiIndikator.sub_indikators)
           ? potensiIndikator.sub_indikators.filter((s) => s.isactive)
           : [];
+
+      // Sort subindikators alphabetically by their display name (case-insensitive)
+      const alphaSort = (a, b) => {
+        const an = (a.subindikator || "").toString().toLowerCase();
+        const bn = (b.subindikator || "").toString().toLowerCase();
+        if (an < bn) return -1;
+        if (an > bn) return 1;
+        return 0;
+      };
+
+      kompetensiSubs = kompetensiSubs.sort(alphaSort);
+      potensiSubs = potensiSubs.sort(alphaSort);
 
       setSubIndikatorKompetensi(kompetensiSubs);
       setSubIndikatorPotensi(potensiSubs);
@@ -1095,6 +1107,21 @@ const Pengembangan = () => {
                         if (name) jenisJabatanSet.add(name);
                       });
                       const uniqueJenisJabatan = Array.from(jenisJabatanSet);
+
+                      // Sort jenis jabatan so those with larger total standar values appear first
+                      const computeTotalScore = (jenis) => {
+                        let total = 0;
+                        subIndikatorKompetensi.forEach((sub) => {
+                          const standar = standarKompetensi.find(
+                            (s) => s.subindikator_id === sub.id &&
+                            (s.jenis_jabatan?.name === jenis || s.jenis_jabatan_name === jenis)
+                          );
+                          total += standar ? Number(standar.standar) || 0 : 0;
+                        });
+                        return total;
+                      };
+
+                      uniqueJenisJabatan.sort((a, b) => computeTotalScore(b) - computeTotalScore(a));
                       
                       return (
                         <div>
@@ -1129,11 +1156,21 @@ const Pengembangan = () => {
                                       );
                                       return (
                                         <td key={subIdx} className="px-4 py-3 text-center">
-                                          {standar ? (
-                                            <span className="inline-flex items-center justify-center w-10 h-10 bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 rounded-lg text-sm font-semibold">
-                                              {standar.standar}
-                                            </span>
-                                          ) : (
+                                          {standar ? (() => {
+                                            const val = Number(standar.standar);
+                                            const bgClass =
+                                              val === 5 ? 'bg-teal-900 dark:bg-teal-700' :
+                                              val === 4 ? 'bg-teal-600 dark:bg-teal-600' :
+                                              val === 3 ? 'bg-teal-400 dark:bg-teal-500' :
+                                              val === 2 ? 'bg-teal-200 dark:bg-teal-400' :
+                                              'bg-teal-100 dark:bg-teal-300';
+                                            const textClass = val >= 4 ? 'text-white' : 'text-teal-800 dark:text-teal-200';
+                                            return (
+                                              <span className={`inline-flex items-center justify-center w-10 h-10 ${bgClass} ${textClass} rounded-lg text-sm font-bold`}>
+                                                {val}
+                                              </span>
+                                            );
+                                          })() : (
                                             <span className="inline-flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-lg text-sm">
                                               -
                                             </span>
@@ -1214,6 +1251,7 @@ const Pengembangan = () => {
             jabatan: "",
             filter: "",
             golongan: "",
+            with_riwayat_asesmen: "",
           }}
           filterConfigs={[
             {
@@ -1256,6 +1294,15 @@ const Pengembangan = () => {
                 { value: "IV/c", label: "Pembina Madya (IV/c)" },
                 { value: "IV/d", label: "Pembina Utama Muda (IV/d)" },
                 { value: "IV/e", label: "Pembina Utama (IV/e)" },
+              ],
+            },
+            {
+              key: "with_riwayat_asesmen",
+              label: "Status Asesmen",
+              placeholder: "Semua Status",
+              options: [
+                { value: "true", label: "Sudah Asesmen" },
+                { value: "false", label: "Belum Asesmen" },
               ],
             },
           ]}
