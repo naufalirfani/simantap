@@ -170,7 +170,7 @@ const AdminLogin = () => {
           {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              © 2025 BPSDM. All rights reserved
+              &copy; 2026 BPSDM - SETJEN DPD RI
             </p>
           </div>
         </div>

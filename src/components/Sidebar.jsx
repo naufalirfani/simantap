@@ -685,7 +685,7 @@ const Sidebar = () => {
 
         {/* Copyright stays fixed at bottom of sidebar */}
         <div className="sticky bottom-0 px-4 py-2 text-sm text-gray-400 text-center bg-transparent z-20">
-          © 2025 BPSDM. All rights reserved
+          &copy; 2026 BPSDM - SETJEN DPD RI
         </div>
       </div>
     </>
