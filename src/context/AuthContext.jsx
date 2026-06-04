@@ -11,7 +11,7 @@ export const useAuth = () => {
   return context;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_CMB_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 const NUSA_URL = import.meta.env.VITE_NUSA_URL;
 const ADMIN_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
