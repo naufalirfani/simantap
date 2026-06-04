@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }) => {
       const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
         salt: API_TOKEN,
       });
-      const response = await fetch(`${API_BASE_URL}/sso/verify/${token}`, {
+      const response = await fetch(`${API_BASE_URL}/api/sso/verify/${token}`, {
         headers: {
           "X-API-Token": encryptedToken,
         },
