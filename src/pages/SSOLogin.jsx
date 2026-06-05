@@ -95,7 +95,7 @@ const SSOLogin = () => {
   };
 
   const handleBackToNUSA = () => {
-    window.location.href = `${NUSA_URL}/dashboard`;
+    window.location.href = `${NUSA_URL}`;
   };
 
   if (status === 'verifying') {
