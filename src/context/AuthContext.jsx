@@ -57,7 +57,10 @@ const readAuthStorageItem = (key, legacyKey = key) => {
 
 const writeAuthStorageItem = (key, value, legacyKey = key) => {
   // only persist admin token and SSO token per new policy
-  if (key === AUTH_STORAGE_KEYS.adminToken || key === AUTH_STORAGE_KEYS.ssoToken) {
+  if (
+    key === AUTH_STORAGE_KEYS.adminToken ||
+    key === AUTH_STORAGE_KEYS.ssoToken
+  ) {
     sessionStorage.setItem(key, value);
     localStorage.removeItem(legacyKey);
   }
@@ -81,8 +84,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const storedAdminToken = readAuthStorageItem(AUTH_STORAGE_KEYS.adminToken, LEGACY_AUTH_STORAGE_KEYS.adminToken);
-        const storedSSOToken = readAuthStorageItem(AUTH_STORAGE_KEYS.ssoToken, LEGACY_AUTH_STORAGE_KEYS.ssoToken);
+        const storedAdminToken = readAuthStorageItem(
+          AUTH_STORAGE_KEYS.adminToken,
+          LEGACY_AUTH_STORAGE_KEYS.adminToken,
+        );
+        const storedSSOToken = readAuthStorageItem(
+          AUTH_STORAGE_KEYS.ssoToken,
+          LEGACY_AUTH_STORAGE_KEYS.ssoToken,
+        );
 
         // Check admin token first
         if (storedAdminToken) {
@@ -92,7 +101,7 @@ export const AuthProvider = ({ children }) => {
             const adminUser = buildAdminUser(payload, payload.email);
             setUser(adminUser);
             setIsAuthenticated(true);
-              sessionStorage.removeItem('self_logout');
+            sessionStorage.removeItem("self_logout");
           } else {
             clearAuthStorage();
           }
@@ -103,7 +112,7 @@ export const AuthProvider = ({ children }) => {
           if (data && data.status === true && data.user) {
             setUser(data.user);
             setIsAuthenticated(true);
-            sessionStorage.removeItem('self_logout');
+            sessionStorage.removeItem("self_logout");
           } else {
             clearAuthStorage();
             window.location.href = `${NUSA_URL}/dashboard`;
@@ -126,9 +135,12 @@ export const AuthProvider = ({ children }) => {
       const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
         salt: API_TOKEN,
       });
-      const response = await fetch(`${API_BASE_URL}/api/sso/verify/${token}`, {
+      const response = await fetch(`${API_BASE_URL}/api/sso/verify/${encodeURIComponent(token)}`, {
+        method: "GET",
+        mode: "cors",
+        credentials: "include",
         headers: {
-          "X-API-Token": encryptedToken,
+          "X-Api-Token": encryptedToken,
         },
       });
 
@@ -144,7 +156,9 @@ export const AuthProvider = ({ children }) => {
   const verifyAdminToken = async (adminToken) => {
     try {
       if (!ADMIN_API_BASE_URL) return null;
-      const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+      const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+        salt: API_TOKEN,
+      });
       const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/verify`, {
         method: "POST",
         headers: {
@@ -188,7 +202,8 @@ export const AuthProvider = ({ children }) => {
 
   const buildAdminUser = (adminData, fallbackEmail) => {
     const email = adminData?.email || fallbackEmail || "";
-    const role = adminData?.type === "admin" ? "Admin" : (adminData?.type || "Admin");
+    const role =
+      adminData?.type === "admin" ? "Admin" : adminData?.type || "Admin";
 
     return {
       email,
@@ -205,9 +220,13 @@ export const AuthProvider = ({ children }) => {
       const safeUser = sanitizeUser(userData);
       setUser(safeUser);
       setIsAuthenticated(true);
-      sessionStorage.removeItem('self_logout');
+      sessionStorage.removeItem("self_logout");
       // Persist only SSO token (not user data) per policy
-      writeAuthStorageItem(AUTH_STORAGE_KEYS.ssoToken, token, LEGACY_AUTH_STORAGE_KEYS.ssoToken);
+      writeAuthStorageItem(
+        AUTH_STORAGE_KEYS.ssoToken,
+        token,
+        LEGACY_AUTH_STORAGE_KEYS.ssoToken,
+      );
       return true;
     } catch (error) {
       console.error("Login error:", error);
@@ -217,18 +236,23 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     const isAdminAuth = isAdminUser(user);
-    const adminToken = readAuthStorageItem(AUTH_STORAGE_KEYS.adminToken, LEGACY_AUTH_STORAGE_KEYS.adminToken);
+    const adminToken = readAuthStorageItem(
+      AUTH_STORAGE_KEYS.adminToken,
+      LEGACY_AUTH_STORAGE_KEYS.adminToken,
+    );
 
     // Mark that this logout was initiated by the user (self-logout)
     try {
-      sessionStorage.setItem('self_logout', 'true');
+      sessionStorage.setItem("self_logout", "true");
     } catch (e) {
       // ignore storage errors
     }
 
     if (isAdminAuth && ADMIN_API_BASE_URL) {
       try {
-        const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+        const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+          salt: API_TOKEN,
+        });
         await fetch(`${ADMIN_API_BASE_URL}/api/admin/logout`, {
           method: "POST",
           headers: {
@@ -262,10 +286,16 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Encrypt email and password
-      const encryptedEmail = await encryptTokenForHeader(email, { salt: email });
-      const encryptedPassword = await encryptTokenForHeader(password, { salt: password });
+      const encryptedEmail = await encryptTokenForHeader(email, {
+        salt: email,
+      });
+      const encryptedPassword = await encryptTokenForHeader(password, {
+        salt: password,
+      });
 
-      const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+      const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+        salt: API_TOKEN,
+      });
       const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/login`, {
         method: "POST",
         headers: {
@@ -273,13 +303,19 @@ export const AuthProvider = ({ children }) => {
           Accept: "application/json",
           ...(encryptedToken ? { "X-API-TOKEN": encryptedToken } : {}),
         },
-        body: JSON.stringify({ email: encryptedEmail, password: encryptedPassword }),
+        body: JSON.stringify({
+          email: encryptedEmail,
+          password: encryptedPassword,
+        }),
       });
 
       const result = await response.json().catch(() => null);
 
       if (!response.ok || !result?.success || !result?.data?.token) {
-        console.error("Admin login failed:", result?.message || response.statusText);
+        console.error(
+          "Admin login failed:",
+          result?.message || response.statusText,
+        );
         return false;
       }
 
@@ -288,7 +324,11 @@ export const AuthProvider = ({ children }) => {
       setUser(adminUser);
       setIsAuthenticated(true);
       // Persist only admin token
-      writeAuthStorageItem(AUTH_STORAGE_KEYS.adminToken, result.data.token, LEGACY_AUTH_STORAGE_KEYS.adminToken);
+      writeAuthStorageItem(
+        AUTH_STORAGE_KEYS.adminToken,
+        result.data.token,
+        LEGACY_AUTH_STORAGE_KEYS.adminToken,
+      );
       sessionStorage.removeItem("admin_logout_redirect");
       return true;
     } catch (error) {
