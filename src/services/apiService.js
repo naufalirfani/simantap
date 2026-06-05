@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 
 // CMB API Configuration
-const CMB_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const CMB_API_BASE_URL = import.meta.env.VITE_API_CMB_URL;
 const CMB_API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
 // Indikator API Configuration
@@ -220,14 +220,10 @@ export const fetchPegawai = async (params = {}) => {
       queryParams.toString() ? "?" + queryParams.toString() : ""
     }`;
 
-    const encryptedToken = await encryptTokenForHeader(CMB_API_TOKEN, {
-            salt: CMB_API_TOKEN,
-          });
-
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "x-api-token": encryptedToken,
+        "x-api-token": CMB_API_TOKEN,
         "Content-Type": "application/json",
       },
     });
