@@ -7,7 +7,7 @@ import {
   approvePengajuanPenilaian,
   downloadPengajuanPenilaianFile,
   fetchPengajuanPenilaianDetail,
-  getPengajuanPenilaianPreviewUrl,
+  fetchPengajuanPenilaianPreviewBlob,
   rejectPengajuanPenilaian,
 } from "../services/apiService";
 import { PRIMARY_COLORS, BG_COLORS, TEXT_ON_BG_COLORS, SECONDARY_COLORS } from "../config/colors";
@@ -45,9 +45,11 @@ const ApprovalPengajuanPenilaianDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [pengajuan, setPengajuan] = useState(null);
   const [catatanAdmin, setCatatanAdmin] = useState("");
+  const [previewObjectUrl, setPreviewObjectUrl] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
 
-  const previewUrl = useMemo(() => getPengajuanPenilaianPreviewUrl(pengajuan), [pengajuan]);
-  const canPreviewPdf = Boolean(previewUrl) && pengajuan?.file_type === "application/pdf";
+  const canPreviewPdf = pengajuan?.file_type === "application/pdf";
   const canReview = (pengajuan?.status || "").toLowerCase() === "diajukan";
 
   useEffect(() => {
@@ -78,6 +80,55 @@ const ApprovalPengajuanPenilaianDetail = () => {
       loadDetail();
     }
   }, [id, navigate]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const clearPreview = () => {
+      setPreviewObjectUrl((currentUrl) => {
+        if (currentUrl) {
+          URL.revokeObjectURL(currentUrl);
+        }
+        return "";
+      });
+    };
+
+    const loadPreview = async () => {
+      clearPreview();
+      setPreviewError("");
+
+      if (!pengajuan || !canPreviewPdf) {
+        setPreviewLoading(false);
+        return;
+      }
+
+      try {
+        setPreviewLoading(true);
+        const blob = await fetchPengajuanPenilaianPreviewBlob(pengajuan);
+
+        if (!isActive) return;
+
+        const objectUrl = URL.createObjectURL(blob);
+        setPreviewObjectUrl(objectUrl);
+      } catch (error) {
+        if (!isActive) return;
+
+        console.error("loadPreview error:", error);
+        setPreviewError(error.message || "Preview tidak dapat dimuat");
+      } finally {
+        if (isActive) {
+          setPreviewLoading(false);
+        }
+      }
+    };
+
+    loadPreview();
+
+    return () => {
+      isActive = false;
+      clearPreview();
+    };
+  }, [pengajuan, canPreviewPdf]);
 
   const handleDownload = async () => {
     if (!pengajuan) return;
@@ -299,7 +350,7 @@ const ApprovalPengajuanPenilaianDetail = () => {
 
           <div className="border-t border-gray-200 p-5 space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-gray-800">Preview Bukti Dukung</h2>
+              <h2 className="text-lg font-semibold text-gray-800">Bukti Dukung</h2>
               <IconButton onClick={handleDownload} variant="blue" size="md">
                 <i className="fas fa-download mr-2" />
                 Unduh Berkas
@@ -308,11 +359,21 @@ const ApprovalPengajuanPenilaianDetail = () => {
 
             {canPreviewPdf ? (
               <div className="rounded-xl border border-gray-200 overflow-hidden">
-                <iframe
-                  title="Preview Bukti Dukung"
-                  src={previewUrl}
-                  className="h-[640px] w-full bg-gray-100"
-                />
+                {previewLoading ? (
+                  <div className="flex h-[640px] items-center justify-center bg-gray-50 text-gray-500">
+                    Memuat preview berkas...
+                  </div>
+                ) : previewError ? (
+                  <div className="flex h-[640px] items-center justify-center bg-red-50 px-6 text-center text-red-700">
+                    {previewError}
+                  </div>
+                ) : (
+                  <iframe
+                    title="Preview Bukti Dukung"
+                    src={previewObjectUrl}
+                    className="h-[640px] w-full bg-gray-100"
+                  />
+                )}
               </div>
             ) : (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">

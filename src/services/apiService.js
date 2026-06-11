@@ -1777,6 +1777,34 @@ export const downloadPengajuanPenilaianFile = async (pengajuan) => {
   URL.revokeObjectURL(objectUrl);
 };
 
+export const fetchPengajuanPenilaianPreviewBlob = async (pengajuan) => {
+  const fallbackPreviewUrl = pengajuan?.id
+    ? `${API_BASE_URL}/api/pengajuan-penilaians/${pengajuan.id}/preview`
+    : "";
+  const previewUrl = toAbsoluteApiUrl(pengajuan?.preview_url || fallbackPreviewUrl);
+
+  if (!previewUrl) {
+    throw new Error("URL preview tidak tersedia");
+  }
+
+  const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+    salt: API_TOKEN,
+  });
+
+  const response = await fetch(previewUrl, {
+    method: "GET",
+    headers: {
+      "X-API-TOKEN": encryptedToken,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Gagal memuat preview berkas");
+  }
+
+  return response.blob();
+};
+
 export const getPengajuanPenilaianPreviewUrl = (pengajuan) =>
   toAbsoluteApiUrl(
     pengajuan?.preview_url ||
