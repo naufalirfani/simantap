@@ -2410,15 +2410,16 @@ const DetailPegawai = () => {
                           {ind.name}
                         </span>
                       </div>
-                      <div className="justify-end">
+                      <div className="flex items-center gap-4 justify-end">
                         <a
-                          onClick={() =>
-                            handleOpenInstrumenModal(indikatorObj, "potensial")
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenInstrumenModal(indikatorObj, "potensial");
+                          }}
                           variant="ghost"
                           size="sm"
                           title={`Lihat instrumen ${ind.name}`}
-                          className="text-teal-600 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/20"
+                          className="text-teal-600 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/20 whitespace-nowrap flex items-center"
                         >
                           <i className="fas fa-clipboard-list mr-2"></i>
                           Lihat Instrumen
@@ -2595,15 +2596,16 @@ const DetailPegawai = () => {
                           {ind.name}
                         </span>
                       </div>
-                      <div className="justify-end">
+                      <div className="flex items-center gap-4 justify-end">
                         <a
-                          onClick={() =>
-                            handleOpenInstrumenModal(indikatorObj, "kinerja")
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenInstrumenModal(indikatorObj, "kinerja");
+                          }}
                           variant="ghost"
                           size="sm"
                           title={`Lihat instrumen ${ind.name}`}
-                          className="text-[#3085d6] dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/20"
+                          className="text-[#3085d6] dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/20 whitespace-nowrap flex items-center"
                         >
                           <i className="fas fa-clipboard-list mr-2"></i>
                           Lihat Instrumen
