@@ -415,13 +415,7 @@ const Dashboard = () => {
   const [quadrantLoading, setQuadrantLoading] = useState(true);
 
   const loadEmployees = useCallback(
-    async ({
-      filter,
-      kuadran = null,
-      q,
-      page = 1,
-      per_page = 10,
-    } = {}) => {
+    async ({ filter, kuadran = null, q, page = 1, per_page = 10 } = {}) => {
       // If no explicit q provided, use the current dashboard searchQuery as baseline
       if (q === undefined) q = searchQuery || "";
       try {
@@ -482,6 +476,7 @@ const Dashboard = () => {
               last_page: 1,
               total: 0,
               tabel: "kuadran",
+              kotak: kotakId,
             });
             return;
           }
@@ -493,7 +488,7 @@ const Dashboard = () => {
 
           const filtered = withUnitIds.filter((it) => {
             // Filter by quadrant
-            if (it.quadrant !== kotakId) return false;
+            if (it.quadrant !== kotakId && kotakId !== -99) return false;
 
             // Filter by Unit Kerja (with parent-child logic)
             if (selectedUnitKerja && selectedUnitKerja.length > 0) {
@@ -525,9 +520,21 @@ const Dashboard = () => {
 
           // Sort by potensial + kinerja total (highest first)
           searched.sort((a, b) => {
+            // Jika kotakId = -99, urutkan dulu berdasarkan quadrant (descending)
+            if (kotakId === -99) {
+              const quadrantA = a.quadrant ?? -Infinity;
+              const quadrantB = b.quadrant ?? -Infinity;
+
+              if (quadrantA !== quadrantB) {
+                return quadrantB - quadrantA; // descending
+              }
+            }
+
+            // Jika quadrant sama (atau kotakId != -99), urutkan berdasarkan total nilai
             const sumA = (a.potensial ?? 0) + (a.kinerja ?? 0);
             const sumB = (b.potensial ?? 0) + (b.kinerja ?? 0);
-            return sumB - sumA; // descending order
+
+            return sumB - sumA; // descending
           });
 
           const total = searched.length;
@@ -536,6 +543,7 @@ const Dashboard = () => {
           const start = (current_page - 1) * per_page;
           const paged = searched.slice(start, start + per_page);
           const tabel = "kuadran";
+          const kotak = kotakId;
 
           const mapped = paged.map((it) => ({
             name: it.name || "",
@@ -548,10 +556,18 @@ const Dashboard = () => {
             potensial: it.potensial ?? it.raw?.nilai_potensial ?? null,
             kinerja: it.kinerja ?? it.raw?.nilai_kinerja ?? null,
             avatar: it.avatar || null,
+            quadrant: it.quadrant ?? null,
           }));
 
           setEmpEmployees(mapped);
-          setEmpMeta({ current_page, per_page, last_page, total, tabel });
+          setEmpMeta({
+            current_page,
+            per_page,
+            last_page,
+            total,
+            tabel,
+            kotak,
+          });
           return;
         }
 
@@ -691,9 +707,19 @@ const Dashboard = () => {
   useEffect(() => {
     if (!modalState.isOpen) return;
     if (empKuadran != null) {
-      loadEmployees({ kuadran: empKuadran, q: searchQuery, page: 1, per_page: 10 });
+      loadEmployees({
+        kuadran: empKuadran,
+        q: searchQuery,
+        page: 1,
+        per_page: 10,
+      });
     } else if (empFilter) {
-      loadEmployees({ filter: empFilter, q: searchQuery, page: 1, per_page: 10 });
+      loadEmployees({
+        filter: empFilter,
+        q: searchQuery,
+        page: 1,
+        per_page: 10,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
@@ -771,7 +797,11 @@ const Dashboard = () => {
     }
 
     // Filter by Jenis Jabatan
-    if (selectedJenisJabatan && selectedJenisJabatan.length > 0 && !selectedJenisJabatan.includes(item.jenisJabatan)) {
+    if (
+      selectedJenisJabatan &&
+      selectedJenisJabatan.length > 0 &&
+      !selectedJenisJabatan.includes(item.jenisJabatan)
+    ) {
       return false;
     }
 
@@ -808,7 +838,27 @@ const Dashboard = () => {
     setEmpMeta(null);
     // use empKuadran for frontend pagination/search
     setEmpKuadran(quadrantNumber);
-    loadEmployees({ kuadran: quadrantNumber, q: searchQuery, page: 1, per_page: 10 });
+    loadEmployees({
+      kuadran: quadrantNumber,
+      q: searchQuery,
+      page: 1,
+      per_page: 10,
+    });
+  };
+
+  const handleAllBoxClick = () => {
+    setModalState({
+      isOpen: true,
+      employees: [],
+    });
+    setEmpEmployees([]);
+    setEmpMeta(null);
+    loadEmployees({
+      kuadran: -99,
+      q: searchQuery,
+      page: 1,
+      per_page: 10,
+    });
   };
 
   const handleCloseModal = () => {
@@ -858,9 +908,17 @@ const Dashboard = () => {
 
       // Draw background areas
       (cfg.kotak || []).forEach((kotak) => {
-        const x1 = x.getPixelForValue(kotak.potensialRange.min === 0 ? kotak.potensialRange.min : kotak.potensialRange.min-0.01);
+        const x1 = x.getPixelForValue(
+          kotak.potensialRange.min === 0
+            ? kotak.potensialRange.min
+            : kotak.potensialRange.min - 0.01,
+        );
         const x2 = x.getPixelForValue(kotak.potensialRange.max);
-        const y1 = y.getPixelForValue(kotak.kinerjaRange.min === 0 ? kotak.kinerjaRange.min : kotak.kinerjaRange.min-0.01);
+        const y1 = y.getPixelForValue(
+          kotak.kinerjaRange.min === 0
+            ? kotak.kinerjaRange.min
+            : kotak.kinerjaRange.min - 0.01,
+        );
         const y2 = y.getPixelForValue(kotak.kinerjaRange.max);
 
         ctx.fillStyle = kotak.warna;
@@ -1313,7 +1371,10 @@ const Dashboard = () => {
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                  <i className="fas fa-search text-gray-400" aria-hidden="true"></i>
+                  <i
+                    className="fas fa-search text-gray-400"
+                    aria-hidden="true"
+                  ></i>
                 </span>
                 <input
                   type="text"
@@ -1342,9 +1403,7 @@ const Dashboard = () => {
               <SearchableSelect
                 value={selectedUnitKerja}
                 onChange={(value) => setSelectedUnitKerja(value)}
-                options={[
-                  ...unitOptions,
-                ]}
+                options={[...unitOptions]}
                 placeholder="Pilih Unit Kerja..."
                 label="Unit Kerja"
                 multiple={true}
@@ -1362,7 +1421,10 @@ const Dashboard = () => {
                 options={[
                   ...jobTypeData.map((j) => {
                     const match = jenisJabatanList.find((jj) => j.key === jj);
-                    return { value: match, label: j.name + ` (Level ${j.level})` };
+                    return {
+                      value: match,
+                      label: j.name + ` (Level ${j.level})`,
+                    };
                   }),
                 ]}
                 placeholder="Pilih Jenis Jabatan..."
@@ -1373,7 +1435,9 @@ const Dashboard = () => {
           </div>
 
           {/* Reset Filter Button */}
-          {(selectedUnitKerja.length > 0 || selectedJenisJabatan.length > 0 || searchQuery) && (
+          {(selectedUnitKerja.length > 0 ||
+            selectedJenisJabatan.length > 0 ||
+            searchQuery) && (
             <div className="mt-4">
               <IconButton
                 title="Reset Filter"
@@ -1397,40 +1461,38 @@ const Dashboard = () => {
         <div className="mb-0">
           {/* responsive: wrap on small screens, single-row on large */}
           <div className="flex flex-wrap gap-3 py-2">
-            {quadrantLoading ? (
-              // Loading skeleton
-              [1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => (
-                <div
-                  key={q}
-                  className="w-full sm:w-1/2 md:w-1/3 lg:flex-1 min-w-0"
-                >
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-2 border-gray-200 dark:border-gray-700">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 mb-2 animate-pulse"></div>
-                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-12 animate-pulse"></div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              // Actual data
-              [1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
-                const kotak = kotakConfig?.kotak.find((k) => k.id === q);
-                const warna = kotak?.warna || PRIMARY_COLORS.teal;
-                const nama = `Kotak ${q}`;
-                return (
+            {quadrantLoading
+              ? // Loading skeleton
+                [1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => (
                   <div
                     key={q}
                     className="w-full sm:w-1/2 md:w-1/3 lg:flex-1 min-w-0"
                   >
-                    <EmployeeCountBox
-                      title={nama}
-                      count={quadrantCounts[q] || 0}
-                      color={warna}
-                      onClick={() => handleBoxClick(q)}
-                    />
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-2 border-gray-200 dark:border-gray-700">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 mb-2 animate-pulse"></div>
+                      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-12 animate-pulse"></div>
+                    </div>
                   </div>
-                );
-              })
-            )}
+                ))
+              : // Actual data
+                [1, 2, 3, 4, 5, 6, 7, 8, 9].map((q) => {
+                  const kotak = kotakConfig?.kotak.find((k) => k.id === q);
+                  const warna = kotak?.warna || PRIMARY_COLORS.teal;
+                  const nama = `Kotak ${q}`;
+                  return (
+                    <div
+                      key={q}
+                      className="w-full sm:w-1/2 md:w-1/3 lg:flex-1 min-w-0"
+                    >
+                      <EmployeeCountBox
+                        title={nama}
+                        count={quadrantCounts[q] || 0}
+                        color={warna}
+                        onClick={() => handleBoxClick(q)}
+                      />
+                    </div>
+                  );
+                })}
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
@@ -1471,6 +1533,19 @@ const Dashboard = () => {
 
           {/* Legend untuk interval Kotak + jumlah data per Kotak (kanan) */}
           <div className="lg:col-span-1 lg:mt-4">
+            <div className="mb-4 items-center justify-center">
+              <IconButton
+                onClick={handleAllBoxClick}
+                variant="blue"
+                size="lg"
+                disabled={quadrantLoading}
+                className="w-full md:w-auto"
+                title="Lihat Daftar Pegawai"
+              >
+                <i className={`fas fa-users mr-2`} aria-hidden="true"></i>
+                {"Lihat Daftar Pegawai"}
+              </IconButton>
+            </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg top-6 shadow-sm">
               <h3 className="font-semibold text-gray-800 dark:text-white mb-2 text-md">
                 Batas Interval Kotak

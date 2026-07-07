@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import PropTypes from "prop-types";
 import QuadrantRecommendation from "./QuadrantRecommendation";
+import IconButton from "./IconButton";
 
 function EmployeeListModal({
   isOpen,
@@ -403,6 +404,12 @@ function EmployeeTableView({
                         Nilai Talenta
                       </th>
                     )}
+                    {meta?.kotak === -99 && (
+                      <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10">
+                        Kotak Talenta
+                      </th>
+                    )}
+                    <th className="py-2 px-3 text-gray-500 dark:text-gray-300 font-semibold w-28 whitespace-nowrap top-0 z-10"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -487,6 +494,24 @@ function EmployeeTableView({
                           ).toFixed(2)}
                         </td>
                       )}
+                      {meta?.kotak === -99 && (
+                        <td className="py-2 px-3 text-gray-800 dark:text-white font-semibold text-md text-center">
+                          {e.quadrant ?? "-"}
+                        </td>
+                      )}
+                      <td className="py-2 px-3 text-gray-800 dark:text-white font-semibold text-md text-center">
+                        <IconButton
+                          onClick={() =>
+                            window.open(`/detail-pegawai/${e.nip}`, "_blank")
+                          }
+                          variant="primary"
+                          size="lg"
+                          title="Detail Pegawai"
+                        >
+                          <i className="fas fa-info-circle mr-2" />
+                          Lihat Profil
+                        </IconButton>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

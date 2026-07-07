@@ -185,9 +185,9 @@ const DetailPegawaiTutorial = ({
                 Langkah 2
               </div>
               <p className="mt-2 text-sm leading-6 text-gray-700 dark:text-gray-200">
-                Isi form dengan subindikator, instrumen, tanggal SK, dan bukti
-                dukung, lalu klik <strong>Ajukan Penilaian</strong> agar data
-                tersimpan.
+                Isi form dengan subindikator, instrumen, tanggal SK, masa
+                berlaku, dan bukti dukung, lalu klik{" "}
+                <strong>Ajukan Penilaian</strong> agar data tersimpan.
               </p>
             </div>
           </div>

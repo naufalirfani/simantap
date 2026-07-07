@@ -40,6 +40,13 @@ const formatDate = (value) => {
   });
 };
 
+const formatMasaBerlaku = (mulai, selesai) => {
+  if (!mulai) return "-";
+  const mulaiFormatted = formatDate(mulai);
+  if (!selesai) return mulaiFormatted;
+  return `${mulaiFormatted} s/d ${formatDate(selesai)}`;
+};
+
 const ApprovalPengajuanPenilaian = () => {
   const navigate = useNavigate();
   const [refreshKey] = useState(0);
@@ -156,6 +163,19 @@ const ApprovalPengajuanPenilaian = () => {
         noWrap: true,
         render: (item) => (
           <span className="text-gray-700">{formatDate(item?.tanggal_sk)}</span>
+        ),
+      },
+      {
+        key: "masa_berlaku",
+        label: "Masa Berlaku",
+        noWrap: true,
+        render: (item) => (
+          <span className="text-gray-700">
+            {formatMasaBerlaku(
+              item?.masa_berlaku_mulai,
+              item?.masa_berlaku_selesai,
+            )}
+          </span>
         ),
       },
       {

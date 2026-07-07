@@ -1454,6 +1454,8 @@ export const createPengajuanPenilaian = async ({
   subindikator_id,
   instrumen_id,
   tanggal_sk,
+  masa_berlaku_mulai,
+  masa_berlaku_selesai,
   file,
   catatan,
 }) => {
@@ -1464,6 +1466,8 @@ export const createPengajuanPenilaian = async ({
     formData.append("instrumen_id", instrumen_id);
     formData.append("status", "Diajukan");
     formData.append("tanggal_sk", tanggal_sk);
+    formData.append("masa_berlaku_mulai", masa_berlaku_mulai);
+    formData.append("masa_berlaku_selesai", masa_berlaku_selesai);
     
     if (file) {
       formData.append("file", file);
@@ -1702,6 +1706,35 @@ export const approvePengajuanPenilaian = async (id, payload = {}) => {
     return result.data;
   } catch (error) {
     console.error("approvePengajuanPenilaian error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Delete pengajuan penilaian by id (hanya status Diajukan).
+ */
+export const deletePengajuanPenilaian = async (id) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, {
+      salt: API_TOKEN,
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/pengajuan-penilaians/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result || result.success === false) {
+      throw new Error(result?.message || "Gagal menghapus pengajuan penilaian");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("deletePengajuanPenilaian error:", error);
     throw error;
   }
 };

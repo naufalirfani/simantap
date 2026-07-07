@@ -24,6 +24,13 @@ const formatDate = (value) => {
   });
 };
 
+const formatMasaBerlaku = (mulai, selesai) => {
+  if (!mulai) return "-";
+  const mulaiFormatted = formatDate(mulai);
+  if (!selesai) return mulaiFormatted;
+  return `${mulaiFormatted} s/d ${formatDate(selesai)}`;
+};
+
 const statusClass = (status) => {
   switch ((status || "").toLowerCase()) {
     case "diajukan":
@@ -331,6 +338,15 @@ const ApprovalPengajuanPenilaianDetail = () => {
             <div>
               <p className="text-sm text-gray-500">Tanggal SK</p>
               <p className="font-semibold text-gray-800">{formatDate(pengajuan?.tanggal_sk)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Masa Berlaku</p>
+              <p className="font-semibold text-gray-800">
+                {formatMasaBerlaku(
+                  pengajuan?.masa_berlaku_mulai,
+                  pengajuan?.masa_berlaku_selesai,
+                )}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Subindikator</p>

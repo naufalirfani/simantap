@@ -3,16 +3,22 @@ import Swal from "sweetalert2";
 import { PRIMARY_COLORS } from "../config/colors";
 import {
   fetchPengajuanPenilaianByPegawai,
+  deletePengajuanPenilaian,
   encryptTokenForHeader,
 } from "../services/apiService";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
-const PengajuanPenilaianHistory = ({ pegawaiId, refreshTrigger }) => {
+const PengajuanPenilaianHistory = ({
+  pegawaiId,
+  refreshTrigger,
+  onDeleteSuccess,
+}) => {
   const [pengajuanList, setPengajuanList] = useState([]);
   const [allPengajuanList, setAllPengajuanList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
   const [statusFilter, setStatusFilter] = useState("Diajukan");
 
   useEffect(() => {
@@ -106,9 +112,14 @@ const PengajuanPenilaianHistory = ({ pegawaiId, refreshTrigger }) => {
       day: "numeric",
       month: "long",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
+  };
+
+  const formatMasaBerlaku = (mulai, selesai) => {
+    if (!mulai) return "N/A";
+    const mulaiFormatted = formatDateIndo(mulai);
+    if (!selesai) return mulaiFormatted;
+    return `${mulaiFormatted} s/d ${formatDateIndo(selesai)}`;
   };
 
   const resolveBerkasUrl = (pengajuan, type = "preview") => {
@@ -155,6 +166,56 @@ const PengajuanPenilaianHistory = ({ pegawaiId, refreshTrigger }) => {
     if (!berkasUrl) return;
 
     window.open(berkasUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleDeletePengajuan = async (pengajuan) => {
+    if (pengajuan.status?.toLowerCase() !== "diajukan") return;
+
+    const subindikatorName =
+      pengajuan.subindikator?.subindikator ||
+      pengajuan.subindikator?.nama ||
+      "pengajuan ini";
+
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Hapus Pengajuan?",
+      html: `Pengajuan penilaian untuk <strong>${subindikatorName}</strong> akan dihapus permanen.`,
+      showCancelButton: true,
+      reverseButtons: true,
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+      confirmButtonColor: PRIMARY_COLORS.red,
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setDeletingId(pengajuan.id);
+      await deletePengajuanPenilaian(pengajuan.id);
+
+      setAllPengajuanList((prev) => prev.filter((p) => p.id !== pengajuan.id));
+      setPengajuanList((prev) => prev.filter((p) => p.id !== pengajuan.id));
+
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Pengajuan penilaian berhasil dihapus",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      onDeleteSuccess?.();
+    } catch (error) {
+      console.error("Delete pengajuan error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menghapus",
+        text: error.message || "Terjadi kesalahan saat menghapus pengajuan",
+      });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleDownloadBerkas = async (pengajuan) => {
@@ -321,7 +382,7 @@ const PengajuanPenilaianHistory = ({ pegawaiId, refreshTrigger }) => {
                   className={`border-2 ${statusColor.border} rounded-lg p-4 transition-all hover:shadow-md`}
                 >
                   {/* Status Badge */}
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-3 gap-3">
                     <div>
                       <div className="flex items-center gap-2">
                         <i
@@ -334,9 +395,29 @@ const PengajuanPenilaianHistory = ({ pegawaiId, refreshTrigger }) => {
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatDateIndo(pengajuan.created_at)}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDateIndo(pengajuan.created_at)}
+                      </span>
+                      {pengajuan.status?.toLowerCase() === "diajukan" && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePengajuan(pengajuan)}
+                          disabled={deletingId === pengajuan.id}
+                          title="Hapus pengajuan"
+                          className="cursor-pointer px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors bg-red-50 text-[#f44336] hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-900/40 dark:text-red-200 dark:hover:bg-red-900/60"
+                        >
+                          {deletingId === pengajuan.id ? (
+                            <i className="fas fa-spinner fa-spin"></i>
+                          ) : (
+                            <>
+                              <i className="fas fa-trash-alt mr-1"></i>
+                              Hapus
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Details */}
@@ -369,6 +450,17 @@ const PengajuanPenilaianHistory = ({ pegawaiId, refreshTrigger }) => {
                         {pengajuan.tanggal_sk
                           ? formatDateIndo(pengajuan.tanggal_sk)
                           : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 dark:text-gray-400 font-medium font-semibold">
+                        Masa Berlaku
+                      </p>
+                      <p className="text-gray-900 dark:text-white">
+                        {formatMasaBerlaku(
+                          pengajuan.masa_berlaku_mulai,
+                          pengajuan.masa_berlaku_selesai,
+                        )}
                       </p>
                     </div>
                     <div>

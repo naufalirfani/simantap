@@ -106,6 +106,7 @@ const pollSyncProgress = (nips = null) =>
         ) {
           finish(true, status);
           Swal.close();
+          window.location.reload();
         }
       } catch (_) {
         /* keep polling */
@@ -164,6 +165,9 @@ const DetailPegawai = () => {
     useState(false);
   const [showPengajuanKinerjaModal, setShowPengajuanKinerjaModal] =
     useState(false);
+  const [showInstrumenModal, setShowInstrumenModal] = useState(false);
+  const [selectedInstrumenIndicator, setSelectedInstrumenIndicator] =
+    useState(null);
   const [pengajuanRefreshTrigger, setPengajuanRefreshTrigger] = useState(0);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -189,8 +193,11 @@ const DetailPegawai = () => {
         title: "Isi form lalu kirim pengajuan",
         description: (
           <>
-            Lengkapi data <strong>subindikator</strong>, <strong>instrumen</strong>, <strong>tanggal SK</strong>, dan <strong>bukti dukung</strong>, lalu
-            klik <strong>Ajukan Penilaian</strong> agar statusnya tercatat.
+            Lengkapi data <strong>subindikator</strong>,{" "}
+            <strong>instrumen</strong>, <strong>tanggal SK</strong>,{" "}
+            <strong>masa berlaku</strong>, dan <strong>bukti dukung</strong>,
+            lalu klik{" "}
+            <strong>Ajukan Penilaian</strong> agar statusnya tercatat.
           </>
         ),
         note: "Setelah submit, data pengajuan akan muncul di riwayat pengajuan penilaian dan menunggu proses validasi oleh admin.",
@@ -200,7 +207,8 @@ const DetailPegawai = () => {
         title: "Pantau progress di riwayat pengajuan",
         description: (
           <>
-          Periksa bagian <strong>Riwayat Pengajuan Penilaian</strong> untuk melihat status Diajukan, Diterima, atau Ditolak.
+            Periksa bagian <strong>Riwayat Pengajuan Penilaian</strong> untuk
+            melihat status Diajukan, Diterima, atau Ditolak.
           </>
         ),
         note: "Anda dapat melihat detail setiap pengajuan dan statusnya di sini.",
@@ -210,7 +218,9 @@ const DetailPegawai = () => {
         title: "Sinkronkan data setelah pengajuan diterima",
         description: (
           <>
-            Jika pengajuan sudah diterima, klik <strong>Sinkronisasi Data</strong> agar nilai talenta Anda diperbarui.
+            Jika pengajuan sudah diterima, klik{" "}
+            <strong>Sinkronisasi Data</strong> agar nilai talenta Anda
+            diperbarui.
           </>
         ),
         note: "Sinkronisasi data akan memperbarui nilai talenta Anda dengan informasi terbaru dari pengajuan yang telah diterima.",
@@ -358,7 +368,7 @@ const DetailPegawai = () => {
 
     const isIgnored =
       window.localStorage.getItem(tutorialStorageKey) === "true";
-    if (!isIgnored) {
+    if (!isIgnored && !isAdmin) {
       setShowTutorial(true);
       setTutorialStep(0);
       return;
@@ -787,8 +797,9 @@ const DetailPegawai = () => {
 
   // Get instrumens for a subindikator with their nilai
   const getInstrumensForSub = (subId) => {
+    const subIdStr = String(subId);
     const subInstrumens = instrumens.filter(
-      (inst) => inst.subindikator_id === subId,
+      (inst) => String(inst.subindikator_id) === subIdStr,
     );
     const val = getSubValue(subId);
     const currentNilai = val.nilai;
@@ -805,6 +816,37 @@ const DetailPegawai = () => {
 
     // Return all instrumens with their skor as nilai
     return subInstrumens.map((inst) => ({ ...inst, nilai: inst.skor }));
+  };
+
+  const getAllInstrumensForSub = (subId) => {
+    const subIdStr = String(subId);
+    return instrumens
+      .filter((inst) => String(inst.subindikator_id) === subIdStr)
+      .map((inst) => ({ ...inst, nilai: inst.skor }));
+  };
+
+  const handleOpenInstrumenModal = (indikatorObj, fallbackType) => {
+    const indikatorName = indikatorObj?.indikator || indikatorObj?.name || "-";
+    const penilaianType = (indikatorObj?.penilaian || fallbackType || "")
+      .toString()
+      .toLowerCase();
+    const subs = Array.isArray(indikatorObj?.sub_indikators)
+      ? indikatorObj.sub_indikators
+      : [];
+
+    const subindikators = subs.map((sub) => ({
+      id: sub.id,
+      label: sub.subindikator || sub.nama || sub.name || String(sub.id),
+      bobot: sub.bobot,
+      instrumens: getAllInstrumensForSub(sub.id),
+    }));
+
+    setSelectedInstrumenIndicator({
+      title: indikatorName,
+      penilaianType,
+      subindikators,
+    });
+    setShowInstrumenModal(true);
   };
 
   // Helper function to clean instrument text by removing letter prefixes (a., b., c., etc.)
@@ -2368,18 +2410,32 @@ const DetailPegawai = () => {
                           {ind.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        {ind.bobot !== undefined && ind.bobot !== null && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            Bobot: {ind.bobot}%
-                          </div>
-                        )}
-                        <div className="text-right">
-                          <div
-                            className="text-md font-bold dark:text-teal-400"
-                            style={{ color: PRIMARY_COLORS.teal }}
-                          >
-                            {(Number(ind.hasil) || 0).toFixed(2)}
+                      <div className="justify-end">
+                        <a
+                          onClick={() =>
+                            handleOpenInstrumenModal(indikatorObj, "potensial")
+                          }
+                          variant="ghost"
+                          size="sm"
+                          title={`Lihat instrumen ${ind.name}`}
+                          className="text-teal-600 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/20"
+                        >
+                          <i className="fas fa-clipboard-list mr-2"></i>
+                          Lihat Instrumen
+                        </a>
+                        <div className="flex items-center gap-3">
+                          {ind.bobot !== undefined && ind.bobot !== null && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                              Bobot: {ind.bobot}%
+                            </div>
+                          )}
+                          <div className="text-right">
+                            <div
+                              className="text-md font-bold dark:text-teal-400"
+                              style={{ color: PRIMARY_COLORS.teal }}
+                            >
+                              {(Number(ind.hasil) || 0).toFixed(2)}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2539,15 +2595,29 @@ const DetailPegawai = () => {
                           {ind.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        {ind.bobot !== undefined && ind.bobot !== null && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            Bobot: {ind.bobot}%
-                          </div>
-                        )}
-                        <div className="text-right">
-                          <div className="text-md font-bold text-[#3085d6] dark:text-[#60a5fa]">
-                            {(Number(ind.hasil) || 0).toFixed(2)}
+                      <div className="justify-end">
+                        <a
+                          onClick={() =>
+                            handleOpenInstrumenModal(indikatorObj, "kinerja")
+                          }
+                          variant="ghost"
+                          size="sm"
+                          title={`Lihat instrumen ${ind.name}`}
+                          className="text-[#3085d6] dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/20"
+                        >
+                          <i className="fas fa-clipboard-list mr-2"></i>
+                          Lihat Instrumen
+                        </a>
+                        <div className="flex items-center gap-3">
+                          {ind.bobot !== undefined && ind.bobot !== null && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                              Bobot: {ind.bobot}%
+                            </div>
+                          )}
+                          <div className="text-right">
+                            <div className="text-md font-bold text-[#3085d6] dark:text-[#60a5fa]">
+                              {(Number(ind.hasil) || 0).toFixed(2)}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2659,6 +2729,9 @@ const DetailPegawai = () => {
           <PengajuanPenilaianHistory
             pegawaiId={pegawaiData.id}
             refreshTrigger={pengajuanRefreshTrigger}
+            onDeleteSuccess={() =>
+              setPengajuanRefreshTrigger((prev) => prev + 1)
+            }
           />
         </div>
       )}
@@ -2685,6 +2758,13 @@ const DetailPegawai = () => {
           setShowPengajuanKinerjaModal(false);
           setPengajuanRefreshTrigger((prev) => prev + 1);
         }}
+      />
+
+      <InstrumenIndicatorModal
+        isOpen={showInstrumenModal}
+        onClose={() => setShowInstrumenModal(false)}
+        indicatorData={selectedInstrumenIndicator}
+        cleanInstrumenText={cleanInstrumenText}
       />
 
       <DetailPegawaiTutorial
@@ -2715,9 +2795,21 @@ const DetailPegawai = () => {
           {[
             { key: "jabatan", label: "Jabatan", icon: "briefcase" },
             { key: "skp", label: "SKP", icon: "chart-line" },
-            { key: "pengembangan", label: "Pengembangan", icon: "book-open" },
-            { key: "diklat", label: "Diklat", icon: "graduation-cap" },
-            { key: "sertifikasi", label: "Sertifikasi", icon: "certificate" },
+            {
+              key: "pengembangan",
+              label: "Pengembangan Kompetensi",
+              icon: "book-open",
+            },
+            {
+              key: "diklat",
+              label: "Diklat Struktural/Fungsional",
+              icon: "graduation-cap",
+            },
+            {
+              key: "sertifikasi",
+              label: "Sertifikasi Keahlian",
+              icon: "certificate",
+            },
             { key: "pendidikan", label: "Pendidikan", icon: "university" },
             { key: "penghargaan", label: "Penghargaan", icon: "trophy" },
           ].map((tab) => (
@@ -3028,6 +3120,164 @@ const EmploymentInfoModal = ({
       </div>
 
       {/* Animation styles */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
+    </>
+  );
+};
+
+const InstrumenIndicatorModal = ({
+  isOpen,
+  onClose,
+  indicatorData,
+  cleanInstrumenText,
+}) => {
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const subindikators = Array.isArray(indicatorData?.subindikators)
+    ? indicatorData.subindikators
+    : [];
+  const totalInstrumen = subindikators.reduce(
+    (count, sub) =>
+      count + (Array.isArray(sub.instrumens) ? sub.instrumens.length : 0),
+    0,
+  );
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300 ease-out"
+        onClick={onClose}
+        style={{ animation: "fadeIn 0.3s ease-out" }}
+      />
+
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div className="modal-resizable w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg pointer-events-auto overflow-y-auto shadow-2xl">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10">
+            <div className="flex items-center gap-3">
+              <i
+                className="fas fa-clipboard-list text-3xl"
+                style={{ color: PRIMARY_COLORS.teal }}
+              ></i>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center mb-0">
+                  Instrumen Penilaian
+                </h2>
+                <p className="text-md text-gray-600 dark:text-gray-400 mt-0">
+                  {indicatorData?.title || "-"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-110"
+              aria-label="Close"
+            >
+              <i className="fas fa-times text-xl text-gray-600 dark:text-gray-300"></i>
+            </button>
+          </div>
+
+          <div className="p-6 space-y-5">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              {indicatorData?.penilaianType && (
+                <span className="inline-flex items-center rounded-full bg-teal-100 dark:bg-teal-900/30 px-3 py-1 font-semibold text-teal-700 dark:text-teal-300">
+                  {indicatorData.penilaianType === "potensial"
+                    ? "Potensial"
+                    : indicatorData.penilaianType === "kinerja"
+                      ? "Kinerja"
+                      : indicatorData.penilaianType}
+                </span>
+              )}
+              <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 font-semibold text-gray-600 dark:text-gray-300">
+                {subindikators.length} subindikator
+              </span>
+              <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-3 py-1 font-semibold text-[#3085d6] dark:text-blue-300">
+                {totalInstrumen} instrumen
+              </span>
+            </div>
+
+            {subindikators.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/40 p-8 text-center text-gray-500 dark:text-gray-400">
+                Tidak ada instrumen yang tersedia untuk indikator ini.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {subindikators.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+                      <div>
+                        <h3 className="text-md font-semibold text-gray-900 dark:text-white">
+                          {sub.label}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Bobot: {sub.bobot ?? "-"}%
+                        </p>
+                      </div>
+                      <span className="text-xs font-semibold rounded-full bg-white dark:bg-gray-800 px-2.5 py-1 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                        {Array.isArray(sub.instrumens)
+                          ? sub.instrumens.length
+                          : 0}{" "}
+                        item
+                      </span>
+                    </div>
+
+                    {Array.isArray(sub.instrumens) &&
+                    sub.instrumens.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {sub.instrumens.map((inst) => (
+                          <div
+                            key={inst.id}
+                            className="rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-3 shadow-sm"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-md font-medium text-gray-800 dark:text-gray-100">
+                                  {cleanInstrumenText(inst.instrumen) || "-"}
+                                </p>
+                              </div>
+                              <span className="flex-shrink-0 rounded-full bg-teal-100 dark:bg-teal-900/30 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300">
+                                Skor {inst.skor ?? "-"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 bg-white/60 dark:bg-gray-800/60 p-3 text-sm text-gray-500 dark:text-gray-400">
+                        Tidak ada instrumen yang terhubung ke subindikator ini.
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -3486,10 +3736,10 @@ const RiwayatDiklatPanel = ({ data, formatDateIndo }) => {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-start gap-2">
                 <h4 className="text-md font-semibold text-gray-900 dark:text-white flex-1 leading-tight">
-                  {item.latihanStrukturalNama}
+                  {item.latihanStrukturalNama ?? item.namaKursus}
                 </h4>
                 <span className="text-md font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex-shrink-0">
-                  {item.tahun}
+                  {item.tahun ?? item.tahunKursus}
                 </span>
               </div>
             </div>
@@ -3501,25 +3751,28 @@ const RiwayatDiklatPanel = ({ data, formatDateIndo }) => {
                 {item.institusiPenyelenggara}
               </span>
             )}
-            {item.jumlahJam && (
+            {item.jumlahJam > 0 && (
               <span>
                 <i className="fas fa-clock mr-1 opacity-60"></i>
                 {item.jumlahJam} JP
               </span>
             )}
-            {item.tanggal && (
+            {(item.tanggal || item.tanggalKursus) && (
               <span>
                 <i className="fas fa-calendar-alt mr-1 opacity-60"></i>
-                {formatDateIndo(item.tanggal)}
+                {formatDateIndo(item.tanggal || item.tanggalKursus)}
                 {item.tanggalSelesai
                   ? ` s/d ${formatDateIndo(item.tanggalSelesai)}`
                   : ""}
+                {item.tanggalSelesaiKursus
+                  ? ` s/d ${formatDateIndo(item.tanggalSelesaiKursus)}`
+                  : ""}
               </span>
             )}
-            {item.nomor && (
+            {(item.nomor || item.noSertipikat) && (
               <span>
                 <i className="fas fa-file-alt mr-1 opacity-60"></i>No:{" "}
-                {item.nomor}
+                {item.nomor || item.noSertipikat}
               </span>
             )}
           </div>
