@@ -8,8 +8,10 @@ import logo from "../assets/logo.png";
 const Sidebar = () => {
   const { sidebarExpanded, setSidebarExpanded, t } = useSettings();
   const { user, logout } = useAuth();
-  const [masterdataOpen, setMasterdataOpen] = useState(false);
+  const [akuisisiOpen, setAkuisisiOpen] = useState(false);
   const [pengembanganOpen, setPengembanganOpen] = useState(false);
+  const [penempatanOpen, setPenempatanOpen] = useState(false);
+  const [masterdataOpen, setMasterdataOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const navRef = useRef(null);
@@ -40,10 +42,12 @@ const Sidebar = () => {
     if (isMobile) {
       setIsMobileMenuOpen(false);
     }
-    // Auto-open masterdata dropdown when current route is a child of /masterdata
+    // Auto-open parent dropdowns when current route matches a child prefix
     if (location && location.pathname) {
+      setAkuisisiOpen(location.pathname.startsWith("/akuisisi"));
+      setPengembanganOpen(location.pathname.startsWith("/pengembangan") || location.pathname.startsWith("/pengembangan-talenta"));
+      setPenempatanOpen(location.pathname.startsWith("/penempatan"));
       setMasterdataOpen(location.pathname.startsWith("/masterdata"));
-      setPengembanganOpen(location.pathname.startsWith("/pengembangan"));
       // Clear pending path when location actually changes
       setPendingPath(null);
     }
@@ -71,7 +75,7 @@ const Sidebar = () => {
       else window.removeEventListener("resize", check);
       mo.disconnect();
     };
-  }, [sidebarExpanded, isMobile, masterdataOpen, pengembanganOpen]);
+  }, [sidebarExpanded, isMobile, akuisisiOpen, pengembanganOpen, penempatanOpen, masterdataOpen]);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -99,94 +103,155 @@ const Sidebar = () => {
     };
   }, [isAdmin, location.pathname]);
 
-  const menuItems = [
-    { path: "/", label: t("dashboard"), icon: "fas fa-chart-line" },
+  const menuSections = [
     {
-      path: "/daftar-talenta",
-      label: t("daftarTalenta"),
-      icon: "fas fa-users",
+      title: null,
+      items: [
+        { path: "/", label: t("dashboard"), icon: "fas fa-chart-line" }
+      ]
     },
     {
-      path: "/approval-pengajuan-penilaian",
-      label: "Approval Pengajuan",
-      icon: "fas fa-user-check",
-      badge: pendingApprovalCount,
+      title: "MANAJEMEN TALENTA ASN",
+      items: [
+        {
+          path: "/akuisisi",
+          label: "Akuisisi Talenta",
+          icon: "fas fa-user-plus",
+          isOpen: akuisisiOpen,
+          toggleOpen: () => setAkuisisiOpen((v) => !v),
+          children: [
+            {
+              path: "/akuisisi/daftar-talenta",
+              label: "Daftar Talenta",
+              icon: "fas fa-users",
+            },
+            {
+              path: "/akuisisi/kelompok-rencana-suksesi",
+              label: "Kelompok Rencana Suksesi",
+              icon: "fas fa-sitemap",
+            }
+          ]
+        },
+        {
+          path: "/pengembangan",
+          label: "Pengembangan Talenta",
+          icon: "fas fa-graduation-cap",
+          isOpen: pengembanganOpen,
+          toggleOpen: () => setPengembanganOpen((v) => !v),
+          children: [
+            {
+              path: "/pengembangan-talenta/indeks-kesenjangan",
+              label: "Indeks Kesenjangan Kompetensi",
+              icon: "fas fa-chart-bar",
+            },
+            {
+              path: "/pengembangan-talenta/rencana-pengembangan",
+              label: "Rencana Pengembangan",
+              icon: "fas fa-calendar-alt",
+            },
+            {
+              path: "/pengembangan-talenta/pelaksanaan-pengembangan",
+              label: "Pelaksanaan Pengembangan",
+              icon: "fas fa-tasks",
+            },
+            {
+              path: "/pengembangan-talenta/evaluasi-pengembangan",
+              label: "Evaluasi Pengembangan",
+              icon: "fas fa-clipboard-check",
+            }
+          ]
+        },
+        {
+          path: "/retensi-talenta",
+          label: "Retensi Talenta",
+          icon: "fas fa-user-shield",
+        },
+        {
+          path: "/penempatan",
+          label: "Penempatan Talenta",
+          icon: "fas fa-user-tie",
+          isOpen: penempatanOpen,
+          toggleOpen: () => setPenempatanOpen((v) => !v),
+          children: [
+            {
+              path: "/penempatan/rencana-suksesi",
+              label: "Rencana Suksesi",
+              icon: "fas fa-map-signs",
+            },
+            {
+              path: "/penempatan/approval-suksesor",
+              label: "Approval Suksesor",
+              icon: "fas fa-user-check",
+            },
+            {
+              path: "/penempatan/penetapan-talenta",
+              label: "Penetapan Talenta",
+              icon: "fas fa-user-tag",
+            }
+          ]
+        },
+        {
+          path: "/pemantauan-evaluasi",
+          label: "Pemantauan dan Evaluasi",
+          icon: "fas fa-desktop",
+        }
+      ]
     },
-    { path: "/suksesi", label: t("suksesi"), icon: "fas fa-arrow-trend-up" },
     {
-      path: "/pengembangan",
-      label: t("pengembangan"),
-      icon: "fas fa-graduation-cap",
-      isOpen: pengembanganOpen,
-      toggleOpen: () => setPengembanganOpen((v) => !v),
-      children: [
+      title: "PENGATURAN",
+      items: [
         {
-          path: "/pengembangan/indeks-kesenjangan",
-          label: "Indeks Kesenjangan Kompetensi",
-          icon: "fas fa-chart-bar",
+          path: "/approval-pengajuan",
+          label: "Approval Pengajuan",
+          icon: "fas fa-file-signature",
+          badge: pendingApprovalCount,
         },
         {
-          path: "/pengembangan/rencana",
-          label: "Rencana",
-          icon: "fas fa-calendar-alt",
-        },
-        {
-          path: "/pengembangan/pelaksanaan",
-          label: "Pelaksanaan",
-          icon: "fas fa-tasks",
-        },
-        {
-          path: "/pengembangan/evaluasi",
-          label: "Evaluasi",
-          icon: "fas fa-clipboard-check",
-        },
-      ],
-    },
-    {
-      path: "/masterdata",
-      label: t("masterdata"),
-      icon: "fas fa-database",
-      isOpen: masterdataOpen,
-      toggleOpen: () => setMasterdataOpen((v) => !v),
-      children: [
-        {
-          path: "/masterdata/unit-kerja",
-          label: t("unitKerja"),
-          icon: "fas fa-building",
-        },
-        {
-          path: "/masterdata/jabatan",
-          label: t("jabatan"),
-          icon: "fas fa-briefcase",
-        },
-        {
-          path: "/masterdata/kotak-interval",
-          label: "Kotak Interval",
-          icon: "fas fa-th",
-        },
-        // { path: '/masterdata/pegawai', label: t('pegawai'), icon: 'fas fa-user-circle' },
-        {
-          path: "/masterdata/indikator",
-          label: t("indikator"),
-          icon: "fas fa-chart-bar",
-        },
-        {
-          path: "/masterdata/instrumen",
-          label: "Instrumen",
-          icon: "fas fa-clipboard-list",
-        },
-        {
-          path: "/masterdata/standar-kompetensi-msk",
-          label: "Standar Kompetensi MSK",
-          icon: "fas fa-certificate",
-        },
-        {
-          path: "/masterdata/penilaian-pegawai",
-          label: "Penilaian Pegawai",
-          icon: "fas fa-star",
-        },
-      ],
-    },
+          path: "/masterdata",
+          label: t("masterdata"),
+          icon: "fas fa-database",
+          isOpen: masterdataOpen,
+          toggleOpen: () => setMasterdataOpen((v) => !v),
+          children: [
+            {
+              path: "/masterdata/unit-kerja",
+              label: t("unitKerja"),
+              icon: "fas fa-building",
+            },
+            {
+              path: "/masterdata/jabatan",
+              label: t("jabatan"),
+              icon: "fas fa-briefcase",
+            },
+            {
+              path: "/masterdata/kotak-interval",
+              label: "Kotak Interval",
+              icon: "fas fa-th",
+            },
+            {
+              path: "/masterdata/indikator",
+              label: t("indikator"),
+              icon: "fas fa-chart-bar",
+            },
+            {
+              path: "/masterdata/instrumen",
+              label: "Instrumen",
+              icon: "fas fa-clipboard-list",
+            },
+            {
+              path: "/masterdata/standar-kompetensi-msk",
+              label: "Standar Kompetensi MSK",
+              icon: "fas fa-certificate",
+            },
+            {
+              path: "/masterdata/penilaian-pegawai",
+              label: "Penilaian Pegawai",
+              icon: "fas fa-star",
+            },
+          ]
+        }
+      ]
+    }
   ];
 
   // Mobile menu toggle button (floating button on mobile)
@@ -370,187 +435,194 @@ const Sidebar = () => {
         >
           {/* Only show menu items for admin users */}
           {isAdmin &&
-            menuItems.map((item) => (
-              <div key={item.path}>
-                {item.children ? (
-                  <>
-                    {sidebarExpanded ? (
+            menuSections.map((section, secIdx) => (
+              <div key={secIdx} className="space-y-1">
+                {section.title && sidebarExpanded && (
+                  <div className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-4 pt-4 pb-2 border-t border-gray-100 first:border-t-0">
+                    {section.title}
+                  </div>
+                )}
+                {section.items.map((item) => (
+                  <div key={item.path}>
+                    {item.children ? (
                       <>
-                        <button
-                          onClick={() => item.toggleOpen()}
-                          className="w-full flex items-center cursor-pointer px-4 py-3 hover:bg-teal-500 hover:text-white group rounded-lg text-gray-700"
-                        >
-                          <i
-                            className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform text-teal-500 group-hover:text-white`}
-                          ></i>
-                          <span className="ml-3 flex-1 text-left">
-                            {item.label}
-                          </span>
-                          <i
-                            className={`fas fa-chevron-right text-teal-500 group-hover:text-white transition-all duration-300 ${
-                              item.isOpen ? "rotate-90" : ""
-                            }`}
-                          ></i>
-                        </button>
-                        <div
-                          className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                            item.isOpen
-                              ? "max-h-96 opacity-100"
-                              : "max-h-0 opacity-0"
-                          }`}
-                        >
-                          <div className="space-y-1 py-1">
-                            {item.children.map((child) => {
-                              const currentPath =
-                                pendingPath || location.pathname;
-                              const isActive =
-                                currentPath === child.path ||
-                                currentPath.startsWith(child.path + "/");
-                              return (
-                                <NavLink
-                                  key={child.path}
-                                  to={child.path}
-                                  onClick={() => setPendingPath(child.path)}
-                                >
-                                  <div
-                                    className={`flex items-center px-4 py-3 pl-12 hover:bg-teal-500 hover:text-white group rounded-lg mx-2 ${
-                                      isActive
-                                        ? "bg-teal-500 text-white"
-                                        : "text-gray-700"
-                                    }`}
-                                  >
-                                    <i
-                                      className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
-                                    ></i>
-                                    <span className="ml-3">{child.label}</span>
-                                  </div>
-                                </NavLink>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      // Minimized sidebar - show icons vertically below parent
-                      <div className="relative">
-                        <button
-                          onClick={() => item.toggleOpen()}
-                          title={item.label}
-                          className={`masterdata-button w-full flex items-center cursor-pointer px-4 py-3 justify-center hover:bg-teal-500 hover:text-white transition-all duration-200 rounded-lg relative group/tooltip text-gray-700 ${
-                            item.isOpen ? "bg-gray-100" : ""
-                          }`}
-                        >
-                          <i
-                            className={`${item.icon} text-xl flex-shrink-0 transition-transform text-teal-500 group-hover:text-white`}
-                          ></i>
-                          {/* Tooltip */}
-                          <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
-                            {item.label}
-                          </span>
-                        </button>
-                        {/* Child icons vertically below parent */}
-                        <div
-                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                            item.isOpen
-                              ? "max-h-96 opacity-100"
-                              : "max-h-0 opacity-0"
-                          }`}
-                        >
-                          <div className="bg-gray-50 space-y-1 py-1">
-                            {item.children.map((child) => {
-                              const currentPath =
-                                pendingPath || location.pathname;
-                              const isActive =
-                                currentPath === child.path ||
-                                currentPath.startsWith(child.path + "/");
-                              return (
-                                <NavLink
-                                  key={child.path}
-                                  to={child.path}
-                                  onClick={() => {
-                                    if (item.isOpen) item.toggleOpen();
-                                    setPendingPath(child.path);
-                                  }}
-                                  title={child.label}
-                                >
-                                  <div
-                                    className={`flex items-center justify-center px-4 py-3 hover:bg-teal-500 hover:text-white group relative group/tooltip ${
-                                      isActive
-                                        ? "bg-teal-500 text-white"
-                                        : "text-gray-700"
-                                    }`}
-                                  >
-                                    <i
-                                      className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
-                                    ></i>
-                                    {/* Tooltip */}
-                                    <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
-                                      {child.label}
-                                    </span>
-                                  </div>
-                                </NavLink>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <NavLink
-                    to={item.path}
-                    title={!sidebarExpanded ? item.label : ""}
-                    onClick={() => setPendingPath(item.path)}
-                  >
-                    {() => {
-                      const currentPath = pendingPath || location.pathname;
-                      const isActive =
-                        currentPath === item.path ||
-                        (item.path !== "/" &&
-                          currentPath.startsWith(item.path + "/"));
-                      return (
-                        <div
-                          className={`flex items-center relative group/tooltip rounded-lg ${
-                            sidebarExpanded
-                              ? "px-4 py-3"
-                              : "px-4 py-3 justify-center"
-                          } hover:bg-teal-500 hover:text-white group ${
-                            isActive
-                              ? "bg-teal-500 text-white"
-                              : "text-gray-700"
-                          }`}
-                        >
-                          <i
-                            className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
-                          ></i>
-                          {sidebarExpanded && (
-                            <span className="ml-3 flex-1">{item.label}</span>
-                          )}
-                          {sidebarExpanded && item.badge > 0 && (
-                            <span
-                              className={`ml-2 inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full px-1 text-xs font-bold ${
-                                "bg-red-600 text-white"
+                        {sidebarExpanded ? (
+                          <>
+                            <button
+                              onClick={() => item.toggleOpen()}
+                              className="w-full flex items-center cursor-pointer px-4 py-3 hover:bg-teal-500 hover:text-white group rounded-lg text-gray-700 font-medium"
+                            >
+                              <i
+                                className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform text-teal-500 group-hover:text-white`}
+                              ></i>
+                              <span className="ml-3 flex-1 text-left text-sm">
+                                {item.label}
+                              </span>
+                              <i
+                                className={`fas fa-chevron-right text-teal-500 group-hover:text-white transition-all duration-300 ${
+                                  item.isOpen ? "rotate-90" : ""
+                                }`}
+                              ></i>
+                            </button>
+                            <div
+                              className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                                item.isOpen
+                                  ? "max-h-[500px] opacity-100"
+                                  : "max-h-0 opacity-0"
                               }`}
                             >
-                              {item.badge > 99 ? "99+" : item.badge}
-                            </span>
-                          )}
-                          {/* Tooltip for minimized mode */}
-                          {!sidebarExpanded && (
-                            <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
-                              {item.label}
-                            </span>
-                          )}
-                          {!sidebarExpanded && item.badge > 0 && (
-                            <span className="absolute -right-1 -top-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-                              {item.badge > 99 ? "99+" : item.badge}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    }}
-                  </NavLink>
-                )}
+                              <div className="space-y-1 py-1">
+                                {item.children.map((child) => {
+                                  const currentPath =
+                                    pendingPath || location.pathname;
+                                  const isActive =
+                                    currentPath === child.path ||
+                                    currentPath.startsWith(child.path + "/");
+                                  return (
+                                    <NavLink
+                                      key={child.path}
+                                      to={child.path}
+                                      onClick={() => setPendingPath(child.path)}
+                                    >
+                                      <div
+                                        className={`flex items-center px-4 py-3 pl-12 hover:bg-teal-500 hover:text-white group rounded-lg mx-2 ${
+                                          isActive
+                                            ? "bg-teal-500 text-white"
+                                            : "text-gray-700"
+                                        }`}
+                                      >
+                                        <i
+                                          className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
+                                        ></i>
+                                        <span className="ml-3 text-sm">{child.label}</span>
+                                      </div>
+                                    </NavLink>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          // Minimized sidebar - show icons vertically below parent
+                          <div className="relative">
+                            <button
+                              onClick={() => item.toggleOpen()}
+                              title={item.label}
+                              className={`w-full flex items-center cursor-pointer px-4 py-3 justify-center hover:bg-teal-500 hover:text-white transition-all duration-200 rounded-lg relative group/tooltip text-gray-700 ${
+                                item.isOpen ? "bg-gray-100" : ""
+                              }`}
+                            >
+                              <i
+                                className={`${item.icon} text-xl flex-shrink-0 transition-transform text-teal-500 group-hover:text-white`}
+                              ></i>
+                              {/* Tooltip */}
+                              <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
+                                {item.label}
+                              </span>
+                            </button>
+                            {/* Child icons vertically below parent */}
+                            <div
+                              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                item.isOpen
+                                  ? "max-h-[500px] opacity-100"
+                                  : "max-h-0 opacity-0"
+                              }`}
+                            >
+                              <div className="bg-gray-50 space-y-1 py-1">
+                                {item.children.map((child) => {
+                                  const currentPath =
+                                    pendingPath || location.pathname;
+                                  const isActive =
+                                    currentPath === child.path ||
+                                    currentPath.startsWith(child.path + "/");
+                                  return (
+                                    <NavLink
+                                      key={child.path}
+                                      to={child.path}
+                                      onClick={() => {
+                                        if (item.isOpen) item.toggleOpen();
+                                        setPendingPath(child.path);
+                                      }}
+                                      title={child.label}
+                                    >
+                                      <div
+                                        className={`flex items-center justify-center px-4 py-3 hover:bg-teal-500 hover:text-white group relative group/tooltip ${
+                                          isActive
+                                            ? "bg-teal-500 text-white"
+                                            : "text-gray-700"
+                                        }`}
+                                      >
+                                        <i
+                                          className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
+                                        ></i>
+                                        {/* Tooltip */}
+                                        <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
+                                          {child.label}
+                                        </span>
+                                      </div>
+                                    </NavLink>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <NavLink
+                        to={item.path}
+                        title={!sidebarExpanded ? item.label : ""}
+                        onClick={() => setPendingPath(item.path)}
+                      >
+                        {() => {
+                          const currentPath = pendingPath || location.pathname;
+                          const isActive =
+                            currentPath === item.path ||
+                            (item.path !== "/" &&
+                              currentPath.startsWith(item.path + "/"));
+                          return (
+                            <div
+                              className={`flex items-center relative group/tooltip rounded-lg ${
+                                sidebarExpanded
+                                  ? "px-4 py-3"
+                                  : "px-4 py-3 justify-center"
+                              } hover:bg-teal-500 hover:text-white group ${
+                                isActive
+                                  ? "bg-teal-500 text-white"
+                                  : "text-gray-700"
+                              }`}
+                            >
+                              <i
+                                className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
+                              ></i>
+                              {sidebarExpanded && (
+                                <span className="ml-3 flex-1 text-sm font-medium">{item.label}</span>
+                              )}
+                              {sidebarExpanded && item.badge > 0 && (
+                                <span
+                                  className={`ml-2 inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full px-1 text-xs font-bold bg-red-600 text-white`}
+                                >
+                                  {item.badge > 99 ? "99+" : item.badge}
+                                </span>
+                              )}
+                              {/* Tooltip for minimized mode */}
+                              {!sidebarExpanded && (
+                                <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50">
+                                  {item.label}
+                                </span>
+                              )}
+                              {!sidebarExpanded && item.badge > 0 && (
+                                <span className="absolute -right-1 -top-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                                  {item.badge > 99 ? "99+" : item.badge}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }}
+                      </NavLink>
+                    )}
+                  </div>
+                ))}
               </div>
             ))}
 

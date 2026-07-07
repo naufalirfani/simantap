@@ -14,7 +14,7 @@ const translations = {
   id: {
     dashboard: 'Dashboard',
     daftarTalenta: 'Daftar Talenta',
-    suksesi: 'Suksesi',
+    suksesi: 'Kelompok Rencana Suksesi',
     pengembangan: 'Pengembangan',
     masterdata: 'Masterdata',
     unitKerja: 'Unit Kerja',
@@ -82,7 +82,7 @@ const translations = {
   en: {
     dashboard: 'Dashboard',
     daftarTalenta: 'Talent List',
-    suksesi: 'Succession',
+    suksesi: 'Succession Planning Group',
     pengembangan: 'Development',
     masterdata: 'Masterdata',
     unitKerja: 'Work Unit',

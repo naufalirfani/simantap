@@ -56,15 +56,29 @@ const generateBreadcrumbItems = (pathname, t) => {
     
     // Map path segments to readable labels
     const labelMap = {
+      "akuisisi": "Akuisisi Talenta",
       "daftar-talenta": "Daftar Talenta",
-      "approval-pengajuan-penilaian": "Approval Pengajuan Penilaian",
+      "kelompok-rencana-suksesi": "Kelompok Rencana Suksesi",
+      "approval-pengajuan-penilaian": "Approval Pengajuan",
+      "approval-pengajuan": "Approval Pengajuan",
       "detail": "Detail Pegawai",
-      "suksesi": "Suksesi",
-      "pengembangan": "Pengembangan",
+      "suksesi": "Kelompok Rencana Suksesi",
+      "pengembangan-talenta": "Pengembangan Talenta",
+      "pengembangan": "Pengembangan Talenta",
       "indeks-kesenjangan": "Indeks Kesenjangan Kompetensi",
-      "rencana": "Rencana",
-      "pelaksanaan": "Pelaksanaan",
-      "evaluasi": "Evaluasi",
+      "rencana-pengembangan": "Rencana Pengembangan",
+      "rencana": "Rencana Pengembangan",
+      "pelaksanaan-pengembangan": "Pelaksanaan Pengembangan",
+      "pelaksanaan": "Pelaksanaan Pengembangan",
+      "evaluasi-pengembangan": "Evaluasi Pengembangan",
+      "evaluasi": "Evaluasi Pengembangan",
+      "retensi-talenta": "Retensi Talenta",
+      "penempatan": "Penempatan Talenta",
+      "penempatan-talenta": "Penempatan Talenta",
+      "rencana-suksesi": "Rencana Suksesi",
+      "approval-suksesor": "Approval Suksesor",
+      "penetapan-talenta": "Penetapan Talenta",
+      "pemantauan-evaluasi": "Pemantauan dan Evaluasi",
       "masterdata": "Masterdata",
       "unit-kerja": "Unit Kerja",
       "jabatan": "Jabatan",
@@ -79,15 +93,29 @@ const generateBreadcrumbItems = (pathname, t) => {
     };
 
     const iconMap = {
+      "akuisisi": "fas fa-user-plus",
       "daftar-talenta": "fas fa-users",
-      "approval-pengajuan-penilaian": "fas fa-user-check",
+      "kelompok-rencana-suksesi": "fas fa-sitemap",
+      "approval-pengajuan-penilaian": "fas fa-file-signature",
+      "approval-pengajuan": "fas fa-file-signature",
       "detail": "fas fa-user",
-      "suksesi": "fas fa-arrow-trend-up",
+      "suksesi": "fas fa-sitemap",
+      "pengembangan-talenta": "fas fa-graduation-cap",
       "pengembangan": "fas fa-graduation-cap",
       "indeks-kesenjangan": "fas fa-chart-bar",
+      "rencana-pengembangan": "fas fa-calendar-alt",
       "rencana": "fas fa-calendar-alt",
+      "pelaksanaan-pengembangan": "fas fa-tasks",
       "pelaksanaan": "fas fa-tasks",
+      "evaluasi-pengembangan": "fas fa-clipboard-check",
       "evaluasi": "fas fa-clipboard-check",
+      "retensi-talenta": "fas fa-user-shield",
+      "penempatan": "fas fa-user-tie",
+      "penempatan-talenta": "fas fa-user-tie",
+      "rencana-suksesi": "fas fa-map-signs",
+      "approval-suksesor": "fas fa-user-check",
+      "penetapan-talenta": "fas fa-user-tag",
+      "pemantauan-evaluasi": "fas fa-desktop",
       "masterdata": "fas fa-database",
       "unit-kerja": "fas fa-building",
       "jabatan": "fas fa-briefcase",
@@ -115,7 +143,14 @@ const generateBreadcrumbItems = (pathname, t) => {
       }
       
       // Paths that are parent/category only (not clickable destinations)
-      const nonClickablePaths = ['masterdata', 'pengembangan'];
+      const nonClickablePaths = [
+        'masterdata',
+        'pengembangan',
+        'pengembangan-talenta',
+        'akuisisi',
+        'penempatan',
+        'penempatan-talenta'
+      ];
       const isClickable = !nonClickablePaths.includes(path);
       
       items.push({

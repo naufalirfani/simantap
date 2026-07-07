@@ -24,6 +24,11 @@ import InputPenilaian from './pages/masterdata/InputPenilaian';
 import StandarKompetensiMSK from './pages/masterdata/StandarKompetensiMSK';
 import SyaratSuksesi from './pages/masterdata/SyaratSuksesi';
 import Settings from './pages/Settings';
+import RetensiTalenta from './pages/RetensiTalenta';
+import RencanaSuksesi from './pages/penempatan/RencanaSuksesi';
+import ApprovalSuksesor from './pages/penempatan/ApprovalSuksesor';
+import PenetapanTalenta from './pages/penempatan/PenetapanTalenta';
+import PemantauanEvaluasi from './pages/PemantauanEvaluasi';
 import SSOLogin from './pages/SSOLogin';
 import AdminLogin from './pages/AdminLogin';
 import NotFound from './pages/NotFound';
@@ -55,36 +60,65 @@ const RoleBasedRoutes = () => {
       <main className="flex-1 overflow-auto w-full lg:w-auto">
         <Routes>
           <Route path="/" element={<Dashboard />} />
-                        <Route path="/daftar-talenta" element={<DaftarTalenta />} />
-                        <Route path="/approval-pengajuan-penilaian" element={<ApprovalPengajuanPenilaian />} />
-                        <Route path="/approval-pengajuan-penilaian/:id" element={<ApprovalPengajuanPenilaianDetail />} />
-                        <Route path="/daftar-talenta/detail/:nip" element={<DetailPegawai />} />
-                        <Route path="/suksesi" element={<Suksesi />} />
-                        <Route path="/suksesi/detail/:nip" element={<DetailPegawai />} />
-                        <Route path="/pengembangan" element={<Navigate to="/pengembangan/indeks-kesenjangan" replace />} />
-                        <Route path="/pengembangan/indeks-kesenjangan" element={<Pengembangan />} />
-                        <Route path="/pengembangan/rencana" element={<Rencana />} />
-                        <Route path="/pengembangan/pelaksanaan" element={<Pelaksanaan />} />
-                        <Route path="/pengembangan/evaluasi" element={<Evaluasi />} />
-                        <Route path="/masterdata/unit-kerja" element={<UnitKerja />} />
-                        <Route path="/masterdata/jabatan" element={<Jabatan />} />
-                        <Route path="/masterdata/pegawai" element={<Pegawai />} />
-                        <Route path="/masterdata/indikator" element={<Indikator />} />
-                        <Route path="/masterdata/instrumen" element={<Instrumen />} />
-                        <Route path="/masterdata/kotak-interval" element={<KotakInterval />} />
-                        <Route path="/masterdata/penilaian-pegawai" element={<PenilaianPegawai />} />
-                        <Route path="/masterdata/penilaian-pegawai/:nip/detail" element={<DetailPegawai />} />
-                        <Route path="/masterdata/penilaian-pegawai/input-penilaian/:nip" element={<InputPenilaian />} />
-                        <Route path="/masterdata/penilaian-pegawai/input-penilaian/:nip/detail" element={<DetailPegawai />} />
-                        <Route path="/masterdata/jabatan/:jabatanId/syarat-suksesi" element={<SyaratSuksesi />} />
-                        <Route path="/pengaturan" element={<Settings />} />
-                        <Route path="/masterdata/standar-kompetensi-msk" element={<StandarKompetensiMSK />} />
-                        <Route path="/detail-pegawai/:nip" element={<DetailPegawai />} />
-                        {/* Catch-all route for unknown paths */}
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </main>
-                  </div>
+          
+          {/* Akuisisi Talenta */}
+          <Route path="/daftar-talenta" element={<DaftarTalenta />} />
+          <Route path="/akuisisi/daftar-talenta" element={<DaftarTalenta />} />
+          <Route path="/daftar-talenta/detail/:nip" element={<DetailPegawai />} />
+          <Route path="/akuisisi/daftar-talenta/detail/:nip" element={<DetailPegawai />} />
+          <Route path="/suksesi" element={<Suksesi />} />
+          <Route path="/akuisisi/kelompok-rencana-suksesi" element={<Suksesi />} />
+          <Route path="/suksesi/detail/:nip" element={<DetailPegawai />} />
+          <Route path="/akuisisi/kelompok-rencana-suksesi/detail/:nip" element={<DetailPegawai />} />
+          
+          {/* Pengembangan Talenta */}
+          <Route path="/pengembangan" element={<Navigate to="/pengembangan/indeks-kesenjangan" replace />} />
+          <Route path="/pengembangan/indeks-kesenjangan" element={<Pengembangan />} />
+          <Route path="/pengembangan-talenta/indeks-kesenjangan" element={<Pengembangan />} />
+          <Route path="/pengembangan/rencana" element={<Rencana />} />
+          <Route path="/pengembangan-talenta/rencana-pengembangan" element={<Rencana />} />
+          <Route path="/pengembangan/pelaksanaan" element={<Pelaksanaan />} />
+          <Route path="/pengembangan-talenta/pelaksanaan-pengembangan" element={<Pelaksanaan />} />
+          <Route path="/pengembangan/evaluasi" element={<Evaluasi />} />
+          <Route path="/pengembangan-talenta/evaluasi-pengembangan" element={<Evaluasi />} />
+          
+          {/* Retensi Talenta */}
+          <Route path="/retensi-talenta" element={<RetensiTalenta />} />
+          
+          {/* Penempatan Talenta */}
+          <Route path="/penempatan/rencana-suksesi" element={<RencanaSuksesi />} />
+          <Route path="/penempatan/approval-suksesor" element={<ApprovalSuksesor />} />
+          <Route path="/penempatan/penetapan-talenta" element={<PenetapanTalenta />} />
+          
+          {/* Pemantauan dan Evaluasi */}
+          <Route path="/pemantauan-evaluasi" element={<PemantauanEvaluasi />} />
+
+          {/* Pengaturan & Approval */}
+          <Route path="/approval-pengajuan" element={<ApprovalPengajuanPenilaian />} />
+          <Route path="/approval-pengajuan/:id" element={<ApprovalPengajuanPenilaianDetail />} />
+          <Route path="/approval-pengajuan-penilaian" element={<ApprovalPengajuanPenilaian />} />
+          <Route path="/approval-pengajuan-penilaian/:id" element={<ApprovalPengajuanPenilaianDetail />} />
+          
+          {/* Masterdata */}
+          <Route path="/masterdata/unit-kerja" element={<UnitKerja />} />
+          <Route path="/masterdata/jabatan" element={<Jabatan />} />
+          <Route path="/masterdata/pegawai" element={<Pegawai />} />
+          <Route path="/masterdata/indikator" element={<Indikator />} />
+          <Route path="/masterdata/instrumen" element={<Instrumen />} />
+          <Route path="/masterdata/kotak-interval" element={<KotakInterval />} />
+          <Route path="/masterdata/penilaian-pegawai" element={<PenilaianPegawai />} />
+          <Route path="/masterdata/penilaian-pegawai/:nip/detail" element={<DetailPegawai />} />
+          <Route path="/masterdata/penilaian-pegawai/input-penilaian/:nip" element={<InputPenilaian />} />
+          <Route path="/masterdata/penilaian-pegawai/input-penilaian/:nip/detail" element={<DetailPegawai />} />
+          <Route path="/masterdata/jabatan/:jabatanId/syarat-suksesi" element={<SyaratSuksesi />} />
+          <Route path="/masterdata/standar-kompetensi-msk" element={<StandarKompetensiMSK />} />
+
+          <Route path="/pengaturan" element={<Settings />} />
+          <Route path="/detail-pegawai/:nip" element={<DetailPegawai />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+    </div>
   );
 };
 
