@@ -261,9 +261,8 @@ const Sidebar = () => {
       className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-teal-500 hover:bg-teal-600 text-white rounded-lg shadow-lg transition-all duration-300 cursor-pointer"
     >
       <i
-        className={`${
-          isMobileMenuOpen ? "fas fa-times" : "fas fa-bars"
-        } text-2xl`}
+        className={`${isMobileMenuOpen ? "fas fa-times" : "fas fa-bars"
+          } text-2xl`}
       ></i>
     </button>
   );
@@ -281,9 +280,8 @@ const Sidebar = () => {
       )}
 
       <div
-        className={`${
-          sidebarExpanded ? "w-90" : "w-20"
-        } transition-all duration-500 ease-in-out flex flex-col h-screen shadow-lg overflow-x-hidden bg-white text-gray-700
+        className={`${sidebarExpanded ? "w-90" : "w-20"
+          } transition-all duration-500 ease-in-out flex flex-col h-screen shadow-lg overflow-x-hidden bg-white text-gray-700
         ${isMobile ? "fixed left-0 top-0 z-40" : "sticky top-0"}
         ${isMobile && !isMobileMenuOpen ? "-translate-x-full" : "translate-x-0"}
         `}
@@ -320,9 +318,8 @@ const Sidebar = () => {
           {/* Toggle Button */}
           <button
             onClick={() => setSidebarExpanded(!sidebarExpanded)}
-            className={`w-full ${
-              sidebarExpanded ? "" : "px-2"
-            } py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all duration-300 flex items-center justify-center group cursor-pointer`}
+            className={`w-full ${sidebarExpanded ? "" : "px-2"
+              } py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all duration-300 flex items-center justify-center group cursor-pointer`}
           >
             {sidebarExpanded ? (
               <>
@@ -344,11 +341,10 @@ const Sidebar = () => {
                 canViewDetail && navigate(`/detail-pegawai/${user?.nip}`)
               }
               title={canViewDetail ? "Lihat detail pegawai" : "Profil pengguna"}
-              className={`w-full text-left bg-gray-100 rounded-lg p-3 transition-all duration-300 ${
-                canViewDetail
-                  ? "hover:bg-blue-50 cursor-pointer"
-                  : "cursor-default"
-              }`}
+              className={`w-full text-left bg-gray-100 rounded-lg p-3 transition-all duration-300 ${canViewDetail
+                ? "hover:bg-blue-50 cursor-pointer"
+                : "cursor-default"
+                }`}
               disabled={!canViewDetail}
             >
               <div className="flex items-center space-x-3">
@@ -398,11 +394,10 @@ const Sidebar = () => {
                 canViewDetail && navigate(`/detail-pegawai/${user?.nip}`)
               }
               title={canViewDetail ? "Lihat detail pegawai" : "Profil pengguna"}
-              className={`relative flex items-center justify-center w-full bg-transparent rounded-md p-2 transition-colors duration-200 ${
-                canViewDetail
-                  ? "hover:bg-blue-50 cursor-pointer"
-                  : "cursor-default"
-              }`}
+              className={`relative flex items-center justify-center w-full bg-transparent rounded-md p-2 transition-colors duration-200 ${canViewDetail
+                ? "hover:bg-blue-50 cursor-pointer"
+                : "cursor-default"
+                }`}
               disabled={!canViewDetail}
             >
               <div className="flex items-center justify-center">
@@ -450,26 +445,24 @@ const Sidebar = () => {
                           <>
                             <button
                               onClick={() => item.toggleOpen()}
-                              className="w-full flex items-center cursor-pointer px-4 py-3 hover:bg-teal-500 hover:text-white group rounded-lg text-gray-700 font-medium"
+                              className="w-full flex items-center cursor-pointer px-4 py-3 hover:bg-teal-500 hover:text-white group rounded-lg text-gray-700"
                             >
                               <i
                                 className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform text-teal-500 group-hover:text-white`}
                               ></i>
-                              <span className="ml-3 flex-1 text-left text-sm">
+                              <span className="ml-3 flex-1 text-left">
                                 {item.label}
                               </span>
                               <i
-                                className={`fas fa-chevron-right text-teal-500 group-hover:text-white transition-all duration-300 ${
-                                  item.isOpen ? "rotate-90" : ""
-                                }`}
+                                className={`fas fa-chevron-right text-teal-500 group-hover:text-white transition-all duration-300 ${item.isOpen ? "rotate-90" : ""
+                                  }`}
                               ></i>
                             </button>
                             <div
-                              className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                                item.isOpen
-                                  ? "max-h-[500px] opacity-100"
-                                  : "max-h-0 opacity-0"
-                              }`}
+                              className={`overflow-hidden transition-all duration-500 ease-in-out ${item.isOpen
+                                ? "max-h-[500px] opacity-100"
+                                : "max-h-0 opacity-0"
+                                }`}
                             >
                               <div className="space-y-1 py-1">
                                 {item.children.map((child) => {
@@ -485,16 +478,15 @@ const Sidebar = () => {
                                       onClick={() => setPendingPath(child.path)}
                                     >
                                       <div
-                                        className={`flex items-center px-4 py-3 pl-12 hover:bg-teal-500 hover:text-white group rounded-lg mx-2 ${
-                                          isActive
-                                            ? "bg-teal-500 text-white"
-                                            : "text-gray-700"
-                                        }`}
+                                        className={`flex items-center px-4 py-3 pl-12 hover:bg-teal-500 hover:text-white group rounded-lg mx-2 ${isActive
+                                          ? "bg-teal-500 text-white"
+                                          : "text-gray-700"
+                                          }`}
                                       >
                                         <i
                                           className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
                                         ></i>
-                                        <span className="ml-3 text-sm">{child.label}</span>
+                                        <span className="ml-3">{child.label}</span>
                                       </div>
                                     </NavLink>
                                   );
@@ -508,9 +500,8 @@ const Sidebar = () => {
                             <button
                               onClick={() => item.toggleOpen()}
                               title={item.label}
-                              className={`w-full flex items-center cursor-pointer px-4 py-3 justify-center hover:bg-teal-500 hover:text-white transition-all duration-200 rounded-lg relative group/tooltip text-gray-700 ${
-                                item.isOpen ? "bg-gray-100" : ""
-                              }`}
+                              className={`w-full flex items-center cursor-pointer px-4 py-3 justify-center hover:bg-teal-500 hover:text-white transition-all duration-200 rounded-lg relative group/tooltip text-gray-700 ${item.isOpen ? "bg-gray-100" : ""
+                                }`}
                             >
                               <i
                                 className={`${item.icon} text-xl flex-shrink-0 transition-transform text-teal-500 group-hover:text-white`}
@@ -522,11 +513,10 @@ const Sidebar = () => {
                             </button>
                             {/* Child icons vertically below parent */}
                             <div
-                              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                item.isOpen
-                                  ? "max-h-[500px] opacity-100"
-                                  : "max-h-0 opacity-0"
-                              }`}
+                              className={`overflow-hidden transition-all duration-300 ease-in-out ${item.isOpen
+                                ? "max-h-[500px] opacity-100"
+                                : "max-h-0 opacity-0"
+                                }`}
                             >
                               <div className="bg-gray-50 space-y-1 py-1">
                                 {item.children.map((child) => {
@@ -546,11 +536,10 @@ const Sidebar = () => {
                                       title={child.label}
                                     >
                                       <div
-                                        className={`flex items-center justify-center px-4 py-3 hover:bg-teal-500 hover:text-white group relative group/tooltip ${
-                                          isActive
-                                            ? "bg-teal-500 text-white"
-                                            : "text-gray-700"
-                                        }`}
+                                        className={`flex items-center justify-center px-4 py-3 hover:bg-teal-500 hover:text-white group relative group/tooltip ${isActive
+                                          ? "bg-teal-500 text-white"
+                                          : "text-gray-700"
+                                          }`}
                                       >
                                         <i
                                           className={`${child.icon} flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
@@ -582,21 +571,19 @@ const Sidebar = () => {
                               currentPath.startsWith(item.path + "/"));
                           return (
                             <div
-                              className={`flex items-center relative group/tooltip rounded-lg ${
-                                sidebarExpanded
-                                  ? "px-4 py-3"
-                                  : "px-4 py-3 justify-center"
-                              } hover:bg-teal-500 hover:text-white group ${
-                                isActive
+                              className={`flex items-center relative group/tooltip rounded-lg ${sidebarExpanded
+                                ? "px-4 py-3"
+                                : "px-4 py-3 justify-center"
+                                } hover:bg-teal-500 hover:text-white group ${isActive
                                   ? "bg-teal-500 text-white"
                                   : "text-gray-700"
-                              }`}
+                                }`}
                             >
                               <i
                                 className={`${item.icon} text-xl flex-shrink-0 group-hover:scale-110 transition-transform ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
                               ></i>
                               {sidebarExpanded && (
-                                <span className="ml-3 flex-1 text-sm font-medium">{item.label}</span>
+                                <span className="ml-3 flex-1">{item.label}</span>
                               )}
                               {sidebarExpanded && item.badge > 0 && (
                                 <span
@@ -645,9 +632,8 @@ const Sidebar = () => {
               <button
                 onClick={logout}
                 title={!sidebarExpanded ? "Keluar" : ""}
-                className={`w-full flex items-center relative group/tooltip ${
-                  sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
-                } mb-4 bg-red-600 hover:bg-red-700 rounded-lg transition-all duration-200 group cursor-pointer text-white`}
+                className={`w-full flex items-center relative group/tooltip ${sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
+                  } mb-4 bg-red-600 hover:bg-red-700 rounded-lg transition-all duration-200 group cursor-pointer text-white`}
               >
                 <i className="fas fa-sign-out-alt text-xl flex-shrink-0 group-hover:scale-110 transition-transform text-white"></i>
                 {sidebarExpanded && (
@@ -672,13 +658,11 @@ const Sidebar = () => {
                     (pendingPath || location.pathname) === "/pengaturan";
                   return (
                     <div
-                      className={`flex items-center relative group/tooltip ${
-                        sidebarExpanded
-                          ? "px-4 py-3"
-                          : "px-4 py-3 justify-center"
-                      } rounded-lg hover:bg-teal-500 hover:text-white group ${
-                        isActive ? "bg-teal-500 text-white" : "text-gray-700"
-                      }`}
+                      className={`flex items-center relative group/tooltip ${sidebarExpanded
+                        ? "px-4 py-3"
+                        : "px-4 py-3 justify-center"
+                        } rounded-lg hover:bg-teal-500 hover:text-white group ${isActive ? "bg-teal-500 text-white" : "text-gray-700"
+                        }`}
                     >
                       <i
                         className={`fas fa-cog text-xl flex-shrink-0 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300 ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
@@ -706,9 +690,8 @@ const Sidebar = () => {
             <button
               onClick={logout}
               title={!sidebarExpanded ? "Keluar" : ""}
-              className={`w-full flex items-center relative group/tooltip ${
-                sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
-              } mb-3 bg-red-600 hover:bg-red-700 rounded-lg transition-all duration-200 group cursor-pointer text-white`}
+              className={`w-full flex items-center relative group/tooltip ${sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
+                } mb-3 bg-red-600 hover:bg-red-700 rounded-lg transition-all duration-200 group cursor-pointer text-white`}
             >
               <i className="fas fa-sign-out-alt text-xl flex-shrink-0 group-hover:scale-110 transition-transform text-white"></i>
               {sidebarExpanded && (
@@ -731,11 +714,9 @@ const Sidebar = () => {
                   (pendingPath || location.pathname) === "/pengaturan";
                 return (
                   <div
-                    className={`flex items-center relative group/tooltip ${
-                      sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
-                    } rounded-lg hover:bg-teal-500 hover:text-white group ${
-                      isActive ? "bg-teal-500 text-white" : "text-gray-700"
-                    }`}
+                    className={`flex items-center relative group/tooltip ${sidebarExpanded ? "px-4 py-3" : "px-4 py-3 justify-center"
+                      } rounded-lg hover:bg-teal-500 hover:text-white group ${isActive ? "bg-teal-500 text-white" : "text-gray-700"
+                      }`}
                   >
                     <i
                       className={`fas fa-cog text-xl flex-shrink-0 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300 ${isActive ? "text-white" : "text-teal-500"} group-hover:text-white`}
