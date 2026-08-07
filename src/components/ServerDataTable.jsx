@@ -11,6 +11,7 @@ const ServerDataTable = ({
   defaultFilters = {},
   filterConfigs = [],
   onExport,
+  withSearch = true,
 }) => {
   const { t } = useSettings();
   const [data, setData] = useState([]);
@@ -148,18 +149,23 @@ const ServerDataTable = ({
           {/* Search and Items per page row */}
           <div className="flex flex-col-reverse md:flex-row justify-between space-y-4 gap-4 md:space-y-0">
             {/* Search */}
+
             <div className="relative flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder={t("search")}
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 dark:text-white transition-all shadow-sm"
-              />
-              <i
-                className="fas fa-search absolute left-3.5 top-3 text-gray-400 dark:text-gray-500"
-                aria-hidden="true"
-              />
+              {withSearch && (
+                <>
+                  <input
+                    type="text"
+                    placeholder={t("search")}
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 dark:text-white transition-all shadow-sm"
+                  />
+                  <i
+                    className="fas fa-search absolute left-3.5 top-3 text-gray-400 dark:text-gray-500"
+                    aria-hidden="true"
+                  />
+                </>
+              )}
             </div>
 
             {/* Filter button and Items per page */}

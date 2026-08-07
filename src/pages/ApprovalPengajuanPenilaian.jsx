@@ -153,7 +153,12 @@ const ApprovalPengajuanPenilaian = () => {
         label: "Instrumen",
         render: (item) => (
           <span className="text-gray-700">
-            {(item?.instrumen?.instrumen ? item?.instrumen?.instrumen + " (Skor: " + item?.instrumen?.skor + ")" : "-")}
+            {item?.instrumen?.instrumen
+              ? item?.instrumen?.instrumen +
+                " (Skor: " +
+                item?.instrumen?.skor +
+                ")"
+              : "-"}
           </span>
         ),
       },
@@ -229,6 +234,7 @@ const ApprovalPengajuanPenilaian = () => {
           columns={columns}
           fetchData={fetchData}
           itemsPerPageOptions={[10, 25, 50, 100]}
+          withSearch={false}
           defaultFilters={{
             status: "Diajukan",
             pegawai_id: "",
