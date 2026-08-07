@@ -248,6 +248,11 @@ const Sidebar = () => {
               label: "Penilaian Pegawai",
               icon: "fas fa-star",
             },
+            {
+              path: "/masterdata/bobot-360",
+              label: "Bobot Penilaian 360",
+              icon: "fas fa-balance-scale",
+            },
           ]
         }
       ]

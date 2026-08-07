@@ -23,6 +23,7 @@ import PenilaianPegawai from './pages/masterdata/PenilaianPegawai';
 import InputPenilaian from './pages/masterdata/InputPenilaian';
 import StandarKompetensiMSK from './pages/masterdata/StandarKompetensiMSK';
 import SyaratSuksesi from './pages/masterdata/SyaratSuksesi';
+import BobotPenilaian360 from './pages/masterdata/BobotPenilaian360';
 import Settings from './pages/Settings';
 import RetensiTalenta from './pages/RetensiTalenta';
 import RencanaSuksesi from './pages/penempatan/RencanaSuksesi';
@@ -112,6 +113,7 @@ const RoleBasedRoutes = () => {
           <Route path="/masterdata/penilaian-pegawai/input-penilaian/:nip/detail" element={<DetailPegawai />} />
           <Route path="/masterdata/jabatan/:jabatanId/syarat-suksesi" element={<SyaratSuksesi />} />
           <Route path="/masterdata/standar-kompetensi-msk" element={<StandarKompetensiMSK />} />
+          <Route path="/masterdata/bobot-360" element={<BobotPenilaian360 />} />
 
           <Route path="/pengaturan" element={<Settings />} />
           <Route path="/detail-pegawai/:nip" element={<DetailPegawai />} />

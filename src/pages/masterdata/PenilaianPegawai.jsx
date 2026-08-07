@@ -21,81 +21,7 @@ import BulkUploadModal from "../../components/BulkUploadModal";
 import PenilaianDetailModal from "../../components/PenilaianDetailModal";
 import AsesmenAttachmentModal from "../../components/AsesmenAttachmentModal";
 import { PRIMARY_COLORS, BG_COLORS, DARK_COLORS } from "../../config/colors";
-
-// Poll sync job progress, resolves when queue is empty or user closes the dialog
-const pollSyncProgress = (nips = null) =>
-  new Promise((resolve) => {
-    let timerId = null;
-    let settled = false;
-
-    const finish = (completed, data) => {
-      if (settled) return;
-      settled = true;
-      clearInterval(timerId);
-      resolve({ completed, data });
-    };
-
-    const tick = async () => {
-      try {
-        const status = await fetchSyncPenilaianStatus(nips);
-        const total = status.session_total_nips ?? status.total ?? 0;
-        const synced = status.session_synced ?? 0;
-        const pending = status.session_pending ?? null;
-        const pct = total > 0 ? Math.round((synced / total) * 100) : 0;
-
-        const bar = document.getElementById("swal-sync-bar");
-        const stats = document.getElementById("swal-sync-stats");
-        const queue = document.getElementById("swal-sync-queue");
-        if (bar) bar.style.width = `${pct}%`;
-        if (stats)
-          stats.textContent = `${synced} dari ${total} pegawai terproses (${pct}%)`;
-        if (queue) {
-          const parts = [];
-          if (status.queue_pending !== null && status.queue_pending !== undefined)
-            parts.push(`Antrian tersisa: ${status.queue_pending}`);
-          if (status.queue_completed !== null && status.queue_completed !== undefined)
-            parts.push(`Batch selesai: ${status.queue_completed}`);
-          if (pending !== null)
-            parts.push(`Pending sesi: ${pending}`);
-          queue.textContent = parts.join(" · ");
-        }
-        if (status.queue_pending !== null && status.queue_pending !== undefined && status.queue_pending === 0
-          && status.session_pending !== null && status.session_pending !== undefined && status.session_pending === 0) {
-          finish(true, status);
-          Swal.close();
-        }
-      } catch (_) {
-        /* keep polling */
-      }
-    };
-
-    Swal.fire({
-      title: "Sinkronisasi Berjalan...",
-      html: `
-        <p style="font-size:14px;color:#4b5563;margin-bottom:12px;">
-          Job sinkronisasi penilaian sedang diproses di latar belakang.
-        </p>
-        <div style="background:#e5e7eb;border-radius:9999px;height:10px;overflow:hidden;margin-bottom:10px;">
-          <div id="swal-sync-bar" style="height:100%;background:#3b82f6;border-radius:9999px;width:0%;transition:width 0.4s;"></div>
-        </div>
-        <div id="swal-sync-stats" style="font-size:13px;font-weight:600;color:#374151;margin-bottom:4px;">Memuat status...</div>
-        <div id="swal-sync-queue" style="font-size:12px;color:#6b7280;"></div>
-      `,
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      showConfirmButton: false,
-      showCancelButton: true,
-      cancelButtonText: "Tutup (lanjutkan di latar)",
-      cancelButtonColor: "#6b7280",
-      didOpen: () => {
-        tick();
-        timerId = setInterval(tick, 2500);
-      },
-      willClose: () => {
-        finish(false, null);
-      },
-    });
-  });
+import { pollSyncProgress } from "../../utils/syncUtils";
 
 const PenilaianPegawai = () => {
   const { t } = useSettings();
@@ -168,10 +94,10 @@ const PenilaianPegawai = () => {
         "Jabatan Pimpinan Tinggi Pratama",
         "Jabatan Administrator",
         "Jabatan Pengawas",
-        "Jabatan Fungsional Utama",
-        "Jabatan Fungsional Madya",
-        "Jabatan Fungsional Muda",
-        "Jabatan Fungsional Pertama",
+        "Jabatan Fungsional Ahli Utama",
+        "Jabatan Fungsional Ahli Madya",
+        "Jabatan Fungsional Ahli Muda",
+        "Jabatan Fungsional Ahli Pertama",
         "Jabatan Fungsional Penyelia",
         "Jabatan Fungsional Mahir",
         "Jabatan Fungsional Terampil",
@@ -314,12 +240,15 @@ const PenilaianPegawai = () => {
       setIsSyncingPenilaian(true);
       await syncPenilaian(formValues.nips);
       // Job dispatched — poll progress
-      const { completed } = await pollSyncProgress(formValues.nips);
+      const { completed, isError } = await pollSyncProgress(formValues.nips);
       setRefreshKey((k) => k + 1);
       const nipInfo =
         formValues.syncType === "specific"
           ? ` untuk ${formValues.nips.length} pegawai`
           : "";
+      if (isError) {
+        return;
+      }
       if (completed) {
         Swal.fire({
           icon: "success",
@@ -368,8 +297,11 @@ const PenilaianPegawai = () => {
     try {
       await syncPenilaian([nip]);
       // Job dispatched — poll progress
-      const { completed } = await pollSyncProgress([nip]);
+      const { completed, isError } = await pollSyncProgress([nip]);
       setRefreshKey((k) => k + 1);
+      if (isError) {
+        return;
+      }
       if (completed) {
         Swal.fire({
           icon: "success",

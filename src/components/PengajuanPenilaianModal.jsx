@@ -26,6 +26,8 @@ const PengajuanPenilaianModal = ({
   const [selectedSubindikator, setSelectedSubindikator] = useState(null);
   const [selectedInstrumen, setSelectedInstrumen] = useState(null);
   const [tanggalSK, setTanggalSK] = useState("");
+  const [masaBerlakuMulai, setMasaBerlakuMulai] = useState("");
+  const [masaBerlakuSelesai, setMasaBerlakuSelesai] = useState("");
   const [buktiDukung, setBuktiDukung] = useState(null);
   const [buktiDukungName, setBuktiDukungName] = useState("");
   const [catatan, setCatatan] = useState("");
@@ -135,6 +137,24 @@ const PengajuanPenilaianModal = ({
       return false;
     }
 
+    if (!masaBerlakuMulai || !masaBerlakuSelesai) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validasi",
+        text: "Silakan lengkapi masa berlaku (tanggal mulai dan selesai)",
+      });
+      return false;
+    }
+
+    if (masaBerlakuSelesai < masaBerlakuMulai) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validasi",
+        text: "Tanggal selesai masa berlaku tidak boleh lebih awal dari tanggal mulai",
+      });
+      return false;
+    }
+
     if (!buktiDukung) {
       Swal.fire({
         icon: "warning",
@@ -158,6 +178,8 @@ const PengajuanPenilaianModal = ({
         subindikator_id: selectedSubindikator.id,
         instrumen_id: selectedInstrumen.id,
         tanggal_sk: tanggalSK,
+        masa_berlaku_mulai: masaBerlakuMulai,
+        masa_berlaku_selesai: masaBerlakuSelesai,
         file: buktiDukung,
         catatan: catatan || null,
       });
@@ -194,6 +216,8 @@ const PengajuanPenilaianModal = ({
     setSelectedSubindikator(null);
     setSelectedInstrumen(null);
     setTanggalSK("");
+    setMasaBerlakuMulai("");
+    setMasaBerlakuSelesai("");
     setBuktiDukung(null);
     setBuktiDukungName("");
     setCatatan("");
@@ -326,6 +350,35 @@ const PengajuanPenilaianModal = ({
                   onChange={(e) => setTanggalSK(e.target.value)}
                   className="w-full cursor-pointer px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
+              </div>
+
+              {/* Masa Berlaku */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Masa Berlaku <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-center">
+                  <input
+                    type="date"
+                    value={masaBerlakuMulai}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    onFocus={(e) => e.currentTarget.showPicker?.()}
+                    onChange={(e) => setMasaBerlakuMulai(e.target.value)}
+                    className="w-full cursor-pointer px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                  <span className="text-center text-sm text-gray-500 dark:text-gray-400">
+                    s/d
+                  </span>
+                  <input
+                    type="date"
+                    value={masaBerlakuSelesai}
+                    min={masaBerlakuMulai || undefined}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    onFocus={(e) => e.currentTarget.showPicker?.()}
+                    onChange={(e) => setMasaBerlakuSelesai(e.target.value)}
+                    className="w-full cursor-pointer px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
               </div>
 
               {/* Bukti Dukung */}

@@ -67,10 +67,10 @@ const DaftarTalenta = () => {
         "Jabatan Pimpinan Tinggi Pratama",
         "Jabatan Administrator",
         "Jabatan Pengawas",
-        "Jabatan Fungsional Utama",
-        "Jabatan Fungsional Madya",
-        "Jabatan Fungsional Muda",
-        "Jabatan Fungsional Pertama",
+        "Jabatan Fungsional Ahli Utama",
+        "Jabatan Fungsional Ahli Madya",
+        "Jabatan Fungsional Ahli Muda",
+        "Jabatan Fungsional Ahli Pertama",
         "Jabatan Fungsional Penyelia",
         "Jabatan Fungsional Mahir",
         "Jabatan Fungsional Terampil",
@@ -438,8 +438,8 @@ const DaftarTalenta = () => {
           onExport={handleExport}
           itemsPerPageOptions={[10, 25, 50, 100]}
           defaultFilters={{
-            unit_organisasi: "",
-            jabatan: "",
+            unit_organisasi_name: "",
+            jabatan_name: "",
             filter: "",
             golongan: "",
           }}

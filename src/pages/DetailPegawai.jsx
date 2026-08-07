@@ -53,93 +53,7 @@ ChartJS.register(
 ChartJS.defaults.font.family =
   'Poppins, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
 
-const pollSyncProgress = (nips = null) =>
-  new Promise((resolve) => {
-    let timerId = null;
-    let settled = false;
-
-    const finish = (completed, data) => {
-      if (settled) return;
-      settled = true;
-      clearInterval(timerId);
-      resolve({ completed, data });
-    };
-
-    const tick = async () => {
-      try {
-        const status = await fetchSyncPenilaianStatus(nips);
-        const total = status.session_total_nips ?? status.total ?? 0;
-        const synced = status.session_synced ?? 0;
-        const pending = status.session_pending ?? null;
-        const pct = total > 0 ? Math.round((synced / total) * 100) : 0;
-
-        const bar = document.getElementById("swal-sync-bar");
-        const stats = document.getElementById("swal-sync-stats");
-        const queue = document.getElementById("swal-sync-queue");
-        if (bar) bar.style.width = `${pct}%`;
-        if (stats)
-          stats.textContent = `${synced} dari ${total} pegawai terproses (${pct}%)`;
-        if (queue) {
-          const parts = [];
-          if (
-            status.queue_pending !== null &&
-            status.queue_pending !== undefined
-          ) {
-            parts.push(`Antrian tersisa: ${status.queue_pending}`);
-          }
-          if (
-            status.queue_completed !== null &&
-            status.queue_completed !== undefined
-          ) {
-            parts.push(`Batch selesai: ${status.queue_completed}`);
-          }
-          if (pending !== null) parts.push(`Pending sesi: ${pending}`);
-          queue.textContent = parts.join(" · ");
-        }
-        if (
-          status.queue_pending !== null &&
-          status.queue_pending !== undefined &&
-          status.queue_pending === 0 &&
-          status.session_pending !== null &&
-          status.session_pending !== undefined &&
-          status.session_pending === 0
-        ) {
-          finish(true, status);
-          Swal.close();
-          window.location.reload();
-        }
-      } catch (_) {
-        /* keep polling */
-      }
-    };
-
-    Swal.fire({
-      title: "Sinkronisasi Berjalan...",
-      html: `
-        <p style="font-size:14px;color:#4b5563;margin-bottom:12px;">
-          Job sinkronisasi penilaian sedang diproses di latar belakang.
-        </p>
-        <div style="background:#e5e7eb;border-radius:9999px;height:10px;overflow:hidden;margin-bottom:10px;">
-          <div id="swal-sync-bar" style="height:100%;background:#3b82f6;border-radius:9999px;width:0%;transition:width 0.4s;"></div>
-        </div>
-        <div id="swal-sync-stats" style="font-size:13px;font-weight:600;color:#374151;margin-bottom:4px;">Memuat status...</div>
-        <div id="swal-sync-queue" style="font-size:12px;color:#6b7280;"></div>
-      `,
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      showConfirmButton: false,
-      showCancelButton: true,
-      cancelButtonText: "Tutup (lanjutkan di latar)",
-      cancelButtonColor: "#6b7280",
-      didOpen: () => {
-        tick();
-        timerId = setInterval(tick, 2500);
-      },
-      willClose: () => {
-        finish(false, null);
-      },
-    });
-  });
+import { pollSyncProgress } from "../utils/syncUtils";
 
 const DetailPegawai = () => {
   const { nip } = useParams();
@@ -1150,8 +1064,12 @@ const DetailPegawai = () => {
     try {
       setIsSyncingPenilaian(true);
       await syncPenilaian([nip]);
-      const { completed } = await pollSyncProgress([nip]);
+      const { completed, isError } = await pollSyncProgress([nip]);
       await fetchDetailPegawai();
+
+      if (isError) {
+        return;
+      }
 
       if (completed) {
         Swal.fire({

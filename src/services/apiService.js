@@ -470,6 +470,9 @@ fetchPengembanganStatistik = async (params = {}) => {
  */
 export const fetchPegawaiList = async ({
   filter,
+  unit_organisasi_name,
+  jabatan_name,
+  golongan,
   kuadran,
   page = 1,
   per_page = 20,
@@ -491,6 +494,9 @@ export const fetchPegawaiList = async ({
     if (page) params.append("page", page);
     if (per_page) params.append("per_page", per_page);
     if (q) params.append("q", q);
+    if (unit_organisasi_name) params.append("unit_organisasi_name", unit_organisasi_name);
+    if (jabatan_name) params.append("jabatan_name", jabatan_name);
+    if (golongan) params.append("golongan", golongan);
 
     const url = `${base}/api/pegawai${
       params.toString() ? "?" + params.toString() : ""
@@ -1845,3 +1851,55 @@ export const getPengajuanPenilaianPreviewUrl = (pengajuan) =>
         ? `${API_BASE_URL}/api/pengajuan-penilaians/${pengajuan.id}/preview`
         : ""),
   );
+
+/**
+ * Fetch bobot 360 settings
+ */
+export const fetchBobot360 = async () => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(`${API_BASE_URL}/api/settings/bobot-360`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch bobot 360 settings");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("fetchBobot360 error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Store bobot 360 settings
+ */
+export const storeBobot360 = async (data) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(`${API_BASE_URL}/api/settings/bobot-360`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to save bobot 360 settings");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("storeBobot360 error:", error);
+    throw error;
+  }
+};
