@@ -35,6 +35,7 @@ import {
   computeQuadrantDynamic,
 } from "../services/kotakConfigService";
 import Swal from "sweetalert2";
+import ExcelJS from "exceljs";
 
 // Register Chart.js components
 ChartJS.register(
@@ -143,14 +144,10 @@ const Dashboard = () => {
   const pieContainerProps = isMobile
     ? { width: "100%", aspect: 1 }
     : { width: "100%", height: 300 };
-  const scatterContainerProps = isMobile
-    ? { width: "100%", aspect: 1 }
-    : { width: "100%", height: 600 };
 
   // Statistik dari API (fallback ke data dummy saat belum ada)
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [statsError, setStatsError] = useState(null);
   const [isSyncingStatistik, setIsSyncingStatistik] = useState(false);
 
   const employeeStats = {
@@ -166,14 +163,13 @@ const Dashboard = () => {
 
     const run = async () => {
       setLoadingStats(true);
-      setStatsError(null);
       try {
         const data = await fetchStatistik();
         if (!mounted) return;
         setStats(data || null);
       } catch (err) {
         if (!mounted) return;
-        setStatsError(err.message || "Fetch error");
+        console.error("fetchStatistik error:", err);
       } finally {
         if (mounted) setLoadingStats(false);
       }
@@ -402,8 +398,6 @@ const Dashboard = () => {
   const [selectedUnitKerja, setSelectedUnitKerja] = useState([]);
   const [selectedJenisJabatan, setSelectedJenisJabatan] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [unitKerjaList, setUnitKerjaList] = useState([]);
-  const [unitTree, setUnitTree] = useState([]);
   const [unitOptions, setUnitOptions] = useState([]);
   const [jenisJabatanList, setJenisJabatanList] = useState([]);
   const unitMapsRef = useRef({ nameToId: {}, parentMap: {} });
@@ -445,7 +439,7 @@ const Dashboard = () => {
               sourceData = (resAll.data || []).map((it) => ({
                 name: (it.nama || it.name || "")
                   .toString()
-                  .replace(/^\-\s*/, ""),
+                  .replace(/^-\s*/, ""),
                 nip: it.nip || it.NIP || "",
                 jabatan: it.jabatan || it.nama_jabatan || "",
                 unitKerja: it.unit_kerja || it.unitKerja || "",
@@ -461,7 +455,7 @@ const Dashboard = () => {
               }));
               if (sourceData && sourceData.length > 0)
                 setQuadrantData(sourceData);
-            } catch (e) {
+            } catch {
               sourceData = [];
             }
           }
@@ -574,7 +568,7 @@ const Dashboard = () => {
         // Fallback to server-side fetch for other filters
         const res = await fetchPegawaiList({ filter, page, per_page, q });
         const mapped = (res.data || []).map((it) => ({
-          name: (it.nama || it.name || "").toString().replace(/^\-\s*/, ""),
+          name: (it.nama || it.name || "").toString().replace(/^-\s*/, ""),
           nip: it.nip || it.NIP || "",
           jabatan: it.jabatan || it.nama_jabatan || "",
           unitKerja: it.unit_kerja || it.unitKerja || "",
@@ -637,7 +631,7 @@ const Dashboard = () => {
       .then(async (res) => {
         if (!mounted) return;
         const mapped = (res.data || []).map((it) => ({
-          name: (it.nama || it.name || "").toString().replace(/^\-\s*/, ""),
+          name: (it.nama || it.name || "").toString().replace(/^-\s*/, ""),
           nip: it.nip || it.NIP || "",
           jabatan: it.jabatan || it.nama_jabatan || "",
           unitKerja: it.unit_kerja || it.unitKerja || "",
@@ -650,7 +644,6 @@ const Dashboard = () => {
         // Also fetch unit tree to build unit options + maps, then augment employees with unitId
         try {
           const tree = await fetchPetaJabatanTree();
-          setUnitTree(tree || []);
           const flat = [];
           const nameToId = {};
           const parentMap = {};
@@ -670,8 +663,6 @@ const Dashboard = () => {
           setUnitOptions(
             flat.map((n) => ({ value: n.id, label: n.unit_kerja })),
           );
-          // keep backwards-compatible list of names as well (if needed elsewhere)
-          setUnitKerjaList(flat.map((n) => n.unit_kerja).sort());
 
           const mappedWithUnitId = mapped.map((m) => ({
             ...m,
@@ -821,6 +812,597 @@ const Dashboard = () => {
     acc[q] = (acc[q] || 0) + 1;
     return acc;
   }, {});
+
+  // Fungsi untuk ekspor rekapitulasi pegawai per kotak berdasarkan jenis jabatan ke Excel
+  const handleExportExcel = async () => {
+    try {
+      if (!computedQuadrantData || computedQuadrantData.length === 0) {
+        Swal.fire({
+          icon: "info",
+          title: "Tidak Ada Data",
+          text: "Tidak ada data pegawai untuk diekspor.",
+          confirmButtonColor: PRIMARY_COLORS.blue,
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: "Mempersiapkan File Excel...",
+        text: "Mohon tunggu sejenak",
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false,
+      });
+
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = "SIMANTAP";
+      workbook.created = new Date();
+
+      // --- SHEET 1: REKAPITULASI KOTAK PER JENIS JABATAN ---
+      const sheet1 = workbook.addWorksheet("Rekapitulasi Kotak & Jabatan", {
+        views: [{ showGridLines: true }],
+      });
+
+      // Daftar standar jenis jabatan sesuai urutan hirearki/tingkat
+      const standardJobTypes = jobTypeData.map((j) => j.name);
+
+      // Mapping untuk mengelompokkan pegawai: matrix[jenisJabatan][kotakId]
+      const matrix = {};
+      standardJobTypes.forEach((jt) => {
+        matrix[jt] = {
+          1: 0,
+          2: 0,
+          3: 0,
+          4: 0,
+          5: 0,
+          6: 0,
+          7: 0,
+          8: 0,
+          9: 0,
+          total: 0,
+        };
+      });
+
+      // Normalisasi string jenis jabatan
+      const getNormalizedJenisJabatan = (rawJenis) => {
+        if (!rawJenis) return "Lainnya / Belum Ditetapkan";
+        const str = String(rawJenis).trim();
+        const found = jobTypeData.find(
+          (j) =>
+            j.name.toLowerCase() === str.toLowerCase() ||
+            j.key.toLowerCase() === str.toLowerCase() ||
+            (j.filterKey && j.filterKey.toLowerCase() === str.toLowerCase()),
+        );
+        return found ? found.name : str;
+      };
+
+      // Hitung data per jenis jabatan dan per kotak
+      computedQuadrantData.forEach((emp) => {
+        const jt = getNormalizedJenisJabatan(emp.jenisJabatan);
+        const q = Number(emp.quadrant);
+        if (!matrix[jt]) {
+          matrix[jt] = {
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0,
+            5: 0,
+            6: 0,
+            7: 0,
+            8: 0,
+            9: 0,
+            total: 0,
+          };
+        }
+        if (q >= 1 && q <= 9) {
+          matrix[jt][q] += 1;
+          matrix[jt].total += 1;
+        }
+      });
+
+      // Jenis jabatan aktif yang akan ditampilkan (semua standar + jika ada non-standar yang punya data)
+      const activeJobTypes = [
+        ...standardJobTypes,
+        ...Object.keys(matrix).filter(
+          (k) => !standardJobTypes.includes(k) && matrix[k].total > 0,
+        ),
+      ];
+
+      // Atur lebar kolom
+      sheet1.columns = [
+        { width: 6 }, // A: No
+        { width: 38 }, // B: Jenis Jabatan
+        { width: 14 }, // C: Kotak 1
+        { width: 14 }, // D: Kotak 2
+        { width: 14 }, // E: Kotak 3
+        { width: 14 }, // F: Kotak 4
+        { width: 14 }, // G: Kotak 5
+        { width: 14 }, // H: Kotak 6
+        { width: 14 }, // I: Kotak 7
+        { width: 14 }, // J: Kotak 8
+        { width: 14 }, // K: Kotak 9
+        { width: 16 }, // L: Total
+      ];
+
+      // Header Judul Utama (Row 1)
+      sheet1.mergeCells("A1:L1");
+      const titleCell = sheet1.getCell("A1");
+      titleCell.value =
+        "REKAPITULASI JUMLAH PEGAWAI PER KOTAK TALENTA BERDASARKAN JENIS JABATAN";
+      titleCell.font = {
+        name: "Calibri",
+        size: 13,
+        bold: true,
+        color: { argb: "FFFFFF" },
+      };
+      titleCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "1E3A8A" },
+      };
+      titleCell.alignment = { horizontal: "center", vertical: "middle" };
+      sheet1.getRow(1).height = 32;
+
+      // Sub-judul Sistem (Row 2)
+      sheet1.mergeCells("A2:L2");
+      const subTitleCell = sheet1.getCell("A2");
+      subTitleCell.value = "SISTEM MANAJEMEN TALENTA (SIMANTAP)";
+      subTitleCell.font = {
+        name: "Calibri",
+        size: 10,
+        bold: true,
+        color: { argb: "475569" },
+      };
+      subTitleCell.alignment = { horizontal: "center", vertical: "middle" };
+      sheet1.getRow(2).height = 18;
+
+      // Filter Info & Date (Row 3)
+      sheet1.mergeCells("A3:L3");
+      const filterInfoCell = sheet1.getCell("A3");
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      let filterDesc = [];
+      if (selectedUnitKerja && selectedUnitKerja.length > 0) {
+        filterDesc.push(`Unit Kerja: ${selectedUnitKerja.length} terpilih`);
+      }
+      if (selectedJenisJabatan && selectedJenisJabatan.length > 0) {
+        filterDesc.push(
+          `Jenis Jabatan: ${selectedJenisJabatan.length} terpilih`,
+        );
+      }
+      if (searchQuery) {
+        filterDesc.push(`Pencarian: "${searchQuery}"`);
+      }
+      const filterText =
+        filterDesc.length > 0
+          ? ` (Filter: ${filterDesc.join(", ")})`
+          : " (Semua Data)";
+
+      filterInfoCell.value = `Tanggal Ekspor: ${formattedDate}${filterText} | Total Pegawai: ${computedQuadrantData.length}`;
+      filterInfoCell.font = {
+        name: "Calibri",
+        size: 9,
+        italic: true,
+        color: { argb: "64748B" },
+      };
+      filterInfoCell.alignment = { horizontal: "center", vertical: "middle" };
+      sheet1.getRow(3).height = 18;
+
+      // Baris kosong (Row 4)
+      sheet1.getRow(4).height = 10;
+
+      // Header Tabel (Row 5 & Row 6)
+      sheet1.mergeCells("A5:A6");
+      sheet1.getCell("A5").value = "No";
+
+      sheet1.mergeCells("B5:B6");
+      sheet1.getCell("B5").value = "Jenis Jabatan";
+
+      sheet1.mergeCells("C5:K5");
+      sheet1.getCell("C5").value =
+        "Jumlah Pegawai per Kotak Talenta (9-Box Matrix)";
+
+      sheet1.mergeCells("L5:L6");
+      sheet1.getCell("L5").value = "Total Pegawai";
+
+      // Row 6: Kotak 1 s/d 9 dengan kategori
+      const cfg = kotakConfig || loadKotakConfig();
+      for (let q = 1; q <= 9; q++) {
+        const colLetter = String.fromCharCode(67 + q - 1); // 67 = 'C'
+        const kObj = cfg?.kotak?.find((k) => k.id === q);
+        const catName = kObj?.kategori ? `\n(${kObj.kategori})` : "";
+        sheet1.getCell(`${colLetter}6`).value = `Kotak ${q}${catName}`;
+      }
+
+      // Styling Header (Row 5 & 6)
+      [5, 6].forEach((rIndex) => {
+        const row = sheet1.getRow(rIndex);
+        row.height = rIndex === 5 ? 24 : 28;
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          cell.font = {
+            name: "Calibri",
+            size: 10,
+            bold: true,
+            color: { argb: "FFFFFF" },
+          };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "1E293B" },
+          }; // Slate 800
+          cell.alignment = {
+            horizontal: "center",
+            vertical: "middle",
+            wrapText: true,
+          };
+          cell.border = {
+            top: { style: "thin", color: { argb: "475569" } },
+            left: { style: "thin", color: { argb: "475569" } },
+            bottom: { style: "thin", color: { argb: "475569" } },
+            right: { style: "thin", color: { argb: "475569" } },
+          };
+        });
+      });
+
+      // Data Rows (Mulai Row 7)
+      const startRow = 7;
+      activeJobTypes.forEach((jtName, idx) => {
+        const rowIndex = startRow + idx;
+        const row = sheet1.getRow(rowIndex);
+        row.height = 22;
+
+        const counts = matrix[jtName] || {
+          1: 0,
+          2: 0,
+          3: 0,
+          4: 0,
+          5: 0,
+          6: 0,
+          7: 0,
+          8: 0,
+          9: 0,
+          total: 0,
+        };
+        const isEven = idx % 2 === 0;
+        const bgFill = isEven ? "FFFFFF" : "F8FAFC";
+
+        // Col A: No
+        const cellA = row.getCell(1);
+        cellA.value = idx + 1;
+        cellA.alignment = { horizontal: "center", vertical: "middle" };
+
+        // Col B: Jenis Jabatan
+        const cellB = row.getCell(2);
+        cellB.value = jtName;
+        cellB.alignment = { horizontal: "left", vertical: "middle" };
+
+        // Col C..K: Kotak 1..9
+        for (let q = 1; q <= 9; q++) {
+          const cell = row.getCell(2 + q);
+          cell.value = counts[q];
+          cell.alignment = { horizontal: "center", vertical: "middle" };
+          cell.numFmt = "#,##0";
+        }
+
+        // Col L: Total (Formula)
+        const cellL = row.getCell(12);
+        const firstCol = "C" + rowIndex;
+        const lastCol = "K" + rowIndex;
+        cellL.value = {
+          formula: `SUM(${firstCol}:${lastCol})`,
+          result: counts.total,
+        };
+        cellL.font = { name: "Calibri", size: 10, bold: true };
+        cellL.alignment = { horizontal: "center", vertical: "middle" };
+        cellL.numFmt = "#,##0";
+
+        // Styling data row cells
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          if (!cell.font?.bold) {
+            cell.font = { name: "Calibri", size: 10 };
+          }
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: bgFill },
+          };
+          cell.border = {
+            top: { style: "thin", color: { argb: "E2E8F0" } },
+            left: { style: "thin", color: { argb: "E2E8F0" } },
+            bottom: { style: "thin", color: { argb: "E2E8F0" } },
+            right: { style: "thin", color: { argb: "E2E8F0" } },
+          };
+        });
+      });
+
+      // Total Row
+      const totalRowIndex = startRow + activeJobTypes.length;
+      const totalRow = sheet1.getRow(totalRowIndex);
+      totalRow.height = 26;
+
+      // Merge A & B for TOTAL label
+      sheet1.mergeCells(`A${totalRowIndex}:B${totalRowIndex}`);
+      const totalLabelCell = sheet1.getCell(`A${totalRowIndex}`);
+      totalLabelCell.value = "JUMLAH TOTAL PEGAWAI";
+      totalLabelCell.font = {
+        name: "Calibri",
+        size: 10,
+        bold: true,
+        color: { argb: "0F172A" },
+      };
+      totalLabelCell.alignment = { horizontal: "center", vertical: "middle" };
+
+      // Formula total per Kotak
+      const firstDataRow = startRow;
+      const lastDataRow = totalRowIndex - 1;
+
+      for (let q = 1; q <= 9; q++) {
+        const colLetter = String.fromCharCode(67 + q - 1);
+        const cell = totalRow.getCell(2 + q);
+        cell.value = {
+          formula: `SUM(${colLetter}${firstDataRow}:${colLetter}${lastDataRow})`,
+        };
+        cell.font = {
+          name: "Calibri",
+          size: 10,
+          bold: true,
+          color: { argb: "0F172A" },
+        };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+        cell.numFmt = "#,##0";
+      }
+
+      // Formula Grand Total
+      const grandTotalCell = totalRow.getCell(12);
+      grandTotalCell.value = {
+        formula: `SUM(C${totalRowIndex}:K${totalRowIndex})`,
+      };
+      grandTotalCell.font = {
+        name: "Calibri",
+        size: 11,
+        bold: true,
+        color: { argb: "1E3A8A" },
+      };
+      grandTotalCell.alignment = { horizontal: "center", vertical: "middle" };
+      grandTotalCell.numFmt = "#,##0";
+
+      // Styling Baris Total
+      for (let c = 1; c <= 12; c++) {
+        const cell = totalRow.getCell(c);
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "E2E8F0" },
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "94A3B8" } },
+          bottom: { style: "double", color: { argb: "0F172A" } },
+          left: { style: "thin", color: { argb: "CBD5E1" } },
+          right: { style: "thin", color: { argb: "CBD5E1" } },
+        };
+      }
+
+      // --- Tabel Referensi Keterangan Kotak ---
+      const legendStartRow = totalRowIndex + 3;
+      sheet1.mergeCells(`A${legendStartRow}:E${legendStartRow}`);
+      const legTitle = sheet1.getCell(`A${legendStartRow}`);
+      legTitle.value = "KETERANGAN KOTAK TALENTA (9-BOX MATRIX)";
+      legTitle.font = {
+        name: "Calibri",
+        size: 11,
+        bold: true,
+        color: { argb: "1E293B" },
+      };
+      legTitle.alignment = { horizontal: "left", vertical: "middle" };
+
+      const legHeaderRow = sheet1.getRow(legendStartRow + 1);
+      legHeaderRow.height = 22;
+      const legHeaders = [
+        { col: 1, text: "No Kotak" },
+        { col: 2, text: "Kategori Talenta" },
+        { col: 3, text: "Rentang Potensial (Sumbu X)" },
+        { col: 4, text: "Rentang Kinerja (Sumbu Y)" },
+        { col: 5, text: "Jumlah Pegawai" },
+      ];
+      legHeaders.forEach((h) => {
+        const cell = legHeaderRow.getCell(h.col);
+        cell.value = h.text;
+        cell.font = {
+          name: "Calibri",
+          size: 9,
+          bold: true,
+          color: { argb: "FFFFFF" },
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "334155" },
+        };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+        cell.border = {
+          top: { style: "thin", color: { argb: "64748B" } },
+          left: { style: "thin", color: { argb: "64748B" } },
+          bottom: { style: "thin", color: { argb: "64748B" } },
+          right: { style: "thin", color: { argb: "64748B" } },
+        };
+      });
+
+      for (let q = 1; q <= 9; q++) {
+        const rIdx = legendStartRow + 1 + q;
+        const row = sheet1.getRow(rIdx);
+        row.height = 20;
+
+        const kObj = cfg?.kotak?.find((k) => k.id === q);
+        const potStr = kObj
+          ? `${kObj.potensialRange?.min ?? 0} - ${kObj.potensialRange?.max ?? 100}`
+          : "-";
+        const kinStr = kObj
+          ? `${kObj.kinerjaRange?.min ?? 0} - ${kObj.kinerjaRange?.max ?? 100}`
+          : "-";
+        const qCount = quadrantCounts[q] || 0;
+
+        row.getCell(1).value = `Kotak ${q}`;
+        row.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+        row.getCell(1).font = { name: "Calibri", size: 9, bold: true };
+
+        row.getCell(2).value = kObj?.kategori || "-";
+        row.getCell(2).alignment = { horizontal: "left", vertical: "middle" };
+
+        row.getCell(3).value = potStr;
+        row.getCell(3).alignment = { horizontal: "center", vertical: "middle" };
+
+        row.getCell(4).value = kinStr;
+        row.getCell(4).alignment = { horizontal: "center", vertical: "middle" };
+
+        row.getCell(5).value = qCount;
+        row.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
+        row.getCell(5).font = { name: "Calibri", size: 9, bold: true };
+
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          if (!cell.font) cell.font = { name: "Calibri", size: 9 };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: q % 2 === 0 ? "FFFFFF" : "F8FAFC" },
+          };
+          cell.border = {
+            top: { style: "thin", color: { argb: "E2E8F0" } },
+            left: { style: "thin", color: { argb: "E2E8F0" } },
+            bottom: { style: "thin", color: { argb: "E2E8F0" } },
+            right: { style: "thin", color: { argb: "E2E8F0" } },
+          };
+        });
+      }
+
+      // --- SHEET 2: DATA DETAIL PEGAWAI ---
+      const sheet2 = workbook.addWorksheet("Data Detail Pegawai", {
+        views: [{ showGridLines: true }],
+      });
+
+      sheet2.columns = [
+        { header: "No", key: "no", width: 6 },
+        { header: "NIP", key: "nip", width: 20 },
+        { header: "Nama Pegawai", key: "nama", width: 32 },
+        { header: "Jabatan", key: "jabatan", width: 36 },
+        { header: "Jenis Jabatan", key: "jenis_jabatan", width: 30 },
+        { header: "Unit Kerja", key: "unit_kerja", width: 36 },
+        { header: "Nilai Potensial (X)", key: "potensial", width: 20 },
+        { header: "Nilai Kinerja (Y)", key: "kinerja", width: 20 },
+        { header: "Nilai Talenta", key: "nilai_talenta", width: 16 },
+        { header: "Kotak", key: "kotak", width: 14 },
+      ];
+
+      const headerRow2 = sheet2.getRow(1);
+      headerRow2.height = 26;
+      headerRow2.eachCell((cell) => {
+        cell.font = {
+          name: "Calibri",
+          size: 10,
+          bold: true,
+          color: { argb: "FFFFFF" },
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "1E3A8A" },
+        };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+        cell.border = {
+          top: { style: "thin", color: { argb: "475569" } },
+          left: { style: "thin", color: { argb: "475569" } },
+          bottom: { style: "thin", color: { argb: "475569" } },
+          right: { style: "thin", color: { argb: "475569" } },
+        };
+      });
+
+      computedQuadrantData.forEach((item, idx) => {
+        const p = Number(item.potensial);
+        const k = Number(item.kinerja);
+        const nilaiTalenta =
+          isFinite(p) && isFinite(k) ? p * 0.5 + k * 0.5 : null;
+
+        const empRow = sheet2.addRow({
+          no: idx + 1,
+          nip: item.nip || "-",
+          nama: item.name || "-",
+          jabatan: item.jabatan || "-",
+          jenis_jabatan: item.jenisJabatan || "-",
+          unit_kerja: item.unitKerja || "-",
+          potensial: isFinite(p) ? p : "-",
+          kinerja: isFinite(k) ? k : "-",
+          nilai_talenta: Number.isFinite(nilaiTalenta)
+            ? Number(nilaiTalenta.toFixed(2))
+            : "-",
+          kotak: item.quadrant ? `Kotak ${item.quadrant}` : "-",
+        });
+
+        empRow.height = 20;
+        const isEven = idx % 2 === 0;
+        const bgFill = isEven ? "FFFFFF" : "F8FAFC";
+
+        empRow.eachCell({ includeEmpty: true }, (cell, colNum) => {
+          cell.font = { name: "Calibri", size: 9 };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: bgFill },
+          };
+          cell.border = {
+            top: { style: "thin", color: { argb: "E2E8F0" } },
+            left: { style: "thin", color: { argb: "E2E8F0" } },
+            bottom: { style: "thin", color: { argb: "E2E8F0" } },
+            right: { style: "thin", color: { argb: "E2E8F0" } },
+          };
+
+          if ([1, 2, 7, 8, 9, 10].includes(colNum)) {
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+          } else {
+            cell.alignment = { horizontal: "left", vertical: "middle" };
+          }
+        });
+      });
+
+      // Simpan file dan pemicu unduh di browser
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const dateStr = now.toISOString().slice(0, 10);
+      a.download = `Rekap-Pegawai-Per-Kotak-Jabatan-${dateStr}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      Swal.close();
+      Swal.fire({
+        icon: "success",
+        title: "Ekspor Berhasil",
+        text: "Data jumlah pegawai per kotak berdasarkan jenis jabatan berhasil diekspor ke Excel.",
+        timer: 2500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error("Failed to export excel:", error);
+      Swal.close();
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Ekspor",
+        text:
+          error.message || "Terjadi kesalahan saat mengekspor data ke Excel.",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+    }
+  };
 
   // Fungsi untuk membuka modal dengan data pegawai per kotak
   const handleBoxClick = (quadrantNumber) => {
@@ -1156,20 +1738,33 @@ const Dashboard = () => {
             Ringkasan Data Pegawai dan Statistik
           </p>
         </div>
-        <IconButton
-          onClick={handleSyncStatistik}
-          variant="blue"
-          size="lg"
-          disabled={isSyncingStatistik || loadingStats}
-          className="w-full md:w-auto"
-          title="Sinkronisasi Statistik Pegawai"
-        >
-          <i
-            className={`fas fa-sync-alt mr-2 ${isSyncingStatistik ? "animate-spin" : ""}`}
-            aria-hidden="true"
-          ></i>
-          {isSyncingStatistik ? "Sinkronisasi..." : "Sinkronisasi Data"}
-        </IconButton>
+        <div className="flex flex-wrap items-center gap-3">
+          <IconButton
+            onClick={handleExportExcel}
+            variant="success"
+            size="lg"
+            disabled={quadrantLoading}
+            className="w-full sm:w-auto"
+            title="Ekspor Rekapitulasi per Kotak & Jabatan ke Excel"
+          >
+            <i className="fas fa-file-excel mr-2" aria-hidden="true"></i>
+            Ekspor Rekap Excel
+          </IconButton>
+          <IconButton
+            onClick={handleSyncStatistik}
+            variant="blue"
+            size="lg"
+            disabled={isSyncingStatistik || loadingStats}
+            className="w-full sm:w-auto"
+            title="Sinkronisasi Statistik Pegawai"
+          >
+            <i
+              className={`fas fa-sync-alt mr-2 ${isSyncingStatistik ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            ></i>
+            {isSyncingStatistik ? "Sinkronisasi..." : "Sinkronisasi Data"}
+          </IconButton>
+        </div>
       </div>
 
       {/* Statistik Cards */}
@@ -1298,9 +1893,21 @@ const Dashboard = () => {
 
         {/* List - Job Types */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white mb-4">
-            Komposisi Pegawai Berdasarkan Jenis Jabatan
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
+              Komposisi Pegawai Berdasarkan Jenis Jabatan
+            </h2>
+            <IconButton
+              onClick={handleExportExcel}
+              variant="success"
+              size="sm"
+              disabled={quadrantLoading}
+              title="Ekspor Excel Rekapitulasi Per Kotak & Jabatan"
+            >
+              <i className="fas fa-file-excel mr-1.5" aria-hidden="true"></i>
+              Ekspor Excel
+            </IconButton>
+          </div>
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
             {loadingStats
               ? Array.from({ length: 6 }).map((_, i) => (
@@ -1533,17 +2140,28 @@ const Dashboard = () => {
 
           {/* Legend untuk interval Kotak + jumlah data per Kotak (kanan) */}
           <div className="lg:col-span-1 lg:mt-4">
-            <div className="mb-4 items-center justify-center">
+            <div className="mb-4 flex flex-col gap-2">
               <IconButton
                 onClick={handleAllBoxClick}
                 variant="blue"
                 size="lg"
                 disabled={quadrantLoading}
-                className="w-full md:w-auto"
+                className="w-full"
                 title="Lihat Daftar Pegawai"
               >
                 <i className={`fas fa-users mr-2`} aria-hidden="true"></i>
                 {"Lihat Daftar Pegawai"}
+              </IconButton>
+              <IconButton
+                onClick={handleExportExcel}
+                variant="success"
+                size="lg"
+                disabled={quadrantLoading}
+                className="w-full"
+                title="Ekspor Rekapitulasi per Kotak & Jabatan ke Excel"
+              >
+                <i className="fas fa-file-excel mr-2" aria-hidden="true"></i>
+                {"Ekspor Rekap Excel"}
               </IconButton>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg top-6 shadow-sm">
