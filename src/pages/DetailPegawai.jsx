@@ -110,8 +110,7 @@ const DetailPegawai = () => {
             Lengkapi data <strong>subindikator</strong>,{" "}
             <strong>instrumen</strong>, <strong>tanggal SK</strong>,{" "}
             <strong>masa berlaku</strong>, dan <strong>bukti dukung</strong>,
-            lalu klik{" "}
-            <strong>Ajukan Penilaian</strong> agar statusnya tercatat.
+            lalu klik <strong>Ajukan Penilaian</strong> agar statusnya tercatat.
           </>
         ),
         note: "Setelah submit, data pengajuan akan muncul di riwayat pengajuan penilaian dan menunggu proses validasi oleh admin.",
@@ -3329,7 +3328,11 @@ const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
                   <div className="flex flex-wrap items-start justify-between gap-2 mb-1.5">
                     <h4 className="text-md font-semibold text-gray-900 dark:text-white leading-tight flex-1">
-                      {item.namaJabatan}
+                      {(
+                        item.namaJabatan ||
+                        item.jabatanFungsionalNama ||
+                        "-"
+                      ).replaceAll("\\/", "/")}
                     </h4>
                     {item.eselon && (
                       <span
