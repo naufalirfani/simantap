@@ -5,6 +5,7 @@ import {
   fetchPegawaiList,
   fetchPetaJabatan,
   syncPegawai,
+  syncUmpanBalik360,
   syncPenilaian,
   fetchSyncPenilaianStatus,
   fetchSubIndikators,
@@ -34,6 +35,7 @@ const PenilaianPegawai = () => {
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSyncingPenilaian, setIsSyncingPenilaian] = useState(false);
+  const [isSyncing360, setIsSyncing360] = useState(false);
   const [syncingNips, setSyncingNips] = useState(new Set());
   const [subIndikators, setSubIndikators] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -164,6 +166,45 @@ const PenilaianPegawai = () => {
       });
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleSync360 = async () => {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Sinkronisasi Umpan Balik 360",
+      text: "Sinkronisasi akan mengambil data umpan balik 360 terbaru dari layanan. Lanjutkan?",
+      showCancelButton: true,
+      confirmButtonText: "Ya",
+      cancelButtonText: "Batal",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsSyncing360(true);
+      const res = await syncUmpanBalik360();
+      await loadFilterOptions();
+      setRefreshKey((k) => k + 1);
+      Swal.fire({
+        icon: "success",
+        title: "Sukses",
+        text: res?.message || "Sinkronisasi umpan balik 360 selesai",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.message || "Sinkronisasi umpan balik 360 gagal",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+    } finally {
+      setIsSyncing360(false);
     }
   };
 
@@ -679,7 +720,7 @@ const PenilaianPegawai = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="mb-4 flex flex-col sm:flex-row gap-3 justify-end">
+      <div className="mb-4 flex flex-col sm:flex-row flex-wrap gap-3 justify-end">
         <IconButton
           onClick={() => {
             setUploadMode("regular");
@@ -713,6 +754,20 @@ const PenilaianPegawai = () => {
             <i className="fas fa-file-signature mr-2" />
           )}
           Impor Data Asesmen
+        </IconButton>
+        <IconButton
+          onClick={handleSync360}
+          variant="primary"
+          size="lg"
+          disabled={isSyncing360}
+          title="Sinkronisasi Umpan Balik 360"
+        >
+          {isSyncing360 ? (
+            <i className="fas fa-spinner fa-spin mr-2" />
+          ) : (
+            <i className="fas fa-sync mr-2" />
+          )}
+          Sinkronisasi Umpan Balik 360
         </IconButton>
         <IconButton
           onClick={handleSyncPenilaian}

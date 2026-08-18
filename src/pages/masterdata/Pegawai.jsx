@@ -4,6 +4,7 @@ import {
   fetchPegawai,
   fetchPetaJabatan,
   syncPegawai,
+  syncUmpanBalik360,
 } from "../../services/apiService";
 import ServerDataTable from "../../components/ServerDataTable";
 import IconButton from "../../components/IconButton";
@@ -73,6 +74,7 @@ const Pegawai = () => {
   }, []);
 
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncing360, setIsSyncing360] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleSync = async () => {
@@ -111,6 +113,45 @@ const Pegawai = () => {
       });
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleSync360 = async () => {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Sinkronisasi Umpan Balik 360",
+      text: "Sinkronisasi akan mengambil data umpan balik 360 terbaru dari layanan. Lanjutkan?",
+      showCancelButton: true,
+      confirmButtonText: "Ya",
+      cancelButtonText: "Batal",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsSyncing360(true);
+      const res = await syncUmpanBalik360();
+      await loadFilterOptions();
+      setRefreshKey((k) => k + 1);
+      Swal.fire({
+        icon: "success",
+        title: "Sukses",
+        text: res?.message || "Sinkronisasi umpan balik 360 selesai",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.message || "Sinkronisasi umpan balik 360 gagal",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+    } finally {
+      setIsSyncing360(false);
     }
   };
 
@@ -234,20 +275,34 @@ const Pegawai = () => {
         </p>
       </div>
 
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 justify-end">
+        <IconButton
+          onClick={handleSync360}
+          variant="primary"
+          size="lg"
+          disabled={isSyncing360}
+          title="Sinkronisasi Umpan Balik 360"
+        >
+          {isSyncing360 ? (
+            <i className="fas fa-spinner fa-spin mr-2" />
+          ) : (
+            <i className="fas fa-sync mr-2" />
+          )}
+          Sinkronisasi Umpan Balik 360
+        </IconButton>
         <IconButton
           onClick={handleSync}
           variant="primary"
           size="lg"
           disabled={isSyncing}
-          title="Sinkronisasi"
+          title="Sinkronisasi Pegawai"
         >
           {isSyncing ? (
             <i className="fas fa-spinner fa-spin mr-2" />
           ) : (
             <i className="fas fa-sync mr-2" />
           )}
-          Sinkronisasi
+          Sinkronisasi Pegawai
         </IconButton>
       </div>
 

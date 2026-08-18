@@ -1,17 +1,24 @@
 import { useEffect, useState } from "react";
 import { useSettings } from "../../context/SettingsContext";
-import { fetchBobot360, storeBobot360 } from "../../services/apiService";
+import { fetchBobot360, storeBobot360, syncUmpanBalik360 } from "../../services/apiService";
 import Breadcrumb from "../../components/Breadcrumb";
 import Swal from "sweetalert2";
 import { PRIMARY_COLORS } from "../../config/colors";
 import IconButton from "../../components/IconButton";
 
 const DEFAULT_WEIGHTS = {
-  jpt_madya: {
+  sekjen: {
+    atasan_langsung: 0,
+    penerima_manfaat: 0,
+    rekan_kerja: 0,
+    bawahan: 50,
+    penilaian_diri: 50,
+  },
+  deputi: {
     atasan_langsung: 40,
     penerima_manfaat: 0,
-    rekan_kerja: 15,
-    bawahan: 40,
+    rekan_kerja: 30,
+    bawahan: 25,
     penilaian_diri: 5,
   },
   jpt_pratama: {
@@ -64,9 +71,11 @@ const BobotPenilaian360 = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [isSyncing360, setIsSyncing360] = useState(false);
 
   const categories = [
-    { key: "jpt_madya", label: "JPT Madya" },
+    { key: "sekjen", label: "Sekjen" },
+    { key: "deputi", label: "Deputi" },
     { key: "jpt_pratama", label: "JPT Pratama" },
     { key: "administrator", label: "Administrator" },
     { key: "pengawas", label: "Pengawas" },
@@ -87,6 +96,44 @@ const BobotPenilaian360 = () => {
     document.title = "Bobot Penilaian 360 | SIMANTAP";
     loadData();
   }, []);
+
+  const handleSync360 = async () => {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Sinkronisasi Umpan Balik 360",
+      text: "Sinkronisasi akan mengambil data umpan balik 360 terbaru dari layanan. Lanjutkan?",
+      showCancelButton: true,
+      confirmButtonText: "Ya",
+      cancelButtonText: "Batal",
+      confirmButtonColor: PRIMARY_COLORS.blue,
+      cancelButtonColor: PRIMARY_COLORS.red,
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsSyncing360(true);
+      const res = await syncUmpanBalik360();
+      Swal.fire({
+        icon: "success",
+        title: "Sukses",
+        text: res?.message || "Sinkronisasi umpan balik 360 selesai",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      loadData();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.message || "Sinkronisasi umpan balik 360 gagal",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+    } finally {
+      setIsSyncing360(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -260,6 +307,22 @@ const BobotPenilaian360 = () => {
             Atur persentase bobot penilaian berdasarkan peran penilai untuk masing-masing kategori jabatan.
           </p>
         </div>
+        <div>
+          <IconButton
+            onClick={handleSync360}
+            variant="primary"
+            size="lg"
+            disabled={isSyncing360}
+            title="Sinkronisasi Umpan Balik 360"
+          >
+            {isSyncing360 ? (
+              <i className="fas fa-spinner fa-spin mr-2" />
+            ) : (
+              <i className="fas fa-sync mr-2" />
+            )}
+            Sinkronisasi Umpan Balik 360
+          </IconButton>
+        </div>
       </div>
 
       {/* Loading State */}
@@ -398,11 +461,10 @@ const BobotPenilaian360 = () => {
                         >
                           <div className="flex flex-col items-center justify-center">
                             <span
-                              className={`text-base font-bold transition-colors ${
-                                isValid
-                                  ? "text-teal-500 dark:text-teal-400"
-                                  : "text-red-600 dark:text-red-400"
-                              }`}
+                              className={`text-base font-bold transition-colors ${isValid
+                                ? "text-teal-500 dark:text-teal-400"
+                                : "text-red-600 dark:text-red-400"
+                                }`}
                             >
                               {total}%
                             </span>

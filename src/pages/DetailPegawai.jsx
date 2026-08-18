@@ -988,9 +988,9 @@ const DetailPegawai = () => {
       if (!item || typeof item !== "object") return;
       const key = String(
         item.id ||
-          item.file_path ||
-          item.original_filename ||
-          `lampiran-${index}`,
+        item.file_path ||
+        item.original_filename ||
+        `lampiran-${index}`,
       );
       if (!unique.has(key)) {
         unique.set(key, item);
@@ -1020,8 +1020,7 @@ const DetailPegawai = () => {
       const finalFilename =
         lampiran.original_filename ||
         filename ||
-        `lampiran-asesmen-${lampiran.id}.${
-          lampiran.file_type === "application/pdf" ? "pdf" : "bin"
+        `lampiran-asesmen-${lampiran.id}.${lampiran.file_type === "application/pdf" ? "pdf" : "bin"
         }`;
 
       const objectUrl = URL.createObjectURL(blob);
@@ -1140,47 +1139,47 @@ const DetailPegawai = () => {
   // Chart configurations
   const radarChartData = activeChartData
     ? {
-        labels: activeChartData.codes || activeChartData.labels,
-        datasets:
-          activeRadarTab === "msk"
-            ? [
-                {
-                  label: "Kompetensi Pegawai",
-                  data: activeChartData.actualValues,
-                  fill: true,
-                  backgroundColor: "rgba(20, 184, 166, 0.2)",
-                  borderColor: "rgba(20, 184, 166, 1)",
-                  pointBackgroundColor: "rgba(20, 184, 166, 1)",
-                  pointBorderColor: "#fff",
-                  pointHoverBackgroundColor: "#fff",
-                  pointHoverBorderColor: "rgba(20, 184, 166, 1)",
-                },
-                {
-                  label: "Standar Kompetensi",
-                  data: activeChartData.standardValues,
-                  fill: true,
-                  backgroundColor: "rgba(54, 162, 235, 0.2)",
-                  borderColor: "rgba(59, 130, 246, 1)",
-                  pointBackgroundColor: "rgba(59, 130, 246, 1)",
-                  pointBorderColor: "#fff",
-                  pointHoverBackgroundColor: "#fff",
-                  pointHoverBorderColor: "rgba(59, 130, 246, 1)",
-                },
-              ]
-            : [
-                {
-                  label: "Nilai Potensi Pegawai",
-                  data: activeChartData.actualValues,
-                  fill: true,
-                  backgroundColor: "rgba(20, 184, 166, 0.2)",
-                  borderColor: "rgb(20, 184, 166)",
-                  pointBackgroundColor: "rgb(20, 184, 166)",
-                  pointBorderColor: "#fff",
-                  pointHoverBackgroundColor: "#fff",
-                  pointHoverBorderColor: "rgb(20, 184, 166)",
-                },
-              ],
-      }
+      labels: activeChartData.codes || activeChartData.labels,
+      datasets:
+        activeRadarTab === "msk"
+          ? [
+            {
+              label: "Kompetensi Pegawai",
+              data: activeChartData.actualValues,
+              fill: true,
+              backgroundColor: "rgba(20, 184, 166, 0.2)",
+              borderColor: "rgba(20, 184, 166, 1)",
+              pointBackgroundColor: "rgba(20, 184, 166, 1)",
+              pointBorderColor: "#fff",
+              pointHoverBackgroundColor: "#fff",
+              pointHoverBorderColor: "rgba(20, 184, 166, 1)",
+            },
+            {
+              label: "Standar Kompetensi",
+              data: activeChartData.standardValues,
+              fill: true,
+              backgroundColor: "rgba(54, 162, 235, 0.2)",
+              borderColor: "rgba(59, 130, 246, 1)",
+              pointBackgroundColor: "rgba(59, 130, 246, 1)",
+              pointBorderColor: "#fff",
+              pointHoverBackgroundColor: "#fff",
+              pointHoverBorderColor: "rgba(59, 130, 246, 1)",
+            },
+          ]
+          : [
+            {
+              label: "Nilai Potensi Pegawai",
+              data: activeChartData.actualValues,
+              fill: true,
+              backgroundColor: "rgba(20, 184, 166, 0.2)",
+              borderColor: "rgb(20, 184, 166)",
+              pointBackgroundColor: "rgb(20, 184, 166)",
+              pointBorderColor: "#fff",
+              pointHoverBackgroundColor: "#fff",
+              pointHoverBorderColor: "rgb(20, 184, 166)",
+            },
+          ],
+    }
     : null;
 
   // Calculate dynamic max value for radar chart
@@ -1806,7 +1805,7 @@ const DetailPegawai = () => {
 
                 const potensiSubs =
                   potensiIndikator &&
-                  Array.isArray(potensiIndikator.sub_indikators)
+                    Array.isArray(potensiIndikator.sub_indikators)
                     ? potensiIndikator.sub_indikators.filter((s) => s.isactive)
                     : [];
 
@@ -2055,11 +2054,10 @@ const DetailPegawai = () => {
                 {competencyData && (
                   <button
                     onClick={() => setActiveRadarTab("msk")}
-                    className={`cursor-pointer px-4 py-2 font-medium text-sm transition-colors relative ${
-                      activeRadarTab === "msk"
-                        ? "dark:text-teal-400"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                    }`}
+                    className={`cursor-pointer px-4 py-2 font-medium text-sm transition-colors relative ${activeRadarTab === "msk"
+                      ? "dark:text-teal-400"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                      }`}
                     style={
                       activeRadarTab === "msk"
                         ? { color: PRIMARY_COLORS.teal }
@@ -2078,11 +2076,10 @@ const DetailPegawai = () => {
                 {potensiTalentaData && (
                   <button
                     onClick={() => setActiveRadarTab("potensi")}
-                    className={`cursor-pointer px-4 py-2 font-medium text-sm transition-colors relative ${
-                      activeRadarTab === "potensi"
-                        ? "dark:text-teal-400"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                    }`}
+                    className={`cursor-pointer px-4 py-2 font-medium text-sm transition-colors relative ${activeRadarTab === "potensi"
+                      ? "dark:text-teal-400"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                      }`}
                     style={
                       activeRadarTab === "potensi"
                         ? { color: PRIMARY_COLORS.teal }
@@ -2318,9 +2315,8 @@ const DetailPegawai = () => {
                     >
                       <div className="flex items-center gap-3">
                         <i
-                          className={`fas fa-chevron-right transform transition-transform duration-200 ${
-                            isOpen ? "rotate-90" : ""
-                          }`}
+                          className={`fas fa-chevron-right transform transition-transform duration-200 ${isOpen ? "rotate-90" : ""
+                            }`}
                           style={{ color: PRIMARY_COLORS.teal }}
                         ></i>
                         <span className="text-md text-gray-700 dark:text-gray-300">
@@ -2360,9 +2356,8 @@ const DetailPegawai = () => {
                     </button>
 
                     <div
-                      className={`overflow-hidden transition-[max-height,opacity] duration-300 ${
-                        isOpen ? "max-h-128 opacity-100" : "max-h-0 opacity-0"
-                      }`}
+                      className={`overflow-hidden transition-[max-height,opacity] duration-300 ${isOpen ? "max-h-128 opacity-100" : "max-h-0 opacity-0"
+                        }`}
                     >
                       <div className="p-2 pl-8 space-y-1 overflow-visible">
                         {subs.length > 0 ? (
@@ -2505,9 +2500,8 @@ const DetailPegawai = () => {
                     >
                       <div className="flex items-center gap-3">
                         <i
-                          className={`fas fa-chevron-right text-[#3085d6] transform transition-transform duration-200 ${
-                            isOpen ? "rotate-90" : ""
-                          }`}
+                          className={`fas fa-chevron-right text-[#3085d6] transform transition-transform duration-200 ${isOpen ? "rotate-90" : ""
+                            }`}
                         ></i>
                         <span className="text-md text-gray-700 dark:text-gray-300">
                           {ind.name}
@@ -2543,9 +2537,8 @@ const DetailPegawai = () => {
                     </button>
 
                     <div
-                      className={`overflow-hidden transition-[max-height,opacity] duration-300 ${
-                        isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-                      }`}
+                      className={`overflow-hidden transition-[max-height,opacity] duration-300 ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                        }`}
                     >
                       <div className="p-2 pl-8 space-y-1 overflow-visible">
                         {subs.length > 0 ? (
@@ -2731,15 +2724,15 @@ const DetailPegawai = () => {
             },
             { key: "pendidikan", label: "Pendidikan", icon: "university" },
             { key: "penghargaan", label: "Penghargaan", icon: "trophy" },
+            { key: "umpan_balik", label: "Riwayat Umpan Balik 360", icon: "comments" },
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveRiwayatTab(tab.key)}
-              className={`cursor-pointer px-4 py-3 text-md font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${
-                activeRiwayatTab === tab.key
-                  ? "border-teal-500 bg-white dark:bg-gray-800 dark:text-teal-400"
-                  : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/60"
-              }`}
+              className={`cursor-pointer px-4 py-3 text-md font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${activeRiwayatTab === tab.key
+                ? "border-teal-500 bg-white dark:bg-gray-800 dark:text-teal-400"
+                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/60"
+                }`}
               style={
                 activeRiwayatTab === tab.key
                   ? { color: PRIMARY_COLORS.teal }
@@ -2800,6 +2793,9 @@ const DetailPegawai = () => {
               )}
               {activeRiwayatTab === "penghargaan" && (
                 <PenghargaanPanel awards={satyalancanaAwards} />
+              )}
+              {activeRiwayatTab === "umpan_balik" && (
+                <RiwayatUmpanBalikPanel data={pegawaiData?.riwayat_umpan_balik} />
               )}
             </>
           )}
@@ -3155,7 +3151,7 @@ const InstrumenIndicatorModal = ({
                           Bobot: {sub.bobot ?? "-"}%
                         </p>
                       </div>
-                      <span className="text-xs font-semibold rounded-full bg-white dark:bg-gray-800 px-2.5 py-1 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                      <span className="text-sm font-semibold rounded-full bg-white dark:bg-gray-800 px-2.5 py-1 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
                         {Array.isArray(sub.instrumens)
                           ? sub.instrumens.length
                           : 0}{" "}
@@ -3164,7 +3160,7 @@ const InstrumenIndicatorModal = ({
                     </div>
 
                     {Array.isArray(sub.instrumens) &&
-                    sub.instrumens.length > 0 ? (
+                      sub.instrumens.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {sub.instrumens.map((inst) => (
                           <div
@@ -3177,7 +3173,7 @@ const InstrumenIndicatorModal = ({
                                   {cleanInstrumenText(inst.instrumen) || "-"}
                                 </p>
                               </div>
-                              <span className="flex-shrink-0 rounded-full bg-teal-100 dark:bg-teal-900/30 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300">
+                              <span className="flex-shrink-0 rounded-full bg-teal-100 dark:bg-teal-900/30 px-2.5 py-1 text-sm font-semibold text-teal-700 dark:text-teal-300">
                                 Skor {inst.skor ?? "-"}
                               </span>
                             </div>
@@ -3582,7 +3578,7 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
                     <i className="fas fa-calendar mr-1 opacity-60"></i>
                     {formatDateIndo(item.tanggalKursus)}
                     {item.tanggalSelesaiKursus &&
-                    item.tanggalSelesaiKursus !== item.tanggalKursus
+                      item.tanggalSelesaiKursus !== item.tanggalKursus
                       ? ` – ${formatDateIndo(item.tanggalSelesaiKursus)}`
                       : ""}
                   </span>
@@ -3970,6 +3966,425 @@ const PenghargaanPanel = ({ awards }) => {
           </div>
         );
       })}
+    </div>
+  );
+};
+
+const RiwayatUmpanBalikPanel = ({ data }) => {
+  const parsedData = useMemo(() => {
+    if (!data) return [];
+    let items = data;
+    if (typeof data === "string") {
+      try {
+        items = JSON.parse(data);
+      } catch (e) {
+        items = [];
+      }
+    }
+    if (!Array.isArray(items)) return [];
+    return [...items].sort((a, b) => (b.periode || "").localeCompare(a.periode || ""));
+  }, [data]);
+
+  const [selectedPeriode, setSelectedPeriode] = useState("");
+  const [expandedPages, setExpandedPages] = useState({});
+
+  useEffect(() => {
+    if (parsedData.length > 0 && !selectedPeriode) {
+      setSelectedPeriode(parsedData[0].periode);
+    }
+  }, [parsedData, selectedPeriode]);
+
+  if (parsedData.length === 0) {
+    return (
+      <EmptyState
+        icon="comments"
+        message="Tidak ada data riwayat umpan balik 360"
+      />
+    );
+  }
+
+  const activeData = parsedData.find((item) => item.periode === selectedPeriode) || parsedData[0];
+
+  const templatePages = [
+    {
+      key: "page2",
+      title: "BERORIENTASI PELAYANAN",
+      description: "Responsivitas & Solusi, Ketepatan Waktu, Pemahaman Kebutuhan",
+      questions: [
+        { key: "question1", label: "Responsivitas & Solusi" },
+        { key: "question2", label: "Ketepatan Waktu" },
+        { key: "question3", label: "Pemahaman Kebutuhan" },
+      ],
+    },
+    {
+      key: "page3",
+      title: "AKUNTABEL",
+      description: "Ketaatan Prosedur, Manajemen Sumber Daya, Transparansi",
+      questions: [
+        { key: "question4", label: "Ketaatan Prosedur" },
+        { key: "question5", label: "Manajemen Sumber Daya" },
+        { key: "question6", label: "Transparansi & Kejujuran" },
+      ],
+    },
+    {
+      key: "page4",
+      title: "KOMPETEN",
+      description: "Pemahaman Peran, Kualitas Output, Pengembangan Kapasitas",
+      questions: [
+        { key: "question7", label: "Pemahaman Peran" },
+        { key: "question8", label: "Kualitas Output" },
+        { key: "question9", label: "Pengembangan Kapasitas" },
+      ],
+    },
+    {
+      key: "page5",
+      title: "HARMONIS",
+      description: "Manajemen Konflik, Empati & Dukungan, Inklusivitas",
+      questions: [
+        { key: "question10", label: "Manajemen Konflik" },
+        { key: "question11", label: "Empati & Dukungan" },
+        { key: "question12", label: "Inklusivitas" },
+      ],
+    },
+    {
+      key: "page6",
+      title: "LOYAL",
+      description: "Penyelarasan Visi, Prioritas Lembaga, Integritas & Netralitas",
+      questions: [
+        { key: "question13", label: "Penyelarasan Visi" },
+        { key: "question14", label: "Prioritas Lembaga" },
+        { key: "question15", label: "Integritas & Netralitas" },
+      ],
+    },
+    {
+      key: "page7",
+      title: "ADAPTIF",
+      description: "Fleksibilitas, Keterbukaan Inovasi, Optimalisasi Teknologi",
+      questions: [
+        { key: "question16", label: "Fleksibilitas" },
+        { key: "question17", label: "Keterbukaan Inovasi" },
+        { key: "question18", label: "Optimalisasi Teknologi" },
+      ],
+    },
+    {
+      key: "page8",
+      title: "KOLABORATIF",
+      description: "Sinergi Lintas Unit, Keterbukaan Informasi, Apresiasi Kontribusi",
+      questions: [
+        { key: "question19", label: "Sinergi Lintas Unit" },
+        { key: "question20", label: "Keterbukaan Informasi" },
+        { key: "question21", label: "Apresiasi Kontribusi" },
+      ],
+    },
+  ];
+
+  const togglePageExpand = (key) => {
+    setExpandedPages((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const formatPeriodeIndo = (periodeStr) => {
+    if (!periodeStr || typeof periodeStr !== "string") return periodeStr || "-";
+    const match = periodeStr.trim().match(/^(\d{4})-(\d{1,2})$/);
+    if (!match) return periodeStr;
+    const year = match[1];
+    const monthIdx = parseInt(match[2], 10) - 1;
+    const monthNames = [
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
+    ];
+    if (monthIdx >= 0 && monthIdx < 12) {
+      return `${monthNames[monthIdx]} ${year}`;
+    }
+    return periodeStr;
+  };
+
+  const roleLabels = {
+    atasan_langsung: "Atasan Langsung",
+    rekan_kerja: "Rekan Kerja",
+    bawahan: "Bawahan",
+    penerima_manfaat: "Penerima Manfaat",
+    penilaian_diri: "Penilaian Diri",
+  };
+
+  const penilaian = activeData?.penilaian || {};
+  const roles = activeData?.roles || {};
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header Bar with Dropdown Filter on the Top Right */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+        <div>
+          <h3 className="text-md font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            <i className="fas fa-comments text-teal-500"></i>
+            Riwayat Umpan Balik 360
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Hasil evaluasi 360 derajat per periode penilaian
+          </p>
+        </div>
+
+        {/* Dropdown Filter Periode (Top Right) */}
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <label htmlFor="filter-periode-360" className="text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1.5 whitespace-nowrap">
+            <i className="fas fa-filter text-teal-500 text-xs"></i> Periode:
+          </label>
+          <select
+            id="filter-periode-360"
+            value={selectedPeriode || parsedData[0]?.periode || ""}
+            onChange={(e) => setSelectedPeriode(e.target.value)}
+            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 px-3 py-1.5 shadow-xs cursor-pointer outline-none transition-all font-semibold"
+          >
+            {parsedData.map((item) => (
+              <option key={item.periode} value={item.periode}>
+                {formatPeriodeIndo(item.periode)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Nilai Akhir Card */}
+        <div className="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-teal-200 dark:border-teal-800 flex items-center justify-between shadow-sm">
+          <div>
+            <p className="text-sm uppercase tracking-wider text-teal-600 dark:text-teal-400 font-semibold mb-1">
+              Nilai Akhir 360
+            </p>
+            <div className="text-3xl font-extrabold text-teal-700 dark:text-teal-300">
+              {activeData?.nilai_akhir !== undefined && activeData?.nilai_akhir !== null
+                ? Number(activeData.nilai_akhir).toFixed(2)
+                : "-"}
+            </div>
+            <p className="text-sm text-teal-600/80 dark:text-teal-400/80 mt-1">
+              Periode: {formatPeriodeIndo(activeData?.periode)}
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-300 flex items-center justify-center text-xl">
+            <i className="fas fa-star"></i>
+          </div>
+        </div>
+
+        {/* Keterangan & Status */}
+        <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700 flex items-center justify-between shadow-sm">
+          <div>
+            <p className="text-sm uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold mb-1">
+              Status Kelengkapan
+            </p>
+            <span
+              className={`inline-block px-2.5 py-1 rounded-full text-sm font-bold ${(activeData?.keterangan || "").toLowerCase().includes("lengkap")
+                ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300"
+                }`}
+            >
+              {activeData?.keterangan || "Proses"}
+            </span>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center text-xl">
+            <i className="fas fa-tasks"></i>
+          </div>
+        </div>
+
+        {/* Roles Progress Card */}
+        <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between">
+          <p className="text-sm uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold mb-2">
+            Ringkasan Penilai
+          </p>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            {Object.entries(roles).map(([rKey, rVal]) => {
+              if (!rVal || rVal.bobot === 0) return null;
+              return (
+                <div key={rKey} className="bg-white dark:bg-gray-800 p-1.5 rounded border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                  <span className="truncate text-gray-600 dark:text-gray-400">{roleLabels[rKey] || rKey}</span>
+                  <span className="font-bold text-teal-600 dark:text-teal-400 ml-1">
+                    {rVal.jumlah_penilai}/{rVal.target_penilai}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Detail Peran Penilai Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+        <div className="bg-gray-100 dark:bg-gray-700/60 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+          <i className="fas fa-users text-teal-500"></i>
+          <h4 className="text-sm font-bold text-gray-800 dark:text-white">
+            Detail Bobot & Target Penilai Peran
+          </h4>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+            <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase font-semibold border-b border-gray-200 dark:border-gray-700">
+              <tr>
+                <th className="px-4 py-2.5">Peran Penilai</th>
+                <th className="px-4 py-2.5 text-center">Bobot (%)</th>
+                <th className="px-4 py-2.5 text-center">Jumlah / Target Penilai</th>
+                <th className="px-4 py-2.5 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {Object.entries(roles).map(([rKey, rVal]) => {
+                if (!rVal) return null;
+                const isZero = rVal.bobot === 0 && rVal.target_penilai === 0;
+                return (
+                  <tr key={rKey} className={isZero ? "opacity-40" : "hover:bg-gray-50 dark:hover:bg-gray-700/30"}>
+                    <td className="px-4 py-2.5 font-medium">
+                      {roleLabels[rKey] || rKey}
+                    </td>
+                    <td className="px-4 py-2.5 text-center font-bold text-teal-600 dark:text-teal-400">
+                      {rVal.bobot}%
+                    </td>
+                    <td className="px-4 py-2.5 text-center font-semibold">
+                      {rVal.jumlah_penilai} / {rVal.target_penilai}
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${(rVal.keterangan || "").toLowerCase().includes("lengkap")
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                        }`}>
+                        {rVal.keterangan || "-"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Nilai Per Page (Core Values BerAKHLAK) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-md font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            <i className="fas fa-layer-group text-teal-500"></i>
+            Rata-rata Nilai per Core Value
+          </h4>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {templatePages.map((page) => {
+            const count = page.questions.length;
+            const pageSum = page.questions.reduce((sum, q) => {
+              return sum + (parseFloat(penilaian[q.key]) || 0);
+            }, 0);
+            const pageAvg = count > 0 ? pageSum / count : 0;
+            const isExpanded = !!expandedPages[page.key];
+
+            return (
+              <div
+                key={page.key}
+                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-md transition-all"
+              >
+                <div
+                  onClick={() => togglePageExpand(page.key)}
+                  className="p-4 cursor-pointer flex items-start justify-between gap-3 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-750"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-extrabold px-2 py-0.5 rounded bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+                        {page.title}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                      {page.description}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xl font-black text-teal-600 dark:text-teal-400">
+                      {pageAvg.toFixed(2)}
+                    </div>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center justify-end gap-1">
+                      Rata-rata <i className={`fas fa-chevron-down transform transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}></i>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Question Breakdown Accordion with Smooth Show/Hide Animation */}
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isExpanded ? "max-h-96 opacity-100 border-t border-gray-100 dark:border-gray-700" : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <div className="bg-gray-50 dark:bg-gray-700/30 p-3 space-y-2 text-sm">
+                    {page.questions.map((q) => {
+                      const score = parseFloat(penilaian[q.key]) || 0;
+                      return (
+                        <div key={q.key} className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-gray-700">
+                          <span className="text-gray-700 dark:text-gray-300 font-medium">
+                            {q.label}
+                          </span>
+                          <span className="font-bold text-gray-900 dark:text-white">
+                            {score.toFixed(2)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Refleksi & Validasi (Question 22 & 23 Feedback & Question 24) */}
+      {(Array.isArray(penilaian?.question22) || Array.isArray(penilaian?.question23)) && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm space-y-5">
+          <h4 className="text-md font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            <i className="fas fa-comment-dots text-teal-500"></i>
+            Catatan Refleksi & Umpan Balik Kualitatif
+          </h4>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Question 22: Kekuatan Utama */}
+            {Array.isArray(penilaian?.question22) && penilaian.question22.length > 0 && (
+              <div className="bg-emerald-50/60 dark:bg-emerald-900/10 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800/40">
+                <h5 className="text-sm font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-3 flex items-center gap-1.5">
+                  <i className="fas fa-thumbs-up"></i> Kekuatan Utama ASN (Question 22)
+                </h5>
+                <ul className="space-y-2 text-sm">
+                  {penilaian.question22.map((item, i) => (
+                    <li key={i} className="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-900/30 text-gray-700 dark:text-gray-300 shadow-2xs flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Question 23: Area Perbaikan */}
+            {Array.isArray(penilaian?.question23) && penilaian.question23.length > 0 && (
+              <div className="bg-amber-50/60 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-200 dark:border-amber-800/40">
+                <h5 className="text-sm font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 mb-3 flex items-center gap-1.5">
+                  <i className="fas fa-lightbulb"></i> Area Spesifik Perlu Ditingkatkan (Question 23)
+                </h5>
+                <ul className="space-y-2 text-sm">
+                  {penilaian.question23.map((item, i) => (
+                    <li key={i} className="bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30 text-gray-700 dark:text-gray-300 shadow-2xs flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0"></span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

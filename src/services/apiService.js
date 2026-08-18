@@ -1174,6 +1174,33 @@ export const syncPegawai = async () => {
 };
 
 /**
+ * Trigger sync for umpan balik 360 on the remote service
+ */
+export const syncUmpanBalik360 = async () => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(`${API_BASE_URL}/api/umpan-balik-360/sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    if (!response.ok) {
+      const errResp = await response.json().catch(() => null);
+      throw new Error(errResp?.message || "Gagal melakukan sinkronisasi Umpan Balik 360");
+    }
+
+    return await response.json().catch(() => ({}));
+  } catch (error) {
+    console.error("Sync umpan balik 360 error:", error);
+    throw error;
+  }
+};
+
+
+/**
  * Trigger sync for statistik on the remote service
  */
 export const syncStatistik = async () => {
