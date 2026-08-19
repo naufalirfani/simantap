@@ -3258,7 +3258,19 @@ const EmptyState = ({ icon, message }) => (
 );
 
 const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
-  if (!data || data.length === 0)
+  const filteredData = (Array.isArray(data) ? data : []).filter((item) => {
+    const sk =
+      item?.nomorSk ??
+      item?.nomor_sk ??
+      item?.noSk ??
+      item?.no_sk ??
+      item?.nomorSK;
+    if (sk === null || sk === undefined) return false;
+    const str = String(sk).trim();
+    return str !== "" && str.toLowerCase() !== "null";
+  });
+
+  if (!filteredData || filteredData.length === 0)
     return (
       <EmptyState icon="briefcase" message="Tidak ada data riwayat jabatan" />
     );
@@ -3303,19 +3315,19 @@ const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
   return (
     <div className="relative">
       <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
-        {data.length} entri jabatan
+        {filteredData.length} entri jabatan
       </p>
       <div className="space-y-1">
-        {data.map((item, idx) => {
+        {filteredData.map((item, idx) => {
           const meta = eselonMeta(item.eselon);
           return (
-            <div key={item.id} className="flex gap-4">
+            <div key={item.id || idx} className="flex gap-4">
               {/* Timeline line + dot */}
               <div className="flex flex-col items-center pt-1.5">
                 <div
                   className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${meta.dot}`}
                 ></div>
-                {idx < data.length - 1 && (
+                {idx < filteredData.length - 1 && (
                   <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-700 mt-1 min-h-[20px]"></div>
                 )}
               </div>
