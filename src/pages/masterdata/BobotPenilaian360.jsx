@@ -86,10 +86,10 @@ const BobotPenilaian360 = () => {
 
   const roles = [
     { key: "atasan_langsung", label: "Atasan Langsung" },
-    { key: "penerima_manfaat", label: "Penerima Manfaat" },
+    { key: "penerima_manfaat", label: "Penerima Manfaat Kerja" },
     { key: "rekan_kerja", label: "Rekan Kerja" },
     { key: "bawahan", label: "Bawahan" },
-    { key: "penilaian_diri", label: "Penilaian Diri" },
+    { key: "penilaian_diri", label: "Diri Sendiri" },
   ];
 
   useEffect(() => {

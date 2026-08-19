@@ -4112,8 +4112,8 @@ const RiwayatUmpanBalikPanel = ({ data }) => {
     atasan_langsung: "Atasan Langsung",
     rekan_kerja: "Rekan Kerja",
     bawahan: "Bawahan",
-    penerima_manfaat: "Penerima Manfaat",
-    penilaian_diri: "Penilaian Diri",
+    penerima_manfaat: "Penerima Manfaat Kerja",
+    penilaian_diri: "Diri Sendiri",
   };
 
   const penilaian = activeData?.penilaian || {};
@@ -4314,9 +4314,8 @@ const RiwayatUmpanBalikPanel = ({ data }) => {
 
                 {/* Question Breakdown Accordion with Smooth Show/Hide Animation */}
                 <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    isExpanded ? "max-h-96 opacity-100 border-t border-gray-100 dark:border-gray-700" : "max-h-0 opacity-0"
-                  }`}
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-h-96 opacity-100 border-t border-gray-100 dark:border-gray-700" : "max-h-0 opacity-0"
+                    }`}
                 >
                   <div className="bg-gray-50 dark:bg-gray-700/30 p-3 space-y-2 text-sm">
                     {page.questions.map((q) => {
@@ -4353,7 +4352,7 @@ const RiwayatUmpanBalikPanel = ({ data }) => {
             {Array.isArray(penilaian?.question22) && penilaian.question22.length > 0 && (
               <div className="bg-emerald-50/60 dark:bg-emerald-900/10 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800/40">
                 <h5 className="text-sm font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-3 flex items-center gap-1.5">
-                  <i className="fas fa-thumbs-up"></i> Kekuatan Utama ASN (Question 22)
+                  <i className="fas fa-thumbs-up"></i> Kekuatan Utama ASN
                 </h5>
                 <ul className="space-y-2 text-sm">
                   {penilaian.question22.map((item, i) => (
@@ -4370,7 +4369,7 @@ const RiwayatUmpanBalikPanel = ({ data }) => {
             {Array.isArray(penilaian?.question23) && penilaian.question23.length > 0 && (
               <div className="bg-amber-50/60 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-200 dark:border-amber-800/40">
                 <h5 className="text-sm font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 mb-3 flex items-center gap-1.5">
-                  <i className="fas fa-lightbulb"></i> Area Spesifik Perlu Ditingkatkan (Question 23)
+                  <i className="fas fa-lightbulb"></i> Area Spesifik Perlu Ditingkatkan
                 </h5>
                 <ul className="space-y-2 text-sm">
                   {penilaian.question23.map((item, i) => (

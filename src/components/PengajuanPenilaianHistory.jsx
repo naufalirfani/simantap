@@ -490,27 +490,40 @@ const PengajuanPenilaianHistory = ({
                     </div>
                   </div>
 
-                  {/* Catatan if exists */}
+                  {/* Catatan Pengusul if exists */}
                   {pengajuan.catatan && (
-                    <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
-                      <p className="text-gray-600 dark:text-gray-400 font-medium text-sm font-semibold">
-                        Catatan
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-gray-600 dark:text-gray-400 font-semibold text-sm">
+                        Catatan Pengusul
                       </p>
-                      <p className="text-gray-900 dark:text-white text-sm">
+                      <p className="text-gray-900 dark:text-white text-sm whitespace-pre-line">
                         {pengajuan.catatan}
                       </p>
                     </div>
                   )}
 
-                  {/* Alasan Penolakan if status is Ditolak */}
-                  {pengajuan.status?.toLowerCase() === "ditolak" &&
-                    pengajuan.alasan_penolakan && (
-                      <div className="mt-3 pt-3 border-t border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/30 p-3 rounded">
-                        <p className="text-red-700 dark:text-red-200 font-medium text-sm">
-                          Alasan Penolakan
+                  {/* Catatan Admin if status is Diterima */}
+                  {pengajuan.status?.toLowerCase() === "diterima" &&
+                    pengajuan.catatan_admin && (
+                      <div className="mt-3 pt-3 border-t border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-900/30 p-3 rounded-lg">
+                        <p className="text-teal-700 dark:text-teal-300 font-semibold text-sm">
+                          Catatan Admin
                         </p>
-                        <p className="text-red-900 dark:text-red-100 text-sm">
-                          {pengajuan.alasan_penolakan}
+                        <p className="text-teal-900 dark:text-teal-100 text-sm whitespace-pre-line">
+                          {pengajuan.catatan_admin}
+                        </p>
+                      </div>
+                    )}
+
+                  {/* Catatan Admin if status is Ditolak */}
+                  {pengajuan.status?.toLowerCase() === "ditolak" &&
+                    (pengajuan.catatan_admin || pengajuan.alasan_penolakan) && (
+                      <div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">
+                        <p className="text-red-700 dark:text-red-300 font-semibold text-sm">
+                          Catatan Admin
+                        </p>
+                        <p className="text-red-900 dark:text-red-100 text-sm whitespace-pre-line">
+                          {pengajuan.catatan_admin || pengajuan.alasan_penolakan}
                         </p>
                       </div>
                     )}
