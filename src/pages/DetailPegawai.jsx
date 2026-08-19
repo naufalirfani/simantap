@@ -3327,6 +3327,7 @@ const RiwayatJabatanPanel = ({ data, formatDateIndo }) => {
                       {(
                         item.namaJabatan ||
                         item.jabatanFungsionalNama ||
+                        item.jabatanFungsionalUmumNama ||
                         "-"
                       ).replaceAll("\\/", "/")}
                     </h4>
