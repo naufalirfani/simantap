@@ -1489,6 +1489,7 @@ export const createPengajuanPenilaian = async ({
   tanggal_sk,
   masa_berlaku_mulai,
   masa_berlaku_selesai,
+  institusi_penyelenggara,
   file,
   catatan,
 }) => {
@@ -1499,8 +1500,15 @@ export const createPengajuanPenilaian = async ({
     formData.append("instrumen_id", instrumen_id);
     formData.append("status", "Diajukan");
     formData.append("tanggal_sk", tanggal_sk);
-    formData.append("masa_berlaku_mulai", masa_berlaku_mulai);
-    formData.append("masa_berlaku_selesai", masa_berlaku_selesai);
+    if (masa_berlaku_mulai) {
+      formData.append("masa_berlaku_mulai", masa_berlaku_mulai);
+    }
+    if (masa_berlaku_selesai) {
+      formData.append("masa_berlaku_selesai", masa_berlaku_selesai);
+    }
+    if (institusi_penyelenggara) {
+      formData.append("institusi_penyelenggara", institusi_penyelenggara);
+    }
     
     if (file) {
       formData.append("file", file);

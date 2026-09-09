@@ -452,17 +452,28 @@ const PengajuanPenilaianHistory = ({
                           : "N/A"}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400 font-medium font-semibold">
-                        Masa Berlaku
-                      </p>
-                      <p className="text-gray-900 dark:text-white">
-                        {formatMasaBerlaku(
-                          pengajuan.masa_berlaku_mulai,
-                          pengajuan.masa_berlaku_selesai,
-                        )}
-                      </p>
-                    </div>
+                    {pengajuan.institusi_penyelenggara ? (
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 font-medium font-semibold">
+                          Institusi Penyelenggara
+                        </p>
+                        <p className="text-gray-900 dark:text-white">
+                          {pengajuan.institusi_penyelenggara}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 font-medium font-semibold">
+                          Masa Berlaku
+                        </p>
+                        <p className="text-gray-900 dark:text-white">
+                          {formatMasaBerlaku(
+                            pengajuan.masa_berlaku_mulai,
+                            pengajuan.masa_berlaku_selesai,
+                          )}
+                        </p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-gray-600 dark:text-gray-400 font-medium font-semibold">
                         Bukti Dukung

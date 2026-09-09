@@ -28,6 +28,7 @@ const PengajuanPenilaianModal = ({
   const [tanggalSK, setTanggalSK] = useState("");
   const [masaBerlakuMulai, setMasaBerlakuMulai] = useState("");
   const [masaBerlakuSelesai, setMasaBerlakuSelesai] = useState("");
+  const [institusiPenyelenggara, setInstitusiPenyelenggara] = useState("");
   const [buktiDukung, setBuktiDukung] = useState(null);
   const [buktiDukungName, setBuktiDukungName] = useState("");
   const [catatan, setCatatan] = useState("");
@@ -47,12 +48,13 @@ const PengajuanPenilaianModal = ({
         fetchInstrumens(),
       ]);
 
-      // Filter subindikators to only show "Penugasan Dalam Jabatan Nondefinitif" and "Penugasan dalam Tim Kerja"
+      // Filter subindikators to only show "Penugasan Dalam Jabatan Nondefinitif", "Penugasan dalam Tim Kerja", and "Penghargaan atas Capaian Kinerja"
       const filteredSubs = subs.filter((sub) => {
         const nama = (sub.subindikator || sub.nama || "").toLowerCase();
         return (
           nama.includes("penugasan dalam jabatan nondefinitif") ||
-          nama.includes("penugasan dalam tim kerja")
+          nama.includes("penugasan dalam tim kerja") ||
+          nama.includes("penghargaan atas capaian kinerja")
         );
       });
 
@@ -73,11 +75,17 @@ const PengajuanPenilaianModal = ({
   // Get instrumens for selected subindikator
   const getInstrumensForSub = () => {
     if (!selectedSubindikator) return [];
-    return instrumens.filter(
-      (inst) =>
-        inst.subindikator_id === selectedSubindikator.id ||
-        String(inst.subindikator_id) === String(selectedSubindikator.id)
-    );
+    return instrumens
+      .filter(
+        (inst) =>
+          inst.subindikator_id === selectedSubindikator.id ||
+          String(inst.subindikator_id) === String(selectedSubindikator.id)
+      )
+      .sort((a, b) => {
+        const nameA = a.instrumen || a.nama || a.name || "";
+        const nameB = b.instrumen || b.nama || b.name || "";
+        return nameA.localeCompare(nameB, undefined, { sensitivity: "base", numeric: true });
+      });
   };
 
   const handleFileChange = (e) => {
@@ -109,6 +117,35 @@ const PengajuanPenilaianModal = ({
     }
   };
 
+  const isPenghargaan = Boolean(
+    (
+      selectedSubindikator?.subindikator ||
+      selectedSubindikator?.nama ||
+      selectedSubindikator?.name ||
+      ""
+    )
+      .toLowerCase()
+      .includes("penghargaan atas capaian kinerja")
+  );
+
+  const getInstrumenTahun = (inst) => {
+    const text = inst?.instrumen || inst?.nama || inst?.name || "";
+    const match = text.match(/(\d+)\s*tahun/i);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
+  const dynamicYears = isPenghargaan ? getInstrumenTahun(selectedInstrumen) : null;
+
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+
+  const minTanggalSKStr = (() => {
+    if (!dynamicYears) return undefined;
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - dynamicYears);
+    return d.toISOString().split("T")[0];
+  })();
+
   const validateForm = () => {
     if (!selectedSubindikator) {
       Swal.fire({
@@ -137,22 +174,51 @@ const PengajuanPenilaianModal = ({
       return false;
     }
 
-    if (!masaBerlakuMulai || !masaBerlakuSelesai) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validasi",
-        text: "Silakan lengkapi masa berlaku (tanggal mulai dan selesai)",
-      });
-      return false;
-    }
+    if (isPenghargaan) {
+      if (dynamicYears && minTanggalSKStr && tanggalSK < minTanggalSKStr) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validasi Tanggal SK",
+          text: `Berdasarkan ketentuan instrumen penghargaan, tanggal SK harus dalam rentang ${dynamicYears} tahun terakhir`,
+        });
+        return false;
+      }
 
-    if (masaBerlakuSelesai < masaBerlakuMulai) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validasi",
-        text: "Tanggal selesai masa berlaku tidak boleh lebih awal dari tanggal mulai",
-      });
-      return false;
+      if (tanggalSK > todayStr) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validasi Tanggal SK",
+          text: "Tanggal SK tidak boleh melebihi tanggal hari ini",
+        });
+        return false;
+      }
+
+      if (!institusiPenyelenggara.trim()) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Silakan masukkan institusi penyelenggara",
+        });
+        return false;
+      }
+    } else {
+      if (!masaBerlakuMulai || !masaBerlakuSelesai) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Silakan lengkapi masa berlaku (tanggal mulai dan selesai)",
+        });
+        return false;
+      }
+
+      if (masaBerlakuSelesai < masaBerlakuMulai) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Tanggal selesai masa berlaku tidak boleh lebih awal dari tanggal mulai",
+        });
+        return false;
+      }
     }
 
     if (!buktiDukung) {
@@ -178,8 +244,9 @@ const PengajuanPenilaianModal = ({
         subindikator_id: selectedSubindikator.id,
         instrumen_id: selectedInstrumen.id,
         tanggal_sk: tanggalSK,
-        masa_berlaku_mulai: masaBerlakuMulai,
-        masa_berlaku_selesai: masaBerlakuSelesai,
+        masa_berlaku_mulai: isPenghargaan ? null : masaBerlakuMulai,
+        masa_berlaku_selesai: isPenghargaan ? null : masaBerlakuSelesai,
+        institusi_penyelenggara: isPenghargaan ? institusiPenyelenggara.trim() : null,
         file: buktiDukung,
         catatan: catatan || null,
       });
@@ -218,6 +285,7 @@ const PengajuanPenilaianModal = ({
     setTanggalSK("");
     setMasaBerlakuMulai("");
     setMasaBerlakuSelesai("");
+    setInstitusiPenyelenggara("");
     setBuktiDukung(null);
     setBuktiDukungName("");
     setCatatan("");
@@ -300,8 +368,11 @@ const PengajuanPenilaianModal = ({
                   onChange={(value) => {
                     const selected = subIndikators.find((s) => s.id === value);
                     setSelectedSubindikator(selected);
-                    // Reset instrumen when subindikator changes
+                    // Reset instrumen and specific fields when subindikator changes
                     setSelectedInstrumen(null);
+                    setInstitusiPenyelenggara("");
+                    setMasaBerlakuMulai("");
+                    setMasaBerlakuSelesai("");
                   }}
                   options={subindikatorOptions}
                   placeholder="Pilih subindikator"
@@ -345,41 +416,64 @@ const PengajuanPenilaianModal = ({
                 <input
                   type="date"
                   value={tanggalSK}
+                  min={isPenghargaan ? minTanggalSKStr : undefined}
+                  max={isPenghargaan ? todayStr : undefined}
                   onClick={(e) => e.currentTarget.showPicker?.()}
                   onFocus={(e) => e.currentTarget.showPicker?.()}
                   onChange={(e) => setTanggalSK(e.target.value)}
                   className="w-full cursor-pointer px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
+                {isPenghargaan && dynamicYears && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    * Sesuai ketentuan instrumen, tanggal SK penghargaan harus dalam kurun waktu {dynamicYears} tahun terakhir.
+                  </p>
+                )}
               </div>
 
-              {/* Masa Berlaku */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Masa Berlaku <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-center">
+              {isPenghargaan ? (
+                /* Institusi Penyelenggara */
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Institusi Penyelenggara <span className="text-red-500">*</span>
+                  </label>
                   <input
-                    type="date"
-                    value={masaBerlakuMulai}
-                    onClick={(e) => e.currentTarget.showPicker?.()}
-                    onFocus={(e) => e.currentTarget.showPicker?.()}
-                    onChange={(e) => setMasaBerlakuMulai(e.target.value)}
-                    className="w-full cursor-pointer px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                  <span className="text-center text-sm text-gray-500 dark:text-gray-400">
-                    s/d
-                  </span>
-                  <input
-                    type="date"
-                    value={masaBerlakuSelesai}
-                    min={masaBerlakuMulai || undefined}
-                    onClick={(e) => e.currentTarget.showPicker?.()}
-                    onFocus={(e) => e.currentTarget.showPicker?.()}
-                    onChange={(e) => setMasaBerlakuSelesai(e.target.value)}
-                    className="w-full cursor-pointer px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    type="text"
+                    value={institusiPenyelenggara}
+                    onChange={(e) => setInstitusiPenyelenggara(e.target.value)}
+                    placeholder="Masukkan institusi penyelenggara (contoh: Kementerian PANRB, BKN, dsb.)"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
-              </div>
+              ) : (
+                /* Masa Berlaku */
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Masa Berlaku <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-center">
+                    <input
+                      type="date"
+                      value={masaBerlakuMulai}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
+                      onFocus={(e) => e.currentTarget.showPicker?.()}
+                      onChange={(e) => setMasaBerlakuMulai(e.target.value)}
+                      className="w-full cursor-pointer px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                    <span className="text-center text-sm text-gray-500 dark:text-gray-400">
+                      s/d
+                    </span>
+                    <input
+                      type="date"
+                      value={masaBerlakuSelesai}
+                      min={masaBerlakuMulai || undefined}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
+                      onFocus={(e) => e.currentTarget.showPicker?.()}
+                      onChange={(e) => setMasaBerlakuSelesai(e.target.value)}
+                      className="w-full cursor-pointer px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Bukti Dukung */}
               <div>
