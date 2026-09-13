@@ -9,9 +9,30 @@ import {
   fetchSyaratSuksesi,
   createSyaratSuksesi,
   updateSyaratSuksesi,
+  fetchPetaJabatanById,
 } from "../../services/apiService";
 import Swal from "sweetalert2";
 import { PRIMARY_COLORS, DARK_COLORS } from "../../config/colors";
+
+const PANGKAT_GOLONGAN_OPTIONS = [
+  { value: "I/a", label: "Juru Muda (I/a)" },
+  { value: "I/b", label: "Juru Muda Tk. I (I/b)" },
+  { value: "I/c", label: "Juru (I/c)" },
+  { value: "I/d", label: "Juru Tk. I (I/d)" },
+  { value: "II/a", label: "Pengatur Muda (II/a)" },
+  { value: "II/b", label: "Pengatur Muda Tk. I (II/b)" },
+  { value: "II/c", label: "Pengatur (II/c)" },
+  { value: "II/d", label: "Pengatur Tk. I (II/d)" },
+  { value: "III/a", label: "Penata Muda (III/a)" },
+  { value: "III/b", label: "Penata Muda Tk. I (III/b)" },
+  { value: "III/c", label: "Penata (III/c)" },
+  { value: "III/d", label: "Penata Tk. I (III/d)" },
+  { value: "IV/a", label: "Pembina (IV/a)" },
+  { value: "IV/b", label: "Pembina Tk. I (IV/b)" },
+  { value: "IV/c", label: "Pembina Madya (IV/c)" },
+  { value: "IV/d", label: "Pembina Utama Muda (IV/d)" },
+  { value: "IV/e", label: "Pembina Utama (IV/e)" },
+];
 
 const SyaratSuksesi = () => {
   const { jabatanId } = useParams();
@@ -25,13 +46,24 @@ const SyaratSuksesi = () => {
   const [syaratData, setSyaratData] = useState({});
   const [existingSyarat, setExistingSyarat] = useState(null);
   const [jabatan, setJabatan] = useState(null);
+  const [gunakanKompetensiTeknis, setGunakanKompetensiTeknis] = useState(false);
+  const [sesuaiRumpunJabatan, setSesuaiRumpunJabatan] = useState(false);
+  const [minimalUsia, setMinimalUsia] = useState("");
+  const [maksimalUsia, setMaksimalUsia] = useState("");
+  const [pangkatGolongan, setPangkatGolongan] = useState("");
 
   useEffect(() => {
     document.title = `Syarat Suksesi | SIMANTAP`;
     
-    // Get jabatan info from location state
+    // Get jabatan info from location state or fetch by ID
     if (location.state && location.state.jabatan) {
       setJabatan(location.state.jabatan);
+    } else if (jabatanId) {
+      fetchPetaJabatanById(jabatanId)
+        .then((j) => {
+          if (j) setJabatan(j);
+        })
+        .catch((err) => console.error("Error fetching jabatan:", err));
     }
     
     loadData();
@@ -55,6 +87,19 @@ const SyaratSuksesi = () => {
         
         if (existingData && existingData.id) {
             setExistingSyarat(existingData);
+            setGunakanKompetensiTeknis(Boolean(existingData.gunakan_kompetensi_teknis));
+            setSesuaiRumpunJabatan(Boolean(existingData.sesuai_rumpun_jabatan));
+            setMinimalUsia(
+              existingData.minimal_usia !== null && existingData.minimal_usia !== undefined
+                ? String(existingData.minimal_usia)
+                : ""
+            );
+            setMaksimalUsia(
+              existingData.maksimal_usia !== null && existingData.maksimal_usia !== undefined
+                ? String(existingData.maksimal_usia)
+                : ""
+            );
+            setPangkatGolongan(existingData.pangkat_golongan || "");
             
             // Initialize syaratData with existing values
             const initialData = {};
@@ -146,7 +191,11 @@ const SyaratSuksesi = () => {
   };
 
   const handleBack = () => {
-    navigate("/masterdata/jabatan");
+    if (location.state && location.state.from) {
+      navigate(location.state.from);
+    } else {
+      navigate("/masterdata/jabatan");
+    }
   };
 
   // Get instrumens for a specific subindikator
@@ -213,6 +262,21 @@ const SyaratSuksesi = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate usia
+    if (
+      minimalUsia !== "" &&
+      maksimalUsia !== "" &&
+      parseInt(minimalUsia, 10) > parseInt(maksimalUsia, 10)
+    ) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validasi Usia",
+        text: "Usia minimal tidak boleh lebih besar dari usia maksimal",
+        confirmButtonColor: PRIMARY_COLORS.blue,
+      });
+      return;
+    }
+
     // Confirm submit
     const confirm = await Swal.fire({
       icon: "question",
@@ -253,6 +317,11 @@ const SyaratSuksesi = () => {
       const payload = {
         jabatan_id: jabatanId,
         syarat: syaratObj,
+        gunakan_kompetensi_teknis: gunakanKompetensiTeknis,
+        sesuai_rumpun_jabatan: sesuaiRumpunJabatan,
+        minimal_usia: minimalUsia !== "" ? parseInt(minimalUsia, 10) : null,
+        maksimal_usia: maksimalUsia !== "" ? parseInt(maksimalUsia, 10) : null,
+        pangkat_golongan: pangkatGolongan || null,
       };
 
       if (existingSyarat) {
@@ -269,7 +338,11 @@ const SyaratSuksesi = () => {
         showConfirmButton: false,
       });
 
-      navigate("/masterdata/jabatan");
+      if (location.state && location.state.from) {
+        navigate(location.state.from);
+      } else {
+        navigate("/masterdata/jabatan");
+      }
     } catch (error) {
       console.error("Error submitting syarat suksesi:", error);
       Swal.fire({
@@ -409,6 +482,238 @@ const SyaratSuksesi = () => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="p-6">
+              {/* Pengaturan Tambahan Suksesi */}
+              <div className="mb-8 bg-slate-50 dark:bg-gray-750/60 rounded-xl p-5 border border-slate-200 dark:border-gray-700">
+                <div className="flex items-center gap-3 mb-4">
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-white flex-shrink-0 shadow-sm"
+                    style={{ backgroundColor: PRIMARY_COLORS.teal }}
+                  >
+                    <i className="fas fa-sliders-h text-sm"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                      Pengaturan Tambahan Suksesi
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Konfigurasi parameter penilaian dan penyaringan calon suksesor untuk jabatan ini
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Toggle 1: Menggunakan Nilai Kompetensi Teknis */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col justify-between hover:border-teal-300 dark:hover:border-teal-700 transition-colors">
+                    <div>
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <label
+                          htmlFor="toggle-komp-teknis"
+                          className="text-sm font-semibold text-gray-900 dark:text-white cursor-pointer select-none"
+                        >
+                          Menggunakan Nilai Kompetensi Teknis
+                        </label>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={gunakanKompetensiTeknis}
+                          id="toggle-komp-teknis"
+                          onClick={() => setGunakanKompetensiTeknis(!gunakanKompetensiTeknis)}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
+                            gunakanKompetensiTeknis ? "bg-teal-600" : "bg-gray-300 dark:bg-gray-600"
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                              gunakanKompetensiTeknis ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Jika aktif, perhitungan Nilai Akhir Talenta menggunakan pembobotan Nilai Talenta dan Nilai Kompetensi Teknis. Jika tidak aktif, maka murni menggunakan Nilai Talenta.
+                      </p>
+                    </div>
+                    <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Status:</span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                          gunakanKompetensiTeknis
+                            ? "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {gunakanKompetensiTeknis ? "Aktif" : "Tidak Aktif"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Toggle 2: Sesuai Rumpun Jabatan */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col justify-between hover:border-teal-300 dark:hover:border-teal-700 transition-colors">
+                    <div>
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <label
+                          htmlFor="toggle-rumpun"
+                          className="text-sm font-semibold text-gray-900 dark:text-white cursor-pointer select-none"
+                        >
+                          Sesuai Rumpun Jabatan
+                        </label>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={sesuaiRumpunJabatan}
+                          id="toggle-rumpun"
+                          onClick={() => setSesuaiRumpunJabatan(!sesuaiRumpunJabatan)}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
+                            sesuaiRumpunJabatan ? "bg-teal-600" : "bg-gray-300 dark:bg-gray-600"
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                              sesuaiRumpunJabatan ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Jika aktif, suksesor hanya diambil dari rumpun Eselon I / JPT Madya yang sama (berlaku khusus jabatan kosong di bawah Deputi Bidang Administrasi dan Deputi Bidang Persidangan).
+                      </p>
+                    </div>
+                    <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Status:</span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                          sesuaiRumpunJabatan
+                            ? "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {sesuaiRumpunJabatan ? "Aktif" : "Tidak Aktif"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Option 3: Syarat Pangkat / Golongan Minimal */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col justify-between hover:border-teal-300 dark:hover:border-teal-700 transition-colors">
+                    <div>
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <label
+                          htmlFor="select-pangkat-golongan"
+                          className="text-sm font-semibold text-gray-900 dark:text-white cursor-pointer select-none flex items-center gap-1.5"
+                        >
+                          <i className="fas fa-id-badge text-blue-600 dark:text-blue-400"></i>
+                          Pangkat / Golongan Minimal
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-3">
+                        Pegawai dengan pangkat/golongan di bawah standar ini tidak akan dimasukkan dalam bursa suksesor.
+                      </p>
+                      <div>
+                        <select
+                          id="select-pangkat-golongan"
+                          value={pangkatGolongan}
+                          onChange={(e) => setPangkatGolongan(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors cursor-pointer"
+                        >
+                          <option value="">-- Semua Pangkat / Golongan (Tanpa Batasan) --</option>
+                          {PANGKAT_GOLONGAN_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Syarat Minimal:</span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                          pangkatGolongan
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {pangkatGolongan
+                          ? PANGKAT_GOLONGAN_OPTIONS.find((p) => p.value === pangkatGolongan)?.label || pangkatGolongan
+                          : "Semua Golongan"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Option 4: Syarat Usia Calon Suksesor */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-xs flex flex-col justify-between hover:border-teal-300 dark:hover:border-teal-700 transition-colors">
+                    <div>
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <label
+                          className="text-sm font-semibold text-gray-900 dark:text-white cursor-pointer select-none flex items-center gap-1.5"
+                        >
+                          <i className="fas fa-calendar-alt text-amber-600 dark:text-amber-400"></i>
+                          Syarat Usia Calon Suksesor
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-3">
+                        Tentukan batas usia calon suksesor (dalam tahun). Kosongkan jika tidak ada batas minimal atau maksimal.
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label
+                            htmlFor="input-minimal-usia"
+                            className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                          >
+                            Usia Minimal (Tahun)
+                          </label>
+                          <input
+                            type="number"
+                            id="input-minimal-usia"
+                            min="18"
+                            max="70"
+                            placeholder="Cth: 25"
+                            value={minimalUsia}
+                            onChange={(e) => setMinimalUsia(e.target.value)}
+                            className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="input-maksimal-usia"
+                            className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                          >
+                            Usia Maksimal (Tahun)
+                          </label>
+                          <input
+                            type="number"
+                            id="input-maksimal-usia"
+                            min="18"
+                            max="70"
+                            placeholder="Cth: 56"
+                            value={maksimalUsia}
+                            onChange={(e) => setMaksimalUsia(e.target.value)}
+                            className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Rentang Usia:</span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                          minimalUsia || maksimalUsia
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {minimalUsia && maksimalUsia
+                          ? `${minimalUsia} - ${maksimalUsia} Tahun`
+                          : minimalUsia
+                          ? `Min. ${minimalUsia} Tahun`
+                          : maksimalUsia
+                          ? `Maks. ${maksimalUsia} Tahun`
+                          : "Semua Usia"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {indikators.map((indikator) => {
                 const activeSubindikators = (
                   indikator.sub_indikators || []

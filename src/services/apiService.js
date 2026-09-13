@@ -85,6 +85,29 @@ export const fetchPetaJabatan = async () => {
 };
 
 /**
+ * Fetch peta jabatan by ID
+ */
+export const fetchPetaJabatanById = async (id) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(`${API_BASE_URL}/api/peta-jabatan/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    if (!response.ok) return null;
+    const result = await response.json();
+    return result.data || null;
+  } catch (error) {
+    console.error("fetchPetaJabatanById error:", error);
+    return null;
+  }
+};
+
+/**
  * Fetch peta jabatan as hierarchical tree (by unit kerja)
  */
 export const fetchPetaJabatanTree = async () => {
@@ -277,11 +300,22 @@ export const fetchPegawaiByNip = async (nip, with_penilaian = false, with_riwaya
 /**
  * Fetch rekomendasi pegawai for succession planning
  */
-export const fetchRekomendasiPegawai = async (petaJabatanId, isRotasi = false) => {
+export const fetchRekomendasiPegawai = async (
+  petaJabatanId,
+  isRotasi = false,
+  jenisJabatan = "keduanya"
+) => {
   try {
     const base = API_BASE_URL || "http://192.168.0.111:8000";
-    const params = isRotasi ? "?retensi=true" : "";
-    const url = `${base}/api/pegawai/rekomendasi/${petaJabatanId}${params}`;
+    const queryParams = new URLSearchParams();
+    if (isRotasi) {
+      queryParams.append("retensi", "true");
+    }
+    if (jenisJabatan && jenisJabatan !== "keduanya") {
+      queryParams.append("jenis_jabatan_kategori", jenisJabatan);
+    }
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    const url = `${base}/api/pegawai/rekomendasi/${petaJabatanId}${queryString}`;
 
     const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     const response = await fetch(url, {
@@ -297,7 +331,9 @@ export const fetchRekomendasiPegawai = async (petaJabatanId, isRotasi = false) =
       throw new Error(result.message || "Failed to fetch rekomendasi pegawai");
     }
 
-    return result.data || [];
+    const data = result.data || [];
+    data.pengaturan = result.pengaturan || null;
+    return data;
   } catch (error) {
     console.error("fetchRekomendasiPegawai error:", error);
     throw error;
@@ -1436,7 +1472,12 @@ export const createSyaratSuksesi = async (data) => {
 
     if (!response.ok) {
       const result = await response.json().catch(() => null);
-      throw new Error(result?.message || "Gagal menyimpan syarat suksesi");
+      let errMsg = result?.message || "Gagal menyimpan syarat suksesi";
+      if (result?.errors) {
+        const detailErrors = Object.values(result.errors).flat().join(". ");
+        if (detailErrors) errMsg = `${errMsg}: ${detailErrors}`;
+      }
+      throw new Error(errMsg);
     }
 
     const result = await response.json();
@@ -1467,7 +1508,12 @@ export const updateSyaratSuksesi = async (id, data) => {
 
     if (!response.ok) {
       const result = await response.json().catch(() => null);
-      throw new Error(result?.message || "Gagal mengupdate syarat suksesi");
+      let errMsg = result?.message || "Gagal mengupdate syarat suksesi";
+      if (result?.errors) {
+        const detailErrors = Object.values(result.errors).flat().join(". ");
+        if (detailErrors) errMsg = `${errMsg}: ${detailErrors}`;
+      }
+      throw new Error(errMsg);
     }
 
     const result = await response.json();
@@ -1935,6 +1981,111 @@ export const storeBobot360 = async (data) => {
     return await response.json();
   } catch (error) {
     console.error("storeBobot360 error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch all suksesor list
+ */
+export const fetchSuksesorList = async () => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(`${API_BASE_URL}/api/suksesor`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch suksesor list");
+    }
+
+    const result = await response.json();
+    return result.data || [];
+  } catch (error) {
+    console.error("fetchSuksesorList error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch suksesor for a specific jabatan
+ */
+export const fetchSuksesorByJabatan = async (petaJabatanId) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(`${API_BASE_URL}/api/suksesor/${petaJabatanId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch suksesor");
+    }
+
+    const result = await response.json();
+    return result.data || null;
+  } catch (error) {
+    console.error("fetchSuksesorByJabatan error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Assign or update a suksesor for a jabatan
+ */
+export const assignSuksesor = async ({ peta_jabatan_id, pegawai_id }) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(`${API_BASE_URL}/api/suksesor`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+      body: JSON.stringify({ peta_jabatan_id, pegawai_id }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.message || "Failed to assign suksesor");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("assignSuksesor error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Cancel suksesor for a jabatan
+ */
+export const cancelSuksesor = async (petaJabatanId) => {
+  try {
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(`${API_BASE_URL}/api/suksesor/${petaJabatanId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.message || "Failed to cancel suksesor");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("cancelSuksesor error:", error);
     throw error;
   }
 };
