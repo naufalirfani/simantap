@@ -65,6 +65,31 @@ const Dashboard = () => {
   // Load kotak configuration from localStorage
   const [kotakConfig, setKotakConfig] = useState(null);
 
+  // Role toggle for Matriks 9 Kotak (default: "PNS")
+  const [selectedRole, setSelectedRole] = useState("PNS"); // "PNS" | "PPPK"
+
+  // Helper untuk mencocokkan role pegawai (PNS vs PPPK)
+  const matchesRole = (itemRole, targetRole) => {
+    const r = (itemRole || "").toString().trim().toUpperCase();
+    if (targetRole === "PNS") {
+      return (
+        r === "PNS" ||
+        r === "CPNS" ||
+        r.includes("PNS") ||
+        (!r.includes("PPPK") && !r.includes("P3K") && !r.includes("PERJANJIAN KERJA"))
+      );
+    }
+    if (targetRole === "PPPK") {
+      return (
+        r === "PPPK" ||
+        r.includes("PPPK") ||
+        r.includes("P3K") ||
+        r.includes("PERJANJIAN KERJA")
+      );
+    }
+    return true;
+  };
+
   useEffect(() => {
     const config = loadKotakConfig();
     setKotakConfig(config);
@@ -451,6 +476,9 @@ const Dashboard = () => {
                   it.nilai_kinerja ?? null,
                 ),
                 avatar: it.avatar || null,
+                role: (it.role || it.raw?.role || it.status_pegawai || it.json?.statusPegawai || "PNS")
+                  .toString()
+                  .toUpperCase(),
                 raw: it,
               }));
               if (sourceData && sourceData.length > 0)
@@ -497,6 +525,11 @@ const Dashboard = () => {
               selectedJenisJabatan.length > 0 &&
               !selectedJenisJabatan.includes(it.jenisJabatan)
             ) {
+              return false;
+            }
+
+            // Filter by Role (PNS vs PPPK)
+            if (selectedRole && !matchesRole(it.role, selectedRole)) {
               return false;
             }
 
@@ -550,6 +583,7 @@ const Dashboard = () => {
             potensial: it.potensial ?? it.raw?.nilai_potensial ?? null,
             kinerja: it.kinerja ?? it.raw?.nilai_kinerja ?? null,
             avatar: it.avatar || null,
+            role: it.role || it.raw?.role || "",
             quadrant: it.quadrant ?? null,
           }));
 
@@ -578,6 +612,7 @@ const Dashboard = () => {
           potensial: it.potensial ?? null,
           kinerja: it.kinerja ?? null,
           avatar: it.avatar || null,
+          role: it.role || it.raw?.role || "",
         }));
         setEmpEmployees(mapped);
         setEmpMeta(res.meta ? { ...res.meta, tabel: "jabatan" } : null);
@@ -589,7 +624,7 @@ const Dashboard = () => {
         setEmpLoading(false);
       }
     },
-    [selectedUnitKerja, selectedJenisJabatan, quadrantData, searchQuery],
+    [selectedUnitKerja, selectedJenisJabatan, selectedRole, quadrantData, searchQuery],
   );
 
   const handleJobTypeClick = async (item) => {
@@ -639,6 +674,9 @@ const Dashboard = () => {
           potensial: it.nilai_potensial ?? null,
           kinerja: it.nilai_kinerja ?? null,
           avatar: it.avatar || null,
+          role: (it.role || it.raw?.role || it.status_pegawai || it.json?.statusPegawai || "PNS")
+            .toString()
+            .toUpperCase(),
           raw: it,
         }));
         // Also fetch unit tree to build unit options + maps, then augment employees with unitId
@@ -776,8 +814,8 @@ const Dashboard = () => {
     quadrant: computeQuadrant(item.potensial, item.kinerja),
   }));
 
-  // Apply filters
-  const computedQuadrantData = computedQuadrantDataFull.filter((item) => {
+  // Base filtered by Unit Kerja, Jenis Jabatan, and Search Query
+  const roleFilteredBase = computedQuadrantDataFull.filter((item) => {
     // Filter by Unit Kerja (with parent-child logic)
     if (
       selectedUnitKerja &&
@@ -803,6 +841,22 @@ const Dashboard = () => {
       if (!hay.includes(q)) return false;
     }
 
+    return true;
+  });
+
+  // Hitung jumlah data per Role (PNS vs PPPK) untuk toggle
+  const pnsCount = roleFilteredBase.filter((item) =>
+    matchesRole(item.role, "PNS"),
+  ).length;
+  const pppkCount = roleFilteredBase.filter((item) =>
+    matchesRole(item.role, "PPPK"),
+  ).length;
+
+  // Apply Role filter (default: "PNS")
+  const computedQuadrantData = roleFilteredBase.filter((item) => {
+    if (selectedRole && !matchesRole(item.role, selectedRole)) {
+      return false;
+    }
     return true;
   });
 
@@ -968,6 +1022,9 @@ const Dashboard = () => {
       });
 
       let filterDesc = [];
+      if (selectedRole) {
+        filterDesc.push(`Role: ${selectedRole}`);
+      }
       if (selectedUnitKerja && selectedUnitKerja.length > 0) {
         filterDesc.push(`Unit Kerja: ${selectedUnitKerja.length} terpilih`);
       }
@@ -1377,7 +1434,7 @@ const Dashboard = () => {
       const a = document.createElement("a");
       a.href = url;
       const dateStr = now.toISOString().slice(0, 10);
-      a.download = `Rekap-Pegawai-Per-Kotak-Jabatan-${dateStr}.xlsx`;
+      a.download = `Rekap-Pegawai-Per-Kotak-Jabatan-${selectedRole}-${dateStr}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1411,7 +1468,7 @@ const Dashboard = () => {
       isOpen: true,
       quadrant: quadrantNumber,
       employees: [],
-      title: `Kotak ${quadrantNumber}`,
+      title: `Kotak ${quadrantNumber} (${selectedRole})`,
       description: kotak?.kategori || "",
       color: kotak?.warna || PRIMARY_COLORS.teal,
       kotakConfig: kotak,
@@ -1432,6 +1489,9 @@ const Dashboard = () => {
     setModalState({
       isOpen: true,
       employees: [],
+      title: `Semua Pegawai (${selectedRole})`,
+      description: `Daftar seluruh pegawai ${selectedRole} dalam pemetaan 9 kotak`,
+      color: PRIMARY_COLORS.teal,
     });
     setEmpEmployees([]);
     setEmpMeta(null);
@@ -1563,6 +1623,7 @@ const Dashboard = () => {
             y: item.kinerja,
             name: item.name,
             quadrant: item.quadrant,
+            role: item.role,
           })),
           backgroundColor: POINT_COLOR,
           borderColor: isDark ? "#0F172A" : "#FFFFFF",
@@ -1630,6 +1691,7 @@ const Dashboard = () => {
             afterLabel: (item) => {
               const data = item.raw || item;
               return [
+                `Status: ${data.role || selectedRole}`,
                 `Nilai Potensial: ${data.x}`,
                 `Nilai Kinerja: ${data.y}`,
                 `Nilai Talenta: ${((data.x * 50) / 100 + (data.y * 50) / 100).toFixed(2)}`,
@@ -1953,12 +2015,63 @@ const Dashboard = () => {
 
       {/* 9 Quadrant Scatter Chart */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white mb-2">
-          Matriks 9 Kotak - Potensial vs Kinerja
-        </h2>
-        <p className="text-md text-gray-600 dark:text-gray-400 mb-4">
-          Pemetaan posisi pegawai berdasarkan nilai potensial dan kinerja
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
+              Matriks 9 Kotak - Potensial vs Kinerja
+            </h2>
+            <p className="text-md text-gray-600 dark:text-gray-400 mt-1">
+              Pemetaan posisi pegawai berdasarkan nilai potensial dan kinerja
+            </p>
+          </div>
+
+          {/* Role Toggle: PNS vs PPPK */}
+          <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-700/80 rounded-xl border border-gray-200 dark:border-gray-600 self-start sm:self-center shadow-xs">
+            <button
+              type="button"
+              onClick={() => setSelectedRole("PNS")}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                selectedRole === "PNS"
+                  ? "bg-white dark:bg-gray-800 text-teal-600 dark:text-teal-400 shadow-xs"
+                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              }`}
+            >
+              <i className="fas fa-user-tie text-xs" aria-hidden="true"></i>
+              <span>PNS</span>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  selectedRole === "PNS"
+                    ? "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300 font-bold"
+                    : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                }`}
+              >
+                {pnsCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedRole("PPPK")}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                selectedRole === "PPPK"
+                  ? "bg-white dark:bg-gray-800 text-teal-600 dark:text-teal-400 shadow-xs"
+                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              }`}
+            >
+              <i className="fas fa-id-card text-xs" aria-hidden="true"></i>
+              <span>PPPK</span>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  selectedRole === "PPPK"
+                    ? "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300 font-bold"
+                    : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                }`}
+              >
+                {pppkCount}
+              </span>
+            </button>
+          </div>
+        </div>
 
         {/* Filter Section */}
         <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -2044,7 +2157,8 @@ const Dashboard = () => {
           {/* Reset Filter Button */}
           {(selectedUnitKerja.length > 0 ||
             selectedJenisJabatan.length > 0 ||
-            searchQuery) && (
+            searchQuery ||
+            selectedRole !== "PNS") && (
             <div className="mt-4">
               <IconButton
                 title="Reset Filter"
@@ -2052,6 +2166,7 @@ const Dashboard = () => {
                   setSelectedUnitKerja([]);
                   setSelectedJenisJabatan([]);
                   setSearchQuery("");
+                  setSelectedRole("PNS");
                 }}
                 variant="default"
                 size="lg"
