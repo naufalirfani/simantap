@@ -143,11 +143,15 @@ export const fetchPetaJabatanTree = async () => {
 /**
  * Fetch peta jabatan kosong data for succession planning
  */
-export const fetchPetaJabatanKosong = async () => {
+export const fetchPetaJabatanKosong = async (kategori = "") => {
   try {
     const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    let url = `${API_BASE_URL}/api/peta-jabatan?with_pagination=false&jabatan_kosong=true`;
+    if (kategori) {
+      url += `&kategori_jabatan_kosong=${encodeURIComponent(kategori)}`;
+    }
     const response = await fetch(
-      `${API_BASE_URL}/api/peta-jabatan?with_pagination=false&jabatan_kosong=true`,
+      url,
       {
         method: "GET",
         headers: {
@@ -303,7 +307,8 @@ export const fetchPegawaiByNip = async (nip, with_penilaian = false, with_riwaya
 export const fetchRekomendasiPegawai = async (
   petaJabatanId,
   isRotasi = false,
-  jenisJabatan = "keduanya"
+  jenisJabatan = "keduanya",
+  all = true
 ) => {
   try {
     const base = API_BASE_URL || "http://192.168.0.111:8000";
@@ -313,6 +318,9 @@ export const fetchRekomendasiPegawai = async (
     }
     if (jenisJabatan && jenisJabatan !== "keduanya") {
       queryParams.append("jenis_jabatan_kategori", jenisJabatan);
+    }
+    if (all) {
+      queryParams.append("all", "true");
     }
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
     const url = `${base}/api/pegawai/rekomendasi/${petaJabatanId}${queryString}`;
@@ -333,9 +341,71 @@ export const fetchRekomendasiPegawai = async (
 
     const data = result.data || [];
     data.pengaturan = result.pengaturan || null;
+    data.total_memenuhi_syarat = result.total_memenuhi_syarat ?? data.length;
     return data;
   } catch (error) {
     console.error("fetchRekomendasiPegawai error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Export rekomendasi pegawai to Excel spreadsheet
+ */
+export const exportRekomendasiPegawaiExcel = async (
+  petaJabatanId,
+  isRotasi = false,
+  jenisJabatan = "keduanya"
+) => {
+  try {
+    const base = API_BASE_URL || "http://192.168.0.111:8000";
+    const queryParams = new URLSearchParams();
+    if (isRotasi) {
+      queryParams.append("retensi", "true");
+    }
+    if (jenisJabatan && jenisJabatan !== "keduanya") {
+      queryParams.append("jenis_jabatan_kategori", jenisJabatan);
+    }
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    const url = `${base}/api/pegawai/rekomendasi/${petaJabatanId}/export${queryString}`;
+
+    const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "X-API-TOKEN": encryptedToken,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMsg = "Gagal mengunduh file Excel";
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMsg = errorJson.message || errorJson.error || errorMsg;
+      } catch (e) {}
+      throw new Error(errorMsg);
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get("content-disposition") || "";
+    const utf8NameMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const plainNameMatch = disposition.match(/filename="?([^";]+)"?/i);
+    const rawFilename = utf8NameMatch?.[1] || plainNameMatch?.[1] || "";
+    const filename = rawFilename
+      ? decodeURIComponent(rawFilename)
+      : `Rekomendasi_Suksesor_${petaJabatanId}_${isRotasi ? "Rotasi" : "Promosi"}.xlsx`;
+
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  } catch (error) {
+    console.error("exportRekomendasiPegawaiExcel error:", error);
     throw error;
   }
 };

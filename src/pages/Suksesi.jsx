@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import {
   fetchPetaJabatanKosong,
   fetchRekomendasiPegawai,
+  exportRekomendasiPegawaiExcel,
   assignSuksesor,
   cancelSuksesor,
   fetchSyaratSuksesi,
@@ -49,6 +50,7 @@ const Suksesi = () => {
   const [selectedJabatan, setSelectedJabatan] = useState("");
   const [selectedJabatanData, setSelectedJabatanData] = useState(null);
   const [rekomendasiPegawai, setRekomendasiPegawai] = useState([]);
+  const [showAllRekomendasi, setShowAllRekomendasi] = useState(false);
   const [rekomendasiPengaturan, setRekomendasiPengaturan] = useState(null);
   const [selectedJenisJabatan, setSelectedJenisJabatan] = useState("keduanya"); // "keduanya" | "struktural" | "fungsional"
   const [loading, setLoading] = useState(true);
@@ -57,8 +59,103 @@ const Suksesi = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("promosi"); // "promosi" or "rotasi"
   const [tableSearch, setTableSearch] = useState("");
+  const [selectedKategoriJabatan, setSelectedKategoriJabatan] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 5;
+
+  const getKategoriLabel = (kategori) => {
+    switch (kategori) {
+      case "sudah_kosong":
+        return "Sudah kosong";
+      case "6_bulan":
+        return "Akan kosong dalam 6 bulan";
+      case "1_tahun":
+        return "Akan kosong dalam 1 tahun";
+      case "2_tahun":
+        return "Akan kosong dalam 2 tahun";
+      default:
+        return "-";
+    }
+  };
+
+  const getKategoriJabatan = (j) => {
+    if (j?.kategori_jabatan_kosong) return j.kategori_jabatan_kosong;
+    const bezetting = Number(j?.bezetting ?? 0);
+    const kebutuhan = Number(j?.kebutuhan_pegawai ?? 0);
+    const pej = j?.pejabat || [];
+    if (bezetting === 0 || kebutuhan - bezetting > 0 || pej.length === 0) {
+      return "sudah_kosong";
+    }
+    const p = pej[0];
+    if (!p) return "sudah_kosong";
+    const now = new Date();
+    let retireDate = null;
+    if (p.tanggal_pensiun) retireDate = new Date(p.tanggal_pensiun);
+    else if (p.tglPensiun) retireDate = new Date(p.tglPensiun);
+    else if (p.tglLahir) {
+      const b = new Date(p.tglLahir);
+      if (!isNaN(b)) {
+        const retirementAge =
+          (j.jenis_jabatan || "").toUpperCase().includes("ESELON I") ||
+          (j.jenis_jabatan || "").toUpperCase().includes("ESELON II")
+            ? 60
+            : 58;
+        retireDate = new Date(
+          b.getFullYear() + retirementAge,
+          b.getMonth(),
+          b.getDate()
+        );
+      }
+    }
+    if (!retireDate || isNaN(retireDate)) return "sudah_kosong";
+    const diffMs = retireDate.getTime() - now.getTime();
+    if (diffMs <= 0) return "sudah_kosong";
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    if (diffDays <= 183) return "6_bulan";
+    if (diffDays <= 365) return "1_tahun";
+    if (diffDays <= 730) return "2_tahun";
+    return "";
+  };
+
+  const renderKategoriBadge = (kategori, label) => {
+    const effectiveLabel = label || getKategoriLabel(kategori);
+    switch (kategori) {
+      case "sudah_kosong":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-300 dark:border-rose-700 whitespace-nowrap">
+            <i className="fas fa-exclamation-circle text-rose-500" aria-hidden="true"></i>
+            <span>{effectiveLabel}</span>
+          </span>
+        );
+      case "6_bulan":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700 whitespace-nowrap">
+            <i className="fas fa-clock text-amber-500" aria-hidden="true"></i>
+            <span>{effectiveLabel}</span>
+          </span>
+        );
+      case "1_tahun":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-300 dark:border-blue-700 whitespace-nowrap">
+            <i className="fas fa-hourglass-half text-blue-500" aria-hidden="true"></i>
+            <span>{effectiveLabel}</span>
+          </span>
+        );
+      case "2_tahun":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-300 dark:border-purple-700 whitespace-nowrap">
+            <i className="fas fa-calendar-alt text-purple-500" aria-hidden="true"></i>
+            <span>{effectiveLabel}</span>
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+            {effectiveLabel || "-"}
+          </span>
+        );
+    }
+  };
 
   // States for Modal Syarat Suksesi
   const [modalSyaratOpen, setModalSyaratOpen] = useState(false);
@@ -165,15 +262,22 @@ const Suksesi = () => {
     loadJabatanKosong();
   }, [t]);
 
-  const loadJabatanKosong = async (preserveSelectedId = null) => {
+  const loadJabatanKosong = async (preserveSelectedId = null, kategori = selectedKategoriJabatan) => {
     try {
       setLoading(true);
-      const data = await fetchPetaJabatanKosong();
+      const data = await fetchPetaJabatanKosong(kategori);
       setJabatanKosong(data);
       const targetId = preserveSelectedId !== null ? preserveSelectedId : selectedJabatan;
       if (targetId) {
         const found = data.find((j) => j.id === targetId);
-        setSelectedJabatanData(found || null);
+        if (found) {
+          setSelectedJabatan(targetId);
+          setSelectedJabatanData(found);
+        } else {
+          setSelectedJabatan("");
+          setSelectedJabatanData(null);
+          setRekomendasiPegawai([]);
+        }
       }
       setError(null);
       return data;
@@ -186,9 +290,15 @@ const Suksesi = () => {
     }
   };
 
+  const handleKategoriJabatanChange = async (kategori) => {
+    setSelectedKategoriJabatan(kategori);
+    setCurrentPage(1);
+    await loadJabatanKosong(selectedJabatan, kategori);
+  };
+
   const reloadAllData = async (jabatanId) => {
     try {
-      const data = await fetchPetaJabatanKosong();
+      const data = await fetchPetaJabatanKosong(selectedKategoriJabatan);
       setJabatanKosong(data);
       const targetId = jabatanId || selectedJabatan;
       if (targetId) {
@@ -352,11 +462,20 @@ const Suksesi = () => {
   };
 
   const filteredJabatan = jabatanKosong.filter((j) => {
+    if (selectedKategoriJabatan) {
+      const kat = j.kategori_jabatan_kosong || getKategoriJabatan(j);
+      if (kat !== selectedKategoriJabatan) return false;
+    }
     const q = tableSearch.toLowerCase();
+    const katLabel = (
+      j.kategori_jabatan_kosong_label ||
+      getKategoriLabel(j.kategori_jabatan_kosong || getKategoriJabatan(j))
+    ).toLowerCase();
     return (
       (j.nama_jabatan || "").toLowerCase().includes(q) ||
       (j.unit_kerja || "").toLowerCase().includes(q) ||
-      (j.jenis_jabatan || "").toLowerCase().includes(q)
+      (j.jenis_jabatan || "").toLowerCase().includes(q) ||
+      katLabel.includes(q)
     );
   });
   const totalPages = Math.max(1, Math.ceil(filteredJabatan.length / PAGE_SIZE));
@@ -400,6 +519,7 @@ const Suksesi = () => {
       { header: "Unit Kerja", key: "unit_kerja", width: 35 },
       { header: "Jenis Jabatan", key: "jenis_jabatan", width: 25 },
       { header: "Kelas Jabatan", key: "kelas_jabatan", width: 16 },
+      { header: "Kategori Kosong", key: "kategori_kosong", width: 26 },
       { header: "Pejabat Saat Ini", key: "pejabat", width: 30 },
       { header: "Suksesor Terpilih", key: "suksesor", width: 30 },
       { header: "Tanggal Pensiun", key: "tanggal_pensiun", width: 20 },
@@ -442,6 +562,9 @@ const Suksesi = () => {
       const sisaMasaKerja = (j.pejabat || [])
         .map((p) => p.sisa_masa_kerja || computeRemaining(p))
         .join(", ");
+      const katLabel =
+        j.kategori_jabatan_kosong_label ||
+        getKategoriLabel(j.kategori_jabatan_kosong || getKategoriJabatan(j));
 
       const row = sheet.addRow({
         no: idx + 1,
@@ -449,6 +572,7 @@ const Suksesi = () => {
         unit_kerja: j.unit_kerja || "-",
         jenis_jabatan: j.jenis_jabatan || "-",
         kelas_jabatan: j.kelas_jabatan || "-",
+        kategori_kosong: katLabel || "-",
         pejabat: pejabatNames || "-",
         suksesor: suksesorInfo,
         tanggal_pensiun: tanggalPensiun || "-",
@@ -483,6 +607,616 @@ const Suksesi = () => {
     link.click();
     URL.revokeObjectURL(url);
   };
+
+  const [exportingExcel, setExportingExcel] = useState(false);
+
+  const handleExportRekomendasiExcel = async () => {
+    if (!selectedJabatan) {
+      Swal.fire({
+        icon: "warning",
+        title: "Pilih Jabatan",
+        text: "Silakan pilih jabatan yang akan kosong terlebih dahulu.",
+        confirmButtonColor: PRIMARY_COLORS.teal,
+      });
+      return;
+    }
+
+    try {
+      setExportingExcel(true);
+      Swal.fire({
+        title: "Mempersiapkan File Excel...",
+        text: "Sedang mengunduh data rekomendasi pegawai...",
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        allowOutsideClick: false,
+      });
+
+      await exportRekomendasiPegawaiExcel(
+        selectedJabatan,
+        activeTab === "rotasi",
+        selectedJenisJabatan
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "Ekspor Berhasil",
+        text: "Data rekomendasi suksesor berhasil diekspor ke Excel.",
+        confirmButtonColor: PRIMARY_COLORS.teal,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      console.warn("Backend excel export failed, falling back to client-side ExcelJS:", err);
+      try {
+        await handleExportRekomendasiClientExcel();
+        Swal.fire({
+          icon: "success",
+          title: "Ekspor Berhasil",
+          text: "Data rekomendasi suksesor berhasil diekspor ke Excel.",
+          confirmButtonColor: PRIMARY_COLORS.teal,
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } catch (fallbackErr) {
+        Swal.fire({
+          icon: "error",
+          title: "Gagal Ekspor Excel",
+          text: err.message || "Terjadi kesalahan saat mengekspor data ke Excel.",
+          confirmButtonColor: PRIMARY_COLORS.teal,
+        });
+      }
+    } finally {
+      setExportingExcel(false);
+    }
+  };
+
+  const handleExportRekomendasiClientExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Rekomendasi Suksesor");
+
+    const namaJabatan = selectedJabatanData?.nama_jabatan || "Jabatan";
+    const unitKerja = selectedJabatanData?.unit_kerja || "-";
+    const jenisJabatan = selectedJabatanData?.jenis_jabatan || "-";
+    const kelasJabatan = selectedJabatanData?.kelas_jabatan || "-";
+    const isRotasi = activeTab === "rotasi";
+
+    sheet.mergeCells("A1:P1");
+    sheet.getCell("A1").value = "DAFTAR REKOMENDASI SUKSESOR PEGAWAI";
+    sheet.getCell("A1").font = { bold: true, size: 14, color: { argb: "FF0D9488" } };
+
+    sheet.mergeCells("A2:P2");
+    sheet.getCell("A2").value = "SISTEM MANAJEMEN TALENTA (SIMANTAP)";
+    sheet.getCell("A2").font = { italic: true, size: 10, color: { argb: "FF64748B" } };
+
+    sheet.getCell("A4").value = "Jabatan Target";
+    sheet.getCell("B4").value = `: ${namaJabatan}`;
+    sheet.getCell("G4").value = "Jenis Seleksi";
+    sheet.getCell("H4").value = `: ${isRotasi ? "Rotasi" : "Promosi"}`;
+
+    sheet.getCell("A5").value = "Unit Kerja";
+    sheet.getCell("B5").value = `: ${unitKerja}`;
+    sheet.getCell("G5").value = "Filter Jenis Jabatan";
+    sheet.getCell("H5").value = `: ${selectedJenisJabatan === "keduanya" ? "Semua" : selectedJenisJabatan === "struktural" ? "Struktural" : "Fungsional"}`;
+
+    sheet.getCell("A6").value = "Jenis / Kelas";
+    sheet.getCell("B6").value = `: ${jenisJabatan} / Kelas ${kelasJabatan}`;
+    sheet.getCell("G6").value = "Komp. Teknis";
+    sheet.getCell("H6").value = `: ${rekomendasiPengaturan?.gunakan_kompetensi_teknis ? "Digunakan (Berbobot)" : "Murni Nilai Talenta"}`;
+
+    sheet.getCell("A7").value = "Syarat Golongan";
+    sheet.getCell("B7").value = `: ${rekomendasiPengaturan?.pangkat_golongan ? "Minimal " + rekomendasiPengaturan.pangkat_golongan : "Semua Golongan"}`;
+    sheet.getCell("G7").value = "Rumpun Jabatan";
+    sheet.getCell("H7").value = `: ${rekomendasiPengaturan?.sesuai_rumpun_jabatan && rekomendasiPengaturan?.target_rumpun ? "Sesuai (" + (rekomendasiPengaturan.target_rumpun === "administrasi" ? "Deputi Administrasi" : "Deputi Persidangan") + ")" : "Semua Rumpun"}`;
+
+    let usiaInfo = "Semua Usia";
+    if (rekomendasiPengaturan?.minimal_usia && rekomendasiPengaturan?.maksimal_usia) {
+      usiaInfo = `${rekomendasiPengaturan.minimal_usia} - ${rekomendasiPengaturan.maksimal_usia} th`;
+    } else if (rekomendasiPengaturan?.minimal_usia) {
+      usiaInfo = `Min. ${rekomendasiPengaturan.minimal_usia} th`;
+    } else if (rekomendasiPengaturan?.maksimal_usia) {
+      usiaInfo = `Maks. ${rekomendasiPengaturan.maksimal_usia} th`;
+    }
+
+    sheet.getCell("A8").value = "Syarat Usia";
+    sheet.getCell("B8").value = `: ${usiaInfo}`;
+    sheet.getCell("G8").value = "Tanggal Unduh";
+    sheet.getCell("H8").value = `: ${new Date().toLocaleDateString("id-ID")}`;
+
+    ["A4", "A5", "A6", "A7", "A8", "G4", "G5", "G6", "G7", "G8"].forEach((c) => {
+      sheet.getCell(c).font = { bold: true };
+    });
+
+    const columns = [
+      { key: "no", header: "No", width: 6 },
+      { key: "ranking", header: "Peringkat", width: 12 },
+      { key: "nip", header: "NIP", width: 22 },
+      { key: "nama", header: "Nama Pegawai", width: 30 },
+      { key: "golongan", header: "Golongan", width: 12 },
+      { key: "usia", header: "Usia (Th)", width: 10 },
+      { key: "jabatan", header: "Jabatan Saat Ini", width: 30 },
+      { key: "unit_kerja", header: "Unit Kerja", width: 30 },
+      { key: "jenis_jabatan", header: "Jenis Jabatan", width: 20 },
+      { key: "kotak_rank", header: "Kotak Talenta", width: 14 },
+      { key: "nilai_potensial", header: "Nilai Potensial", width: 14 },
+      { key: "nilai_kinerja", header: "Nilai Kinerja", width: 14 },
+      { key: "nilai_talenta", header: "Nilai Talenta", width: 14 },
+    ];
+
+    if (rekomendasiPengaturan?.gunakan_kompetensi_teknis) {
+      columns.push({ key: "nilai_kompetensi_teknis", header: "Nilai Komp. Teknis", width: 18 });
+      columns.push({ key: "nilai_akhir_talenta", header: "Nilai Akhir Talenta", width: 18 });
+      columns.push({ key: "status_suksesor", header: "Status Suksesor", width: 18 });
+    } else {
+      columns.push({ key: "nilai_akhir_talenta", header: "Nilai Akhir Talenta", width: 18 });
+      columns.push({ key: "status_suksesor", header: "Status Suksesor", width: 18 });
+    }
+
+    const headerRow = sheet.getRow(10);
+    columns.forEach((col, idx) => {
+      sheet.getColumn(idx + 1).width = col.width;
+      const cell = headerRow.getCell(idx + 1);
+      cell.value = col.header;
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF0D9488" },
+      };
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
+    headerRow.height = 26;
+
+    rekomendasiPegawai.forEach((p, idx) => {
+      const isSuksesor =
+        Boolean(p.is_suksesor) ||
+        selectedJabatanData?.suksesor?.pegawai_id === p.id ||
+        selectedJabatanData?.suksesor?.pegawai?.nip === p.nip;
+
+      const rowValues = {
+        no: idx + 1,
+        ranking: `#${idx + 1}`,
+        nip: p.nip ? `'${p.nip}` : "-",
+        nama: p.nama || "-",
+        golongan: p.golongan || "-",
+        usia: p.usia ?? "-",
+        jabatan: p.jabatan || "-",
+        unit_kerja: p.unit_kerja || "-",
+        jenis_jabatan: p.jenis_jabatan || "-",
+        kotak_rank: p.kotak_rank ? `Kotak ${p.kotak_rank}` : "-",
+        nilai_potensial: p.nilai_potensial?.toFixed(2) ?? "-",
+        nilai_kinerja: p.nilai_kinerja?.toFixed(2) ?? "-",
+        nilai_talenta: p.nilai_talenta?.toFixed(2) ?? "-",
+        nilai_kompetensi_teknis: p.nilai_kompetensi_teknis?.toFixed(2) ?? "-",
+        nilai_akhir_talenta: p.nilai_akhir_talenta?.toFixed(2) ?? "-",
+        status_suksesor: isSuksesor ? "Suksesor Terpilih" : "Kandidat",
+      };
+
+      const row = sheet.addRow(columns.map((c) => rowValues[c.key]));
+      row.eachCell((cell, colIdx) => {
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: [1, 2, 5, 6, 10, columns.length].includes(colIdx)
+            ? "center"
+            : colIdx >= 11 && colIdx < columns.length
+            ? "right"
+            : "left",
+          wrapText: true,
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFCBD5E1" } },
+          left: { style: "thin", color: { argb: "FFCBD5E1" } },
+          bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+          right: { style: "thin", color: { argb: "FFCBD5E1" } },
+        };
+        if (isSuksesor) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFD1FAE5" },
+          };
+          cell.font = { bold: true };
+        } else if (idx % 2 === 1) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF0FDFA" },
+          };
+        }
+      });
+      row.height = 22;
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const cleanTitle = (namaJabatan || "Jabatan").replace(/[^a-zA-Z0-9_-]/g, "_");
+    link.download = `Rekomendasi_Suksesor_${cleanTitle}_${isRotasi ? "Rotasi" : "Promosi"}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const renderCandidateCard = (pegawai, index) => {
+    const isCurrentSuksesor =
+      Boolean(pegawai.is_suksesor) ||
+      selectedJabatanData?.suksesor?.pegawai_id === pegawai.id ||
+      selectedJabatanData?.suksesor?.pegawai?.nip === pegawai.nip;
+
+    const isTopThree = index < 3;
+
+    return (
+      <div
+        key={pegawai.nip || index}
+        className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group hover:-translate-y-1 flex flex-col h-full ${
+          isCurrentSuksesor
+            ? "border-2 border-emerald-500 ring-2 ring-emerald-500/20"
+            : "border border-gray-200 dark:border-gray-700"
+        }`}
+      >
+        {/* Ranking Badge */}
+        <div
+          className={`text-white px-6 py-3 flex items-center justify-between ${
+            isCurrentSuksesor
+              ? "bg-gradient-to-r from-emerald-600 to-teal-600"
+              : isTopThree
+              ? ""
+              : "bg-gradient-to-r from-slate-600 to-slate-700 dark:from-gray-700 dark:to-gray-800"
+          }`}
+          style={
+            !isCurrentSuksesor && isTopThree
+              ? { backgroundColor: PRIMARY_COLORS.teal }
+              : {}
+          }
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-md font-semibold">
+              {isTopThree
+                ? `Rekomendasi #${index + 1}`
+                : `Peringkat #${index + 1}`}
+            </span>
+            {isCurrentSuksesor && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-bold bg-white text-emerald-700 shadow-xs">
+                <i
+                  className="fas fa-check-circle"
+                  aria-hidden="true"
+                ></i>
+                Suksesor Terpilih
+              </span>
+            )}
+          </div>
+          <div className="flex items-center space-x-1">
+            {isTopThree ? (
+              <>
+                <i
+                  className="fas fa-star text-yellow-300 w-4 h-4"
+                  aria-hidden="true"
+                ></i>
+                <span className="text-sm font-medium">
+                  Top {index + 1}
+                </span>
+              </>
+            ) : (
+              <span className="text-xs px-2 py-0.5 rounded bg-white/20 font-medium">
+                #{index + 1}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Card Content */}
+        <div className="p-6 flex flex-col flex-1">
+          <div className="flex-grow">
+            {/* Avatar & Basic Info */}
+            <div className="flex items-start space-x-4 mb-4">
+              <div className="flex-shrink-0 relative">
+                {pegawai.avatar ? (
+                  <img
+                    src={pegawai.avatar}
+                    alt={pegawai.nama}
+                    className="w-20 h-20 rounded-full border-4 object-cover"
+                    style={{
+                      borderColor: `${PRIMARY_COLORS.teal}20`,
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center border-4"
+                    style={{
+                      borderColor: `${PRIMARY_COLORS.teal}20`,
+                    }}
+                  >
+                    <span className="text-2xl font-bold text-white">
+                      {pegawai.nama?.charAt(0) || "U"}
+                    </span>
+                  </div>
+                )}
+                {pegawai.kotak_rank != null && (
+                  <span
+                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-white text-sm font-semibold px-2 py-1 rounded-full shadow-sm border-2 border-white dark:border-gray-800 whitespace-nowrap"
+                    style={{
+                      backgroundColor: PRIMARY_COLORS.teal,
+                    }}
+                  >
+                    Kotak {pegawai.kotak_rank}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3
+                  className="text-lg font-bold text-gray-800 dark:text-white mb-1 line-clamp-2 transition-colors"
+                  onMouseEnter={(e) =>
+                    (e.target.style.color = PRIMARY_COLORS.teal)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.target.style.color = "")
+                  }
+                >
+                  {pegawai.nama}
+                </h3>
+                <p className="text-md text-gray-500 dark:text-gray-400">
+                  NIP. {pegawai.nip}
+                </p>
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-teal-900 dark:text-teal-200 mt-1 whitespace-nowrap"
+                  style={{
+                    backgroundColor: BG_COLORS.teal.light,
+                    color: TEXT_ON_BG_COLORS.teal,
+                  }}
+                >
+                  {pegawai.jenis_jabatan
+                    ?.replace("Jabatan Pimpinan Tinggi", "JPT")
+                    .replace("Jabatan Fungsional", "JF") ||
+                    pegawai.jenis_jabatan ||
+                    "-"}
+                </span>
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="space-y-3 mb-4">
+              <div className="flex items-start">
+                <i
+                  className="fas fa-briefcase w-4 h-4 text-teal-500 dark:text-gray-500 mt-0.5 mr-2 flex-shrink-0"
+                  aria-hidden="true"
+                ></i>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">
+                    Jabatan
+                  </p>
+                  <p className="text-md text-gray-700 dark:text-gray-200 font-medium">
+                    {pegawai.jabatan}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <i
+                  className="fas fa-building w-4 h-4 text-teal-500 dark:text-gray-500 mt-0.5 mr-2 flex-shrink-0"
+                  aria-hidden="true"
+                ></i>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">
+                    Unit Kerja
+                  </p>
+                  <p className="text-md text-gray-700 dark:text-gray-200 font-medium line-clamp-2">
+                    {pegawai.unit_kerja}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center">
+                  <i
+                    className="fas fa-id-badge w-4 h-4 text-teal-500 dark:text-gray-500 mr-2 flex-shrink-0"
+                    aria-hidden="true"
+                  ></i>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">
+                      Golongan
+                    </p>
+                    <p className="text-md text-gray-700 dark:text-gray-200 font-medium truncate">
+                      {pegawai.golongan || "-"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <i
+                    className="fas fa-birthday-cake w-4 h-4 text-teal-500 dark:text-gray-500 mr-2 flex-shrink-0"
+                    aria-hidden="true"
+                  ></i>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">
+                      Usia
+                    </p>
+                    <p className="text-md text-gray-700 dark:text-gray-200 font-medium truncate">
+                      {pegawai.usia ? `${pegawai.usia} th` : "-"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Metrics */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            {pegawai.gunakan_kompetensi_teknis ? (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900 dark:to-teal-800 rounded-lg p-2 text-center">
+                    <div className="text-sm text-teal-500 dark:text-teal-400 mt-1 font-medium">
+                      Nilai Potensial
+                    </div>
+                    <div
+                      className="text-2xl font-bold dark:text-teal-500"
+                      style={{ color: PRIMARY_COLORS.teal }}
+                    >
+                      {pegawai.nilai_potensial?.toFixed(2) ?? "-"}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-2 text-center">
+                    <div className="text-sm text-[#3085d6] dark:text-blue-400 mt-1 font-medium">
+                      Nilai Kinerja
+                    </div>
+                    <div className="text-2xl font-bold text-[#3085d6] dark:text-blue-300">
+                      {pegawai.nilai_kinerja?.toFixed(2) ?? "-"}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 rounded-lg p-2 text-center">
+                    <div className="text-sm text-purple-600 dark:text-purple-400 mt-1 font-medium">
+                      Nilai Talenta
+                    </div>
+                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-300">
+                      {pegawai.nilai_talenta?.toFixed(2) ?? "-"}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900 dark:to-orange-800 rounded-lg p-2 text-center">
+                    <div className="text-sm text-orange-600 dark:text-orange-400 mt-1 font-medium">
+                      Nilai Komp. Teknis
+                    </div>
+                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">
+                      {pegawai.nilai_kompetensi_teknis?.toFixed(2) ?? "-"}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 rounded-lg p-2 text-center">
+                    <div className="text-sm text-green-700 dark:text-green-400 mt-1 font-medium flex items-center justify-center gap-1">
+                      <span>Nilai Akhir Talenta</span>
+                    </div>
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                      {pegawai.nilai_akhir_talenta?.toFixed(2) ?? "-"}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900 dark:to-teal-800 rounded-lg p-2 text-center">
+                    <div className="text-sm text-teal-500 dark:text-teal-400 mt-1 font-medium">
+                      Nilai Potensial
+                    </div>
+                    <div
+                      className="text-2xl font-bold dark:text-teal-500"
+                      style={{ color: PRIMARY_COLORS.teal }}
+                    >
+                      {pegawai.nilai_potensial?.toFixed(2) ?? "-"}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-2 text-center">
+                    <div className="text-sm text-[#3085d6] dark:text-blue-400 mt-1 font-medium">
+                      Nilai Kinerja
+                    </div>
+                    <div className="text-2xl font-bold text-[#3085d6] dark:text-blue-300">
+                      {pegawai.nilai_kinerja?.toFixed(2) ?? "-"}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 rounded-lg p-2 text-center">
+                    <div className="text-sm text-green-700 dark:text-green-400 mt-1 font-medium flex items-center justify-center gap-1">
+                      <span>Nilai Akhir Talenta</span>
+                    </div>
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                      {pegawai.nilai_akhir_talenta?.toFixed(2) ?? "-"}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Card Footer / Actions */}
+        <div className="px-6 pb-4 border-t border-gray-100 dark:border-gray-800 mt-auto flex flex-col sm:flex-row items-center justify-center gap-2 pt-4">
+          <IconButton
+            onClick={() => handleDetailPegawai(pegawai.nip)}
+            variant="secondary"
+            size="md"
+            title="Detail Pegawai"
+          >
+            <i className="fas fa-info-circle mr-1.5" />
+            Lihat Profil
+          </IconButton>
+
+          {isCurrentSuksesor ? (
+            <button
+              type="button"
+              onClick={() =>
+                handleCancelSuksesor(selectedJabatan, pegawai.nama)
+              }
+              disabled={actionLoading}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+              title="Batalkan penetapan suksesor"
+            >
+              <i
+                className="fas fa-times-circle"
+                aria-hidden="true"
+              />
+              Batalkan Pilihan
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleAssignSuksesor(pegawai)}
+              disabled={actionLoading}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg text-white bg-teal-500 hover:bg-teal-700 active:bg-emerald-800 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+              title="Pilih sebagai suksesor"
+            >
+              <i
+                className="fas fa-user-check"
+                aria-hidden="true"
+              />
+              Pilih sebagai Suksesor
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderEmptySlotCard = (index) => (
+    <div
+      key={`empty-${index}`}
+      className="bg-gray-50 dark:bg-gray-800/50 rounded-xl shadow-md border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden flex flex-col h-full"
+    >
+      {/* Header Badge */}
+      <div className="bg-gray-200 dark:bg-gray-700 px-6 py-3 flex items-center justify-center border-b-2 border-dashed border-gray-300 dark:border-gray-600">
+        <span className="text-sm font-semibold text-gray-400 dark:text-gray-500">
+          Rekomendasi #{index + 1}
+        </span>
+      </div>
+
+      {/* Card Content */}
+      <div className="p-8 flex flex-col flex-1 items-center justify-center text-center">
+        <div className="flex-grow flex flex-col items-center justify-center">
+          {/* Icon */}
+          <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mb-4">
+            <i
+              className="fas fa-user-slash text-4xl text-gray-400 dark:text-gray-500"
+              aria-hidden="true"
+            ></i>
+          </div>
+
+          {/* Text */}
+          <h3 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2">
+            Tidak Ada Rekomendasi
+          </h3>
+          <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">
+            Tidak ada pegawai yang direkomendasikan untuk posisi ini
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -568,32 +1302,57 @@ const Suksesi = () => {
             </IconButton>
           </div>
 
-          {/* Search input */}
-          <div className="relative mb-4">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <i className="fas fa-search text-gray-400" aria-hidden="true"></i>
-            </div>
-            <input
-              type="text"
-              value={tableSearch}
-              onChange={(e) => {
-                setTableSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="Cari nama jabatan, unit kerja, atau jenis jabatan..."
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-600"
-            />
-            {tableSearch && (
-              <button
-                onClick={() => {
-                  setTableSearch("");
+          {/* Controls: Search input & Dropdown Filter Kategori Jabatan Kosong */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <i className="fas fa-search text-gray-400" aria-hidden="true"></i>
+              </div>
+              <input
+                type="text"
+                value={tableSearch}
+                onChange={(e) => {
+                  setTableSearch(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <i className="fas fa-times" aria-hidden="true"></i>
-              </button>
-            )}
+                placeholder="Cari nama jabatan, unit kerja, atau jenis jabatan..."
+                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-600"
+              />
+              {tableSearch && (
+                <button
+                  onClick={() => {
+                    setTableSearch("");
+                    setCurrentPage(1);
+                  }}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <i className="fas fa-times" aria-hidden="true"></i>
+                </button>
+              )}
+            </div>
+
+            {/* Dropdown Kategori Jabatan Kosong */}
+            <div className="w-full sm:w-72">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <i className="fas fa-filter text-xs" aria-hidden="true"></i>
+                </div>
+                <select
+                  value={selectedKategoriJabatan}
+                  onChange={(e) => handleKategoriJabatanChange(e.target.value)}
+                  className="w-full pl-8 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-600 font-medium appearance-none cursor-pointer"
+                >
+                  <option value="">Semua Kategori Jabatan Kosong</option>
+                  <option value="sudah_kosong">Sudah kosong</option>
+                  <option value="6_bulan">Akan kosong dalam 6 bulan</option>
+                  <option value="1_tahun">Dalam 1 tahun</option>
+                  <option value="2_tahun">2 tahun</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                  <i className="fas fa-chevron-down text-xs" aria-hidden="true"></i>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Table */}
@@ -622,6 +1381,9 @@ const Suksesi = () => {
                       Kelas Jabatan
                     </th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-white uppercase tracking-wider">
+                      Kategori Kosong
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-white uppercase tracking-wider">
                       Pejabat Saat Ini
                     </th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-white uppercase tracking-wider">
@@ -636,11 +1398,11 @@ const Suksesi = () => {
                   {filteredJabatan.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         className="px-4 py-8 text-center text-gray-400 dark:text-gray-500"
                       >
-                        {tableSearch
-                          ? "Tidak ada jabatan yang cocok dengan pencarian."
+                        {tableSearch || selectedKategoriJabatan
+                          ? "Tidak ada jabatan yang cocok dengan kriteria filter."
                           : "Tidak ada data jabatan."}
                       </td>
                     </tr>
@@ -709,6 +1471,12 @@ const Suksesi = () => {
                           </td>
                           <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">
                             {jabatan.kelas_jabatan || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            {renderKategoriBadge(
+                              jabatan.kategori_jabatan_kosong || getKategoriJabatan(jabatan),
+                              jabatan.kategori_jabatan_kosong_label
+                            )}
                           </td>
                           <td className="px-4 py-3 text-center">
                             {jabatan.pejabat && jabatan.pejabat.length > 0 ? (
@@ -1218,67 +1986,126 @@ const Suksesi = () => {
             </div>
           </div>
 
-          {/* Toggle Jenis Jabatan Pegawai */}
-          <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50 dark:bg-gray-800/60 p-3 rounded-xl border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 font-medium">
-              <i
-                className="fas fa-filter text-teal-600 dark:text-teal-400"
-                aria-hidden="true"
-              ></i>
-              <span>Pilih Jenis Jabatan Pegawai:</span>
+          {/* Controls: Filter Jenis Jabatan & Tampilan Rekomendasi */}
+          <div className="mb-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-gray-50 dark:bg-gray-800/60 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700">
+            {/* Filter Jenis Jabatan Pegawai */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 font-medium mr-1">
+                <i
+                  className="fas fa-filter text-teal-600 dark:text-teal-400"
+                  aria-hidden="true"
+                ></i>
+                <span>Jenis Jabatan:</span>
+              </div>
+              <div className="inline-flex p-1 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => handleJenisJabatanChange("keduanya")}
+                  className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 flex items-center space-x-1.5 ${
+                    selectedJenisJabatan === "keduanya"
+                      ? "text-white shadow-xs"
+                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                  style={
+                    selectedJenisJabatan === "keduanya"
+                      ? { backgroundColor: PRIMARY_COLORS.teal }
+                      : {}
+                  }
+                >
+                  <i className="fas fa-layer-group text-xs sm:text-sm" aria-hidden="true"></i>
+                  <span>Semua</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleJenisJabatanChange("struktural")}
+                  className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 flex items-center space-x-1.5 ${
+                    selectedJenisJabatan === "struktural"
+                      ? "text-white shadow-xs"
+                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                  style={
+                    selectedJenisJabatan === "struktural"
+                      ? { backgroundColor: PRIMARY_COLORS.teal }
+                      : {}
+                  }
+                >
+                  <i className="fas fa-sitemap text-xs sm:text-sm" aria-hidden="true"></i>
+                  <span>Struktural</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleJenisJabatanChange("fungsional")}
+                  className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 flex items-center space-x-1.5 ${
+                    selectedJenisJabatan === "fungsional"
+                      ? "text-white shadow-xs"
+                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                  style={
+                    selectedJenisJabatan === "fungsional"
+                      ? { backgroundColor: PRIMARY_COLORS.teal }
+                      : {}
+                  }
+                >
+                  <i className="fas fa-user-cog text-xs sm:text-sm" aria-hidden="true"></i>
+                  <span>Jabatan Fungsional</span>
+                </button>
+              </div>
             </div>
-            <div className="inline-flex p-1 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-xs">
-              <button
-                type="button"
-                onClick={() => handleJenisJabatanChange("keduanya")}
-                className={`cursor-pointer px-3 sm:px-4 py-1.5 text-sm sm:text-sm font-semibold rounded-md transition-all duration-200 flex items-center space-x-1.5 ${
-                  selectedJenisJabatan === "keduanya"
-                    ? "text-white shadow-xs"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                }`}
-                style={
-                  selectedJenisJabatan === "keduanya"
-                    ? { backgroundColor: PRIMARY_COLORS.teal }
-                    : {}
-                }
-              >
-                <i className="fas fa-layer-group text-sm" aria-hidden="true"></i>
-                <span>Semua</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleJenisJabatanChange("struktural")}
-                className={`cursor-pointer px-3 sm:px-4 py-1.5 text-sm sm:text-sm font-semibold rounded-md transition-all duration-200 flex items-center space-x-1.5 ${
-                  selectedJenisJabatan === "struktural"
-                    ? "text-white shadow-xs"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                }`}
-                style={
-                  selectedJenisJabatan === "struktural"
-                    ? { backgroundColor: PRIMARY_COLORS.teal }
-                    : {}
-                }
-              >
-                <i className="fas fa-sitemap text-sm" aria-hidden="true"></i>
-                <span>Struktural</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleJenisJabatanChange("fungsional")}
-                className={`cursor-pointer px-3 sm:px-4 py-1.5 text-sm sm:text-sm font-semibold rounded-md transition-all duration-200 flex items-center space-x-1.5 ${
-                  selectedJenisJabatan === "fungsional"
-                    ? "text-white shadow-xs"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                }`}
-                style={
-                  selectedJenisJabatan === "fungsional"
-                    ? { backgroundColor: PRIMARY_COLORS.teal }
-                    : {}
-                }
-              >
-                <i className="fas fa-user-cog text-sm" aria-hidden="true"></i>
-                <span>Jabatan Fungsional</span>
-              </button>
+
+            {/* Toggle Tampilan Rekomendasi: 3 Teratas vs Semua Pegawai */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 font-medium mr-1">
+                <i
+                  className="fas fa-users text-teal-600 dark:text-teal-400"
+                  aria-hidden="true"
+                ></i>
+                <span>Tampilan:</span>
+              </div>
+              <div className="inline-flex p-1 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setShowAllRekomendasi(false)}
+                  className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 flex items-center space-x-1.5 ${
+                    !showAllRekomendasi
+                      ? "text-white shadow-xs"
+                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                  style={
+                    !showAllRekomendasi
+                      ? { backgroundColor: PRIMARY_COLORS.teal }
+                      : {}
+                  }
+                >
+                  <i className="fas fa-trophy text-xs sm:text-sm text-yellow-300" aria-hidden="true"></i>
+                  <span>3 Teratas</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAllRekomendasi(true)}
+                  className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all duration-200 flex items-center space-x-1.5 ${
+                    showAllRekomendasi
+                      ? "text-white shadow-xs"
+                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                  style={
+                    showAllRekomendasi
+                      ? { backgroundColor: PRIMARY_COLORS.teal }
+                      : {}
+                  }
+                >
+                  <i className="fas fa-list-ol text-xs sm:text-sm" aria-hidden="true"></i>
+                  <span>
+                    Semua Pegawai Memenuhi Syarat
+                    <span className={`ml-1.5 px-2 py-0.5 text-xs rounded-full font-bold ${
+                      showAllRekomendasi
+                        ? "bg-white/25 text-white"
+                        : "bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-300"
+                    }`}>
+                      {rekomendasiPegawai?.length || 0}
+                    </span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1388,6 +2215,16 @@ const Suksesi = () => {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => handleExportRekomendasiExcel()}
+                  disabled={exportingExcel || !selectedJabatan}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-700 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                  title="Ekspor Rekomendasi Suksesor ke Excel"
+                >
+                  <i className="fas fa-file-excel text-emerald-600 dark:text-emerald-400"></i>
+                  <span>Ekspor Excel</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleOpenSyaratModal(selectedJabatanData)}
                   className="inline-flex items-center gap-1 px-2.5 py-1 text-sm font-medium rounded-lg text-teal-700 dark:text-teal-300 bg-white dark:bg-gray-700 hover:bg-teal-50 dark:hover:bg-gray-650 border border-teal-200 dark:border-gray-600 transition-colors cursor-pointer"
                   title="Lihat Rincian Syarat Suksesi"
@@ -1408,372 +2245,59 @@ const Suksesi = () => {
             </div>
           )}
 
+          {/* Banner if chosen successor is not in Top 3 and user is viewing Top 3 */}
+          {!showAllRekomendasi &&
+            selectedJabatanData?.suksesor?.pegawai_id &&
+            !rekomendasiPegawai.slice(0, 3).some((p) => p.id === selectedJabatanData.suksesor.pegawai_id) && (
+              <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm text-amber-800 dark:text-amber-300">
+                <div className="flex items-center gap-2.5">
+                  <i className="fas fa-info-circle text-amber-600 dark:text-amber-400 text-base"></i>
+                  <span>
+                    Suksesor terpilih saat ini <strong>{selectedJabatanData.suksesor?.pegawai?.name || "Pegawai"}</strong> berada di luar peringkat 3 teratas.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAllRekomendasi(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium text-xs transition-colors shrink-0 cursor-pointer shadow-xs"
+                >
+                  <i className="fas fa-eye text-xs"></i>
+                  <span>Buka Semua Pegawai ({rekomendasiPegawai.length})</span>
+                </button>
+              </div>
+            )}
+
           {loadingRekomendasi ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-teal-500 mx-auto mb-4"></div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 3 }).map((_, index) => {
-                const pegawai = rekomendasiPegawai[index];
-
-                if (pegawai) {
-                  const isCurrentSuksesor =
-                    Boolean(pegawai.is_suksesor) ||
-                    selectedJabatanData?.suksesor?.pegawai_id === pegawai.id ||
-                    selectedJabatanData?.suksesor?.pegawai?.nip === pegawai.nip;
-
-                  return (
-                    <div
-                      key={pegawai.nip}
-                      className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group hover:-translate-y-1 flex flex-col h-full ${
-                        isCurrentSuksesor
-                          ? "border-2 border-emerald-500 ring-2 ring-emerald-500/20"
-                          : "border border-gray-200 dark:border-gray-700"
-                      }`}
-                    >
-                      {/* Ranking Badge */}
-                      <div
-                        className={`text-white px-6 py-3 flex items-center justify-between ${
-                          isCurrentSuksesor
-                            ? "bg-gradient-to-r from-emerald-600 to-teal-600"
-                            : ""
-                        }`}
-                        style={
-                          !isCurrentSuksesor
-                            ? { backgroundColor: PRIMARY_COLORS.teal }
-                            : {}
-                        }
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-md font-semibold">
-                            Rekomendasi #{index + 1}
-                          </span>
-                          {isCurrentSuksesor && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-bold bg-white text-emerald-700 shadow-xs">
-                              <i
-                                className="fas fa-check-circle"
-                                aria-hidden="true"
-                              ></i>
-                              Suksesor Terpilih
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <i
-                            className="fas fa-star text-yellow-300 w-4 h-4"
-                            aria-hidden="true"
-                          ></i>
-                          <span className="text-sm font-medium">
-                            Top {index + 1}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Card Content */}
-                      <div className="p-6 flex flex-col flex-1">
-                        <div className="flex-grow">
-                          {/* Avatar & Basic Info */}
-                          <div className="flex items-start space-x-4 mb-4">
-                            <div className="flex-shrink-0 relative">
-                              {pegawai.avatar ? (
-                                <img
-                                  src={pegawai.avatar}
-                                  alt={pegawai.nama}
-                                  className="w-20 h-20 rounded-full border-4 object-cover"
-                                  style={{
-                                    borderColor: `${PRIMARY_COLORS.teal}20`,
-                                  }}
-                                />
-                              ) : (
-                                <div
-                                  className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center border-4"
-                                  style={{
-                                    borderColor: `${PRIMARY_COLORS.teal}20`,
-                                  }}
-                                >
-                                  <span className="text-2xl font-bold text-white">
-                                    {pegawai.nama.charAt(0)}
-                                  </span>
-                                </div>
-                              )}
-                              {pegawai.kotak_rank != null && (
-                                <span
-                                  className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-white text-sm font-semibold px-2 py-1 rounded-full shadow-sm border-2 border-white dark:border-gray-800 whitespace-nowrap"
-                                  style={{
-                                    backgroundColor: PRIMARY_COLORS.teal,
-                                  }}
-                                >
-                                  Kotak {pegawai.kotak_rank}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3
-                                className="text-lg font-bold text-gray-800 dark:text-white mb-1 line-clamp-2 transition-colors"
-                                onMouseEnter={(e) =>
-                                  (e.target.style.color = PRIMARY_COLORS.teal)
-                                }
-                                onMouseLeave={(e) =>
-                                  (e.target.style.color = "")
-                                }
-                              >
-                                {pegawai.nama}
-                              </h3>
-                              <p className="text-md text-gray-500 dark:text-gray-400">
-                                NIP. {pegawai.nip}
-                              </p>
-                              <span
-                                className="inline-flex items-center px-2 py-0.5 rounded text-md font-medium dark:bg-teal-900 dark:text-teal-200 mt-1 whitespace-nowrap"
-                                style={{
-                                  backgroundColor: BG_COLORS.teal.light,
-                                  color: TEXT_ON_BG_COLORS.teal,
-                                }}
-                              >
-                                {pegawai.jenis_jabatan
-                                  ?.replace("Jabatan Pimpinan Tinggi", "JPT")
-                                  .replace("Jabatan Fungsional", "JF") ||
-                                  pegawai.jenis_jabatan ||
-                                  "-"}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Details */}
-                          <div className="space-y-3 mb-4">
-                            <div className="flex items-start">
-                              <i
-                                className="fas fa-briefcase w-4 h-4 text-teal-500 dark:text-gray-500 mt-0.5 mr-2 flex-shrink-0"
-                                aria-hidden="true"
-                              ></i>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">
-                                  Jabatan
-                                </p>
-                                <p className="text-md text-gray-700 dark:text-gray-200 font-medium">
-                                  {pegawai.jabatan}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-start">
-                              <i
-                                className="fas fa-building w-4 h-4 text-teal-500 dark:text-gray-500 mt-0.5 mr-2 flex-shrink-0"
-                                aria-hidden="true"
-                              ></i>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">
-                                  Unit Kerja
-                                </p>
-                                <p className="text-md text-gray-700 dark:text-gray-200 font-medium line-clamp-2">
-                                  {pegawai.unit_kerja}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex items-center">
-                                <i
-                                  className="fas fa-id-badge w-4 h-4 text-teal-500 dark:text-gray-500 mr-2 flex-shrink-0"
-                                  aria-hidden="true"
-                                ></i>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">
-                                    Golongan
-                                  </p>
-                                  <p className="text-md text-gray-700 dark:text-gray-200 font-medium truncate">
-                                    {pegawai.golongan || "-"}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center">
-                                <i
-                                  className="fas fa-birthday-cake w-4 h-4 text-teal-500 dark:text-gray-500 mr-2 flex-shrink-0"
-                                  aria-hidden="true"
-                                ></i>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">
-                                    Usia
-                                  </p>
-                                  <p className="text-md text-gray-700 dark:text-gray-200 font-medium truncate">
-                                    {pegawai.usia ? `${pegawai.usia} th` : "-"}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* Performance Metrics */}
-                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                          {pegawai.gunakan_kompetensi_teknis ? (
-                            <>
-                              <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900 dark:to-teal-800 rounded-lg p-2 text-center">
-                                  <div className="text-sm text-teal-500 dark:text-teal-400 mt-1 font-medium">
-                                    Nilai Potensial
-                                  </div>
-                                  <div
-                                    className="text-2xl font-bold dark:text-teal-500"
-                                    style={{ color: PRIMARY_COLORS.teal }}
-                                  >
-                                    {pegawai.nilai_potensial?.toFixed(2) ?? "-"}
-                                  </div>
-                                </div>
-                                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-2 text-center">
-                                  <div className="text-sm text-[#3085d6] dark:text-blue-400 mt-1 font-medium">
-                                    Nilai Kinerja
-                                  </div>
-                                  <div className="text-2xl font-bold text-[#3085d6] dark:text-blue-300">
-                                    {pegawai.nilai_kinerja?.toFixed(2) ?? "-"}
-                                  </div>
-                                </div>
-                                <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 rounded-lg p-2 text-center">
-                                  <div className="text-sm text-purple-600 dark:text-purple-400 mt-1 font-medium">
-                                    Nilai Talenta
-                                  </div>
-                                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-300">
-                                    {pegawai.nilai_talenta?.toFixed(2) ?? "-"}
-                                  </div>
-                                </div>
-                                <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900 dark:to-orange-800 rounded-lg p-2 text-center">
-                                  <div className="text-sm text-orange-600 dark:text-orange-400 mt-1 font-medium">
-                                    Nilai Komp. Teknis
-                                  </div>
-                                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">
-                                    {pegawai.nilai_kompetensi_teknis?.toFixed(2) ??
-                                      "-"}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="mt-3">
-                                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 rounded-lg p-2 text-center">
-                                  <div className="text-sm text-green-700 dark:text-green-400 mt-1 font-medium flex items-center justify-center gap-1">
-                                    <span>Nilai Akhir Talenta</span>
-                                  </div>
-                                  <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-                                    {pegawai.nilai_akhir_talenta?.toFixed(2) ?? "-"}
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900 dark:to-teal-800 rounded-lg p-2 text-center">
-                                  <div className="text-sm text-teal-500 dark:text-teal-400 mt-1 font-medium">
-                                    Nilai Potensial
-                                  </div>
-                                  <div
-                                    className="text-2xl font-bold dark:text-teal-500"
-                                    style={{ color: PRIMARY_COLORS.teal }}
-                                  >
-                                    {pegawai.nilai_potensial?.toFixed(2) ?? "-"}
-                                  </div>
-                                </div>
-                                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-lg p-2 text-center">
-                                  <div className="text-sm text-[#3085d6] dark:text-blue-400 mt-1 font-medium">
-                                    Nilai Kinerja
-                                  </div>
-                                  <div className="text-2xl font-bold text-[#3085d6] dark:text-blue-300">
-                                    {pegawai.nilai_kinerja?.toFixed(2) ?? "-"}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="mt-3">
-                                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 rounded-lg p-2 text-center">
-                                  <div className="text-sm text-green-700 dark:text-green-400 mt-1 font-medium flex items-center justify-center gap-1">
-                                    <span>Nilai Akhir Talenta</span>
-                                  </div>
-                                  <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-                                    {pegawai.nilai_akhir_talenta?.toFixed(2) ?? "-"}
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="px-6 pb-4 border-t border-gray-100 dark:border-gray-800 mt-auto flex flex-col sm:flex-row items-center justify-center gap-2 pt-4">
-                        <IconButton
-                          onClick={() => handleDetailPegawai(pegawai.nip)}
-                          variant="secondary"
-                          size="md"
-                          title="Detail Pegawai"
-                        >
-                          <i className="fas fa-info-circle mr-1.5" />
-                          Lihat Profil
-                        </IconButton>
-
-                        {isCurrentSuksesor ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCancelSuksesor(selectedJabatan, pegawai.nama)
-                            }
-                            disabled={actionLoading}
-                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-                            title="Batalkan penetapan suksesor"
-                          >
-                            <i
-                              className="fas fa-times-circle"
-                              aria-hidden="true"
-                            />
-                            Batalkan Pilihan
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleAssignSuksesor(pegawai)}
-                            disabled={actionLoading}
-                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg text-white bg-teal-500 hover:bg-teal-700 active:bg-emerald-800 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-                            title="Pilih sebagai suksesor"
-                          >
-                            <i
-                              className="fas fa-user-check"
-                              aria-hidden="true"
-                            />
-                            Pilih sebagai Suksesor
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                } else {
-                  return (
-                    <div
-                      key={`empty-${index}`}
-                      className="bg-gray-50 dark:bg-gray-800/50 rounded-xl shadow-md border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden flex flex-col h-full"
-                    >
-                      {/* Header Badge */}
-                      <div className="bg-gray-200 dark:bg-gray-700 px-6 py-3 flex items-center justify-center border-b-2 border-dashed border-gray-300 dark:border-gray-600">
-                        <span className="text-sm font-semibold text-gray-400 dark:text-gray-500">
-                          Rekomendasi #{index + 1}
-                        </span>
-                      </div>
-
-                      {/* Card Content */}
-                      <div className="p-8 flex flex-col flex-1 items-center justify-center text-center">
-                        <div className="flex-grow flex flex-col items-center justify-center">
-                          {/* Icon */}
-                          <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mb-4">
-                            <i
-                              className="fas fa-user-slash text-4xl text-gray-400 dark:text-gray-500"
-                              aria-hidden="true"
-                            ></i>
-                          </div>
-
-                          {/* Text */}
-                          <h3 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2">
-                            Tidak Ada Rekomendasi
-                          </h3>
-                          <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">
-                            Tidak ada pegawai yang direkomendasikan untuk posisi
-                            ini
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-              })}
+              {!showAllRekomendasi ? (
+                Array.from({ length: 3 }).map((_, index) => {
+                  const pegawai = rekomendasiPegawai[index];
+                  if (pegawai) {
+                    return renderCandidateCard(pegawai, index);
+                  }
+                  return renderEmptySlotCard(index);
+                })
+              ) : rekomendasiPegawai.length > 0 ? (
+                rekomendasiPegawai.map((pegawai, index) =>
+                  renderCandidateCard(pegawai, index)
+                )
+              ) : (
+                <div className="col-span-full bg-white dark:bg-gray-800 rounded-xl p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-700">
+                  <div className="w-20 h-20 mx-auto rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
+                    <i className="fas fa-users-slash text-3xl text-gray-400 dark:text-gray-500"></i>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200 mb-1">
+                    Tidak Ada Pegawai yang Memenuhi Syarat
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                    Tidak ada pegawai yang memenuhi kriteria (pangkat/golongan, usia, rumpun jabatan, atau kualifikasi) untuk jabatan ini.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
