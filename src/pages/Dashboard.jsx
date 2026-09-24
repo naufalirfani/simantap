@@ -469,6 +469,12 @@ const Dashboard = () => {
                 jabatan: it.jabatan || it.nama_jabatan || "",
                 unitKerja: it.unit_kerja || it.unitKerja || "",
                 jenisJabatan: it.jenis_jabatan || it.jenisJabatan || "",
+                golongan:
+                  it.golongan ||
+                  it.gol ||
+                  it.pangkat ||
+                  it.raw?.golongan ||
+                  "",
                 potensial: it.nilai_potensial ?? null,
                 kinerja: it.nilai_kinerja ?? null,
                 quadrant: computeQuadrant(
@@ -671,6 +677,12 @@ const Dashboard = () => {
           jabatan: it.jabatan || it.nama_jabatan || "",
           unitKerja: it.unit_kerja || it.unitKerja || "",
           jenisJabatan: it.jenis_jabatan || it.jenisJabatan || "",
+          golongan:
+            it.golongan ||
+            it.gol ||
+            it.pangkat ||
+            it.raw?.golongan ||
+            "",
           potensial: it.nilai_potensial ?? null,
           kinerja: it.nilai_kinerja ?? null,
           avatar: it.avatar || null,
@@ -1349,6 +1361,7 @@ const Dashboard = () => {
         { header: "Jabatan", key: "jabatan", width: 36 },
         { header: "Jenis Jabatan", key: "jenis_jabatan", width: 30 },
         { header: "Unit Kerja", key: "unit_kerja", width: 36 },
+        { header: "Golongan", key: "golongan", width: 14 },
         { header: "Nilai Potensial (X)", key: "potensial", width: 20 },
         { header: "Nilai Kinerja (Y)", key: "kinerja", width: 20 },
         { header: "Nilai Talenta", key: "nilai_talenta", width: 16 },
@@ -1391,6 +1404,7 @@ const Dashboard = () => {
           jabatan: item.jabatan || "-",
           jenis_jabatan: item.jenisJabatan || "-",
           unit_kerja: item.unitKerja || "-",
+          golongan: item.golongan || item.raw?.golongan || "-",
           potensial: isFinite(p) ? p : "-",
           kinerja: isFinite(k) ? k : "-",
           nilai_talenta: Number.isFinite(nilaiTalenta)
@@ -1417,7 +1431,7 @@ const Dashboard = () => {
             right: { style: "thin", color: { argb: "E2E8F0" } },
           };
 
-          if ([1, 2, 7, 8, 9, 10].includes(colNum)) {
+          if ([1, 2, 7, 8, 9, 10, 11].includes(colNum)) {
             cell.alignment = { horizontal: "center", vertical: "middle" };
           } else {
             cell.alignment = { horizontal: "left", vertical: "middle" };
