@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSettings } from "../context/SettingsContext";
 import { PRIMARY_COLORS, BG_COLORS, TEXT_ON_BG_COLORS } from "../config/colors";
@@ -16,6 +16,37 @@ import {
   fetchInstrumens,
 } from "../services/apiService";
 import ExcelJS from "exceljs";
+
+const KATEGORI_JABATAN_OPTIONS = [
+  {
+    value: "sudah_kosong",
+    label: "Sudah kosong",
+    badgeColor: "rose",
+    icon: "fa-exclamation-circle",
+    dotClass: "bg-rose-500",
+  },
+  {
+    value: "6_bulan",
+    label: "Akan kosong dalam 6 bulan",
+    badgeColor: "amber",
+    icon: "fa-clock",
+    dotClass: "bg-amber-500",
+  },
+  {
+    value: "1_tahun",
+    label: "Akan kosong dalam 1 tahun",
+    badgeColor: "blue",
+    icon: "fa-hourglass-half",
+    dotClass: "bg-blue-500",
+  },
+  {
+    value: "2_tahun",
+    label: "Akan kosong dalam 2 tahun",
+    badgeColor: "purple",
+    icon: "fa-calendar-alt",
+    dotClass: "bg-purple-500",
+  },
+];
 
 const PANGKAT_GOLONGAN_OPTIONS = [
   { value: "I/a", label: "Juru Muda (I/a)" },
@@ -59,7 +90,9 @@ const Suksesi = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("promosi"); // "promosi" or "rotasi"
   const [tableSearch, setTableSearch] = useState("");
-  const [selectedKategoriJabatan, setSelectedKategoriJabatan] = useState("");
+  const [selectedKategoriJabatan, setSelectedKategoriJabatan] = useState([]);
+  const [isKategoriDropdownOpen, setIsKategoriDropdownOpen] = useState(false);
+  const kategoriDropdownRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 5;
 
@@ -262,6 +295,21 @@ const Suksesi = () => {
     loadJabatanKosong();
   }, [t]);
 
+  // Close kategori dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        kategoriDropdownRef.current &&
+        !kategoriDropdownRef.current.contains(event.target)
+      ) {
+        setIsKategoriDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const loadJabatanKosong = async (preserveSelectedId = null, kategori = selectedKategoriJabatan) => {
     try {
       setLoading(true);
@@ -291,9 +339,33 @@ const Suksesi = () => {
   };
 
   const handleKategoriJabatanChange = async (kategori) => {
-    setSelectedKategoriJabatan(kategori);
+    const nextList = Array.isArray(kategori)
+      ? kategori
+      : kategori
+        ? [kategori]
+        : [];
+    setSelectedKategoriJabatan(nextList);
     setCurrentPage(1);
-    await loadJabatanKosong(selectedJabatan, kategori);
+    await loadJabatanKosong(selectedJabatan, nextList);
+  };
+
+  const toggleKategoriItem = (val) => {
+    const current = Array.isArray(selectedKategoriJabatan)
+      ? selectedKategoriJabatan
+      : [];
+    const next = current.includes(val)
+      ? current.filter((k) => k !== val)
+      : [...current, val];
+    handleKategoriJabatanChange(next);
+  };
+
+  const handleSelectAllKategori = () => {
+    const all = KATEGORI_JABATAN_OPTIONS.map((o) => o.value);
+    handleKategoriJabatanChange(all);
+  };
+
+  const handleClearAllKategori = () => {
+    handleKategoriJabatanChange([]);
   };
 
   const reloadAllData = async (jabatanId) => {
@@ -462,9 +534,13 @@ const Suksesi = () => {
   };
 
   const filteredJabatan = jabatanKosong.filter((j) => {
-    if (selectedKategoriJabatan) {
+    if (
+      Array.isArray(selectedKategoriJabatan) &&
+      selectedKategoriJabatan.length > 0 &&
+      selectedKategoriJabatan.length < KATEGORI_JABATAN_OPTIONS.length
+    ) {
       const kat = j.kategori_jabatan_kosong || getKategoriJabatan(j);
-      if (kat !== selectedKategoriJabatan) return false;
+      if (!selectedKategoriJabatan.includes(kat)) return false;
     }
     const q = tableSearch.toLowerCase();
     const katLabel = (
@@ -1331,27 +1407,148 @@ const Suksesi = () => {
               )}
             </div>
 
-            {/* Dropdown Kategori Jabatan Kosong */}
-            <div className="w-full sm:w-72">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-                  <i className="fas fa-filter text-xs" aria-hidden="true"></i>
+            {/* Dropdown Kategori Jabatan Kosong (Multi-Select) */}
+            <div className="w-full sm:w-80 relative" ref={kategoriDropdownRef}>
+              {/* Trigger Button */}
+              <button
+                type="button"
+                onClick={() => setIsKategoriDropdownOpen((prev) => !prev)}
+                className={`w-full min-h-[38px] px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-600 transition-colors flex items-center justify-between gap-2 cursor-pointer shadow-xs ${
+                  isKategoriDropdownOpen
+                    ? "border-teal-500 ring-2 ring-teal-400/30"
+                    : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <i
+                    className="fas fa-filter text-xs text-teal-600 dark:text-teal-400 flex-shrink-0"
+                    aria-hidden="true"
+                  ></i>
+                  {selectedKategoriJabatan.length === 0 ? (
+                    <span className="text-gray-500 dark:text-gray-400 truncate">
+                      Semua Kategori Jabatan Kosong
+                    </span>
+                  ) : selectedKategoriJabatan.length === 1 ? (
+                    <span className="font-medium text-gray-800 dark:text-gray-100 truncate">
+                      {getKategoriLabel(selectedKategoriJabatan[0])}
+                    </span>
+                  ) : selectedKategoriJabatan.length === KATEGORI_JABATAN_OPTIONS.length ? (
+                    <span className="font-medium text-gray-800 dark:text-gray-100 truncate">
+                      Semua Kategori ({selectedKategoriJabatan.length})
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-300 flex-shrink-0">
+                        {selectedKategoriJabatan.length} Terpilih
+                      </span>
+                      <span className="text-xs text-gray-600 dark:text-gray-300 truncate">
+                        {selectedKategoriJabatan.map((k) => getKategoriLabel(k)).join(", ")}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <select
-                  value={selectedKategoriJabatan}
-                  onChange={(e) => handleKategoriJabatanChange(e.target.value)}
-                  className="w-full pl-8 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-600 font-medium appearance-none cursor-pointer"
-                >
-                  <option value="">Semua Kategori Jabatan Kosong</option>
-                  <option value="sudah_kosong">Sudah kosong</option>
-                  <option value="6_bulan">Akan kosong dalam 6 bulan</option>
-                  <option value="1_tahun">Dalam 1 tahun</option>
-                  <option value="2_tahun">2 tahun</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                  <i className="fas fa-chevron-down text-xs" aria-hidden="true"></i>
+
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {selectedKategoriJabatan.length > 0 && (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClearAllKategori();
+                      }}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                      title="Reset filter kategori"
+                      role="button"
+                    >
+                      <i className="fas fa-times text-xs" aria-hidden="true"></i>
+                    </span>
+                  )}
+                  <i
+                    className={`fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200 ${
+                      isKategoriDropdownOpen ? "rotate-180 text-teal-600" : ""
+                    }`}
+                    aria-hidden="true"
+                  ></i>
                 </div>
-              </div>
+              </button>
+
+              {/* Dropdown Menu Panel */}
+              {isKategoriDropdownOpen && (
+                <div className="absolute right-0 sm:left-0 z-50 mt-1.5 w-full sm:w-88 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 overflow-hidden">
+                  {/* Panel Header */}
+                  <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      Pilih Kategori Kosong
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllKategori}
+                        className="text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 hover:underline cursor-pointer"
+                      >
+                        Pilih Semua
+                      </button>
+                      <span className="text-gray-300 dark:text-gray-600">|</span>
+                      <button
+                        type="button"
+                        onClick={handleClearAllKategori}
+                        className="text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:underline cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Options List */}
+                  <div className="p-1 space-y-0.5 max-h-60 overflow-y-auto">
+                    {KATEGORI_JABATAN_OPTIONS.map((opt) => {
+                      const isChecked = selectedKategoriJabatan.includes(opt.value);
+                      return (
+                        <div
+                          key={opt.value}
+                          onClick={() => toggleKategoriItem(opt.value)}
+                          className={`w-full px-3 py-2 rounded-lg text-sm flex items-center justify-between gap-3 cursor-pointer transition-colors ${
+                            isChecked
+                              ? "bg-teal-50/70 dark:bg-teal-900/30 text-teal-950 dark:text-teal-100 font-medium"
+                              : "hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {}} // handled by parent onClick
+                              className="rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 h-4 w-4 pointer-events-none"
+                            />
+                            <span className="flex items-center gap-2 truncate">
+                              <span className={`w-2 h-2 rounded-full ${opt.dotClass} flex-shrink-0`}></span>
+                              <span className="truncate">{opt.label}</span>
+                            </span>
+                          </div>
+                          {isChecked && (
+                            <i className="fas fa-check text-xs text-teal-600 dark:text-teal-400 flex-shrink-0"></i>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Panel Footer */}
+                  <div className="px-3 pt-2 pb-1 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>
+                      {selectedKategoriJabatan.length === 0
+                        ? "Menampilkan semua kategori"
+                        : `${selectedKategoriJabatan.length} dari ${KATEGORI_JABATAN_OPTIONS.length} dipilih`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsKategoriDropdownOpen(false)}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-md bg-teal-600 text-white hover:bg-teal-700 transition-colors cursor-pointer"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1401,7 +1598,10 @@ const Suksesi = () => {
                         colSpan={9}
                         className="px-4 py-8 text-center text-gray-400 dark:text-gray-500"
                       >
-                        {tableSearch || selectedKategoriJabatan
+                        {tableSearch ||
+                        (Array.isArray(selectedKategoriJabatan)
+                          ? selectedKategoriJabatan.length > 0
+                          : selectedKategoriJabatan)
                           ? "Tidak ada jabatan yang cocok dengan kriteria filter."
                           : "Tidak ada data jabatan."}
                       </td>

@@ -2235,8 +2235,8 @@ const DetailPegawai = () => {
       {/* Indicator Scores */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Potensial Indicators */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <i
               className="fas fa-star"
               style={{ color: PRIMARY_COLORS.teal }}
@@ -2306,60 +2306,60 @@ const DetailPegawai = () => {
                 return (
                   <div
                     key={idx}
-                    className="bg-teal-50 dark:bg-teal-900/10 rounded"
+                    className="bg-teal-50 dark:bg-teal-900/10 rounded overflow-hidden"
                   >
                     <button
                       type="button"
                       onClick={() => togglePotensial(ind.name)}
-                      className="w-full text-left flex items-center justify-between p-2 px-3 hover:bg-teal-100 dark:hover:bg-teal-900/20 rounded cursor-pointer"
+                      className="w-full text-left flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 p-2.5 sm:p-3 hover:bg-teal-100 dark:hover:bg-teal-900/20 rounded transition-colors cursor-pointer"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
                         <i
-                          className={`fas fa-chevron-right transform transition-transform duration-200 ${isOpen ? "rotate-90" : ""
+                          className={`fas fa-chevron-right transform transition-transform duration-200 mt-1 sm:mt-0 flex-shrink-0 ${isOpen ? "rotate-90" : ""
                             }`}
                           style={{ color: PRIMARY_COLORS.teal }}
                         ></i>
-                        <span className="text-md text-gray-700 dark:text-gray-300">
+                        <span className="text-sm sm:text-md font-semibold sm:font-normal text-gray-800 dark:text-gray-200 break-words leading-snug">
                           {ind.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 justify-end">
-                        <a
+                      <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-4 w-full sm:w-auto pl-6 sm:pl-0 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-teal-200/50 dark:border-teal-800/40">
+                        <span
                           onClick={(e) => {
                             e.stopPropagation();
                             handleOpenInstrumenModal(indikatorObj, "potensial");
                           }}
-                          variant="ghost"
-                          size="sm"
+                          role="button"
+                          tabIndex={0}
                           title={`Lihat instrumen ${ind.name}`}
-                          className="text-teal-600 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/20 whitespace-nowrap flex items-center"
+                          className="inline-flex items-center text-xs sm:text-sm font-medium text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-100 bg-teal-100/70 dark:bg-teal-900/40 hover:bg-teal-200/70 dark:hover:bg-teal-900/60 px-2 py-1 rounded transition-colors whitespace-nowrap cursor-pointer"
                         >
-                          <i className="fas fa-clipboard-list mr-2"></i>
-                          Lihat Instrumen
-                        </a>
-                        <div className="flex items-center gap-3">
+                          <i className="fas fa-clipboard-list mr-1.5 text-xs"></i>
+                          <span>Lihat Instrumen</span>
+                        </span>
+                        <div className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
                           {ind.bobot !== undefined && ind.bobot !== null && (
-                            <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                               Bobot: {ind.bobot}%
-                            </div>
+                            </span>
                           )}
                           <div className="text-right">
-                            <div
-                              className="text-md font-bold dark:text-teal-400"
+                            <span
+                              className="text-base sm:text-md font-bold dark:text-teal-400"
                               style={{ color: PRIMARY_COLORS.teal }}
                             >
                               {(Number(ind.hasil) || 0).toFixed(2)}
-                            </div>
+                            </span>
                           </div>
                         </div>
                       </div>
                     </button>
 
                     <div
-                      className={`overflow-hidden transition-[max-height,opacity] duration-300 ${isOpen ? "max-h-128 opacity-100" : "max-h-0 opacity-0"
+                      className={`overflow-hidden transition-[max-height,opacity] duration-300 ${isOpen ? "max-h-[3000px] opacity-100" : "max-h-0 opacity-0"
                         }`}
                     >
-                      <div className="p-2 pl-8 space-y-1 overflow-visible">
+                      <div className="p-2 pl-3 sm:pl-7 space-y-1.5 overflow-visible">
                         {subs.length > 0 ? (
                           subs.map((s, subIdx) => {
                             const val = getSubValue(s.id);
@@ -2370,37 +2370,39 @@ const DetailPegawai = () => {
                             return (
                               <div
                                 key={s.id}
-                                className="flex justify-between items-center p-1 rounded"
+                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-4 p-2 sm:p-1.5 rounded bg-white/60 dark:bg-gray-800/40 sm:bg-transparent border border-teal-100/60 dark:border-teal-900/30 sm:border-0"
                               >
-                                <div className="flex flex-col">
-                                  <div className="text-md text-gray-700 dark:text-gray-300">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <div className="text-xs sm:text-sm md:text-md text-gray-700 dark:text-gray-300 font-medium sm:font-normal break-words leading-snug">
                                     {s.subindikator}
                                   </div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                     Bobot: {s.bobot ?? "-"}%
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end gap-1">
-                                    Nilai:{" "}
-                                    {val.nilai !== null
-                                      ? isMSKInd
-                                        ? `${Number(val.nilai).toFixed(2)}/${getStandarForSubIndikator(s.id)}`
-                                        : isPotensiTalentaInd
-                                          ? `${Number(val.nilai).toFixed(2)}/5`
-                                          : Number(val.nilai).toFixed(2)
-                                      : "-"}
+                                <div className="flex items-center justify-between sm:justify-end gap-3 text-right pt-1 sm:pt-0 border-t sm:border-t-0 border-dashed border-teal-100 dark:border-teal-900/30 flex-shrink-0">
+                                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end gap-1.5">
+                                    <span>
+                                      Nilai:{" "}
+                                      {val.nilai !== null
+                                        ? isMSKInd
+                                          ? `${Number(val.nilai).toFixed(2)}/${getStandarForSubIndikator(s.id)}`
+                                          : isPotensiTalentaInd
+                                            ? `${Number(val.nilai).toFixed(2)}/5`
+                                            : Number(val.nilai).toFixed(2)
+                                        : "-"}
+                                    </span>
                                     {hasInstrumens && (
                                       <div className="group relative inline-block">
                                         <i
-                                          className="fas fa-info-circle cursor-help"
+                                          className="fas fa-info-circle cursor-help text-xs sm:text-sm"
                                           style={{ color: PRIMARY_COLORS.teal }}
                                         ></i>
                                         <div
-                                          className={`invisible group-hover:visible absolute right-0 ${isFirstSub ? "top-full mt-2" : "bottom-full mb-2"} w-96 p-2 bg-white dark:bg-gray-100 text-gray-800 dark:text-gray-900 text-md text-left rounded shadow-lg border border-gray-200 z-50`}
+                                          className={`invisible group-hover:visible absolute right-0 ${isFirstSub ? "top-full mt-2" : "bottom-full mb-2"} w-72 sm:w-80 md:w-96 max-w-[calc(100vw-2.5rem)] p-2.5 bg-white dark:bg-gray-100 text-gray-800 dark:text-gray-900 text-xs sm:text-sm text-left rounded-lg shadow-xl border border-gray-200 z-50 break-words pointer-events-none`}
                                         >
                                           {subInstrumens.map((inst) => (
-                                            <div key={inst.id}>
+                                            <div key={inst.id} className="py-0.5">
                                               {cleanInstrumenText(
                                                 inst.instrumen,
                                               )}
@@ -2411,7 +2413,7 @@ const DetailPegawai = () => {
                                     )}
                                   </div>
                                   <div
-                                    className="text-md font-medium dark:text-blue-400"
+                                    className="text-sm sm:text-md font-bold sm:font-medium dark:text-blue-400 min-w-[3rem] text-right"
                                     style={{ color: PRIMARY_COLORS.teal }}
                                   >
                                     {val.hasil !== null
@@ -2423,7 +2425,7 @@ const DetailPegawai = () => {
                             );
                           })
                         ) : (
-                          <div className="text-md text-gray-500 italic">
+                          <div className="text-sm text-gray-500 italic p-1">
                             Tidak ada subindikator
                           </div>
                         )}
@@ -2437,8 +2439,8 @@ const DetailPegawai = () => {
         </div>
 
         {/* Kinerja Indicators */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <i className="fas fa-chart-line text-[#3085d6]"></i>
             Nilai Kinerja per Indikator
           </h3>
@@ -2491,56 +2493,56 @@ const DetailPegawai = () => {
                 return (
                   <div
                     key={idx}
-                    className="bg-blue-50 dark:bg-blue-900/10 rounded"
+                    className="bg-blue-50 dark:bg-blue-900/10 rounded overflow-hidden"
                   >
                     <button
                       type="button"
                       onClick={() => toggleKinerja(ind.name)}
-                      className="w-full text-left flex items-center justify-between p-2 px-3 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded cursor-pointer"
+                      className="w-full text-left flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 p-2.5 sm:p-3 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded transition-colors cursor-pointer"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
                         <i
-                          className={`fas fa-chevron-right text-[#3085d6] transform transition-transform duration-200 ${isOpen ? "rotate-90" : ""
+                          className={`fas fa-chevron-right text-[#3085d6] transform transition-transform duration-200 mt-1 sm:mt-0 flex-shrink-0 ${isOpen ? "rotate-90" : ""
                             }`}
                         ></i>
-                        <span className="text-md text-gray-700 dark:text-gray-300">
+                        <span className="text-sm sm:text-md font-semibold sm:font-normal text-gray-800 dark:text-gray-200 break-words leading-snug">
                           {ind.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 justify-end">
-                        <a
+                      <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-4 w-full sm:w-auto pl-6 sm:pl-0 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-blue-200/50 dark:border-blue-800/40">
+                        <span
                           onClick={(e) => {
                             e.stopPropagation();
                             handleOpenInstrumenModal(indikatorObj, "kinerja");
                           }}
-                          variant="ghost"
-                          size="sm"
+                          role="button"
+                          tabIndex={0}
                           title={`Lihat instrumen ${ind.name}`}
-                          className="text-[#3085d6] dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/20 whitespace-nowrap flex items-center"
+                          className="inline-flex items-center text-xs sm:text-sm font-medium text-[#3085d6] dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100 bg-blue-100/70 dark:bg-blue-900/40 hover:bg-blue-200/70 dark:hover:bg-blue-900/60 px-2 py-1 rounded transition-colors whitespace-nowrap cursor-pointer"
                         >
-                          <i className="fas fa-clipboard-list mr-2"></i>
-                          Lihat Instrumen
-                        </a>
-                        <div className="flex items-center gap-3">
+                          <i className="fas fa-clipboard-list mr-1.5 text-xs"></i>
+                          <span>Lihat Instrumen</span>
+                        </span>
+                        <div className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
                           {ind.bobot !== undefined && ind.bobot !== null && (
-                            <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                               Bobot: {ind.bobot}%
-                            </div>
+                            </span>
                           )}
                           <div className="text-right">
-                            <div className="text-md font-bold text-[#3085d6] dark:text-[#60a5fa]">
+                            <span className="text-base sm:text-md font-bold text-[#3085d6] dark:text-[#60a5fa]">
                               {(Number(ind.hasil) || 0).toFixed(2)}
-                            </div>
+                            </span>
                           </div>
                         </div>
                       </div>
                     </button>
 
                     <div
-                      className={`overflow-hidden transition-[max-height,opacity] duration-300 ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                      className={`overflow-hidden transition-[max-height,opacity] duration-300 ${isOpen ? "max-h-[3000px] opacity-100" : "max-h-0 opacity-0"
                         }`}
                     >
-                      <div className="p-2 pl-8 space-y-1 overflow-visible">
+                      <div className="p-2 pl-3 sm:pl-7 space-y-1.5 overflow-visible">
                         {subs.length > 0 ? (
                           subs.map((s, subIdx) => {
                             const val = getSubValue(s.id);
@@ -2551,34 +2553,36 @@ const DetailPegawai = () => {
                             return (
                               <div
                                 key={s.id}
-                                className="flex justify-between items-center p-1 rounded"
+                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-4 p-2 sm:p-1.5 rounded bg-white/60 dark:bg-gray-800/40 sm:bg-transparent border border-blue-100/60 dark:border-blue-900/30 sm:border-0"
                               >
-                                <div className="flex flex-col">
-                                  <div className="text-md text-gray-700 dark:text-gray-300">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <div className="text-xs sm:text-sm md:text-md text-gray-700 dark:text-gray-300 font-medium sm:font-normal break-words leading-snug">
                                     {s.subindikator}
                                   </div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                     Bobot: {s.bobot ?? "-"}%
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end gap-1">
-                                    Nilai:{" "}
-                                    {val.nilai !== null
-                                      ? isMSKInd
-                                        ? `${Number(val.nilai).toFixed(2)}/${getStandarForSubIndikator(s.id)}`
-                                        : isPotensiTalentaInd
-                                          ? `${Number(val.nilai).toFixed(2)}/5`
-                                          : Number(val.nilai).toFixed(2)
-                                      : "-"}
+                                <div className="flex items-center justify-between sm:justify-end gap-3 text-right pt-1 sm:pt-0 border-t sm:border-t-0 border-dashed border-blue-100 dark:border-blue-900/30 flex-shrink-0">
+                                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end gap-1.5">
+                                    <span>
+                                      Nilai:{" "}
+                                      {val.nilai !== null
+                                        ? isMSKInd
+                                          ? `${Number(val.nilai).toFixed(2)}/${getStandarForSubIndikator(s.id)}`
+                                          : isPotensiTalentaInd
+                                            ? `${Number(val.nilai).toFixed(2)}/5`
+                                            : Number(val.nilai).toFixed(2)
+                                        : "-"}
+                                    </span>
                                     {hasInstrumens && (
                                       <div className="group relative inline-block">
-                                        <i className="fas fa-info-circle cursor-help text-[#3085d6]"></i>
+                                        <i className="fas fa-info-circle cursor-help text-[#3085d6] text-xs sm:text-sm"></i>
                                         <div
-                                          className={`invisible text-md text-left group-hover:visible absolute right-0 ${isFirstSub ? "top-full mt-2" : "bottom-full mb-2"} w-96 p-2 bg-white dark:bg-gray-100 text-gray-800 dark:text-gray-900 rounded shadow-lg border border-gray-200 z-50`}
+                                          className={`invisible text-xs sm:text-sm text-left group-hover:visible absolute right-0 ${isFirstSub ? "top-full mt-2" : "bottom-full mb-2"} w-72 sm:w-80 md:w-96 max-w-[calc(100vw-2.5rem)] p-2.5 bg-white dark:bg-gray-100 text-gray-800 dark:text-gray-900 rounded-lg shadow-xl border border-gray-200 z-50 break-words pointer-events-none`}
                                         >
                                           {subInstrumens.map((inst) => (
-                                            <div key={inst.id}>
+                                            <div key={inst.id} className="py-0.5">
                                               {cleanInstrumenText(
                                                 inst.instrumen,
                                               )}
@@ -2588,7 +2592,7 @@ const DetailPegawai = () => {
                                       </div>
                                     )}
                                   </div>
-                                  <div className="text-md font-medium text-[#3085d6] dark:text-[#60a5fa]">
+                                  <div className="text-sm sm:text-md font-bold sm:font-medium text-[#3085d6] dark:text-[#60a5fa] min-w-[3rem] text-right">
                                     {val.hasil !== null
                                       ? Number(val.hasil).toFixed(2)
                                       : "-"}
@@ -2598,7 +2602,7 @@ const DetailPegawai = () => {
                             );
                           })
                         ) : (
-                          <div className="text-md text-gray-500 italic">
+                          <div className="text-sm text-gray-500 italic p-1">
                             Tidak ada subindikator
                           </div>
                         )}

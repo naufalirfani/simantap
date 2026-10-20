@@ -147,8 +147,10 @@ export const fetchPetaJabatanKosong = async (kategori = "") => {
   try {
     const encryptedToken = await encryptTokenForHeader(API_TOKEN, { salt: API_TOKEN });
     let url = `${API_BASE_URL}/api/peta-jabatan?with_pagination=false&jabatan_kosong=true`;
-    if (kategori) {
-      url += `&kategori_jabatan_kosong=${encodeURIComponent(kategori)}`;
+    if (Array.isArray(kategori) && kategori.length > 0) {
+      url += `&kategori_jabatan_kosong=${encodeURIComponent(kategori.join(","))}`;
+    } else if (typeof kategori === "string" && kategori.trim()) {
+      url += `&kategori_jabatan_kosong=${encodeURIComponent(kategori.trim())}`;
     }
     const response = await fetch(
       url,
