@@ -3485,6 +3485,76 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
       />
     );
 
+  const parseDateToTimestamp = (dateStr) => {
+    if (!dateStr || dateStr === "-") return 0;
+    if (dateStr instanceof Date) {
+      const t = dateStr.getTime();
+      return Number.isFinite(t) ? t : 0;
+    }
+
+    const str = String(dateStr).trim();
+    if (!str || str === "-") return 0;
+
+    // Check if it's already a 4-digit year like "2024"
+    if (/^\d{4}$/.test(str)) {
+      const yr = parseInt(str, 10);
+      if (yr > 1900 && yr < 2100) {
+        return new Date(yr, 0, 1).getTime();
+      }
+    }
+
+    // Split date components
+    const parts = str.split(/[-/.\sT:]+/);
+    if (parts.length >= 3) {
+      let year, month, day;
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+        day = parseInt(parts[2], 10);
+      } else {
+        // DD-MM-YYYY
+        day = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+        year = parseInt(parts[2], 10);
+      }
+
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        const d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) {
+          return d.getTime();
+        }
+      }
+    }
+
+    // Direct Date.parse fallback
+    const direct = Date.parse(str);
+    if (!isNaN(direct)) return direct;
+
+    return 0;
+  };
+
+  const getCourseTime = (item) => {
+    // 1. Prioritize tanggalSelesaiKursus
+    if (item?.tanggalSelesaiKursus) {
+      const ts = parseDateToTimestamp(item.tanggalSelesaiKursus);
+      if (ts > 0) return ts;
+    }
+    // 2. Fall back to tanggalKursus
+    if (item?.tanggalKursus) {
+      const ts = parseDateToTimestamp(item.tanggalKursus);
+      if (ts > 0) return ts;
+    }
+    // 3. Fall back to tahunKursus
+    if (item?.tahunKursus) {
+      const yr = parseInt(item.tahunKursus, 10);
+      if (yr > 1900 && yr < 2100) {
+        return new Date(yr, 0, 1).getTime();
+      }
+    }
+    return 0;
+  };
+
   const getUpdatedTime = (item) => {
     const rawDate =
       item?.updatedAt ||
@@ -3508,17 +3578,34 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
       : `unique:${item?.id || "item"}-${index}`;
 
     const existing = uniqueMap.get(dedupeKey);
-    if (!existing || getUpdatedTime(item) > getUpdatedTime(existing)) {
+    const itemCourseTime = getCourseTime(item);
+    const existingCourseTime = existing ? getCourseTime(existing) : 0;
+
+    if (
+      !existing ||
+      itemCourseTime > existingCourseTime ||
+      (itemCourseTime === existingCourseTime &&
+        getUpdatedTime(item) > getUpdatedTime(existing))
+    ) {
       uniqueMap.set(dedupeKey, item);
     }
   });
 
   const sorted = [...uniqueMap.values()].sort((a, b) => {
+    // 1. Urutkan berdasarkan tanggalSelesaiKursus / tanggalKursus / tahunKursus terbaru
+    const courseTimeDiff = getCourseTime(b) - getCourseTime(a);
+    if (courseTimeDiff !== 0) return courseTimeDiff;
+
+    // 2. Fallback jika waktu kursus sama: tahunKursus
+    const ya = parseInt(a?.tahunKursus, 10) || 0;
+    const yb = parseInt(b?.tahunKursus, 10) || 0;
+    if (yb !== ya) return yb - ya;
+
+    // 3. Fallback ke updated time
     const updatedDiff = getUpdatedTime(b) - getUpdatedTime(a);
     if (updatedDiff !== 0) return updatedDiff;
-    const ya = parseInt(a.tahunKursus) || 0;
-    const yb = parseInt(b.tahunKursus) || 0;
-    return yb - ya;
+
+    return (Number(b?.id) || 0) - (Number(a?.id) || 0);
   });
 
   const totalJam = sorted.reduce((s, i) => s + (parseInt(i.jumlahJam) || 0), 0);
@@ -3590,14 +3677,21 @@ const RiwayatPengembanganPanel = ({ data, formatDateIndo }) => {
                     {item.institusiPenyelenggara}
                   </span>
                 )}
-                {item.tanggalKursus && (
+                {(item.tanggalKursus ||
+                  item.tanggalSelesaiKursus ||
+                  item.tahunKursus) && (
                   <span>
                     <i className="fas fa-calendar mr-1 opacity-60"></i>
-                    {formatDateIndo(item.tanggalKursus)}
-                    {item.tanggalSelesaiKursus &&
-                      item.tanggalSelesaiKursus !== item.tanggalKursus
-                      ? ` – ${formatDateIndo(item.tanggalSelesaiKursus)}`
-                      : ""}
+                    {item.tanggalKursus
+                      ? `${formatDateIndo(item.tanggalKursus)}${
+                          item.tanggalSelesaiKursus &&
+                          item.tanggalSelesaiKursus !== item.tanggalKursus
+                            ? ` – ${formatDateIndo(item.tanggalSelesaiKursus)}`
+                            : ""
+                        }`
+                      : item.tanggalSelesaiKursus
+                        ? formatDateIndo(item.tanggalSelesaiKursus)
+                        : item.tahunKursus}
                   </span>
                 )}
                 {item.noSertipikat &&
